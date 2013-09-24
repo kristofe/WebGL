@@ -1,0 +1,369 @@
+<html>
+
+<head>
+<title>WebGL</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<!--
+<script type="text/javascript" src="matrix.js"></script>
+-->
+
+<script id="shader-fs-raytracer" type="x-shader/x-fragment">
+    precision mediump float;
+    varying vec2 vUV;
+
+    void main(void) {
+      //gl_FragColor = vec4(vUV.x, vUV.y, 1.0, 1.0);
+      //gl_FragColor = vec4(mod(vUV.x,1.0), mod(vUV.y,1.0), 0.0, 1.0);
+      float cx = mod(vUV.x,1.0);
+      float cy = mod(vUV.y,1.0);
+      float cmax = max(cx,cy);
+      float cmin = min(cx,cy);
+
+      //Create a grid pattern. White(1.0) as .1 width.
+      float c = max(step(0.95,cmax) , step(0.95,1.0 - cmin));
+
+      //Reverse the gray value
+      c = 1.0 - clamp(c,0.0,1.0);
+      gl_FragColor = vec4(c, c, c, 1.0);
+    }
+
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    //Data from bufferData
+    attribute vec3 aVertexPosition;
+    attribute vec2 aVertexUV;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    //These will be passed to the fragment shader and will be interpreted per
+    //pixel
+    varying vec2 vUV;
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        //The line below will ignore any translation of perspective matrix
+        //gl_Position =  vec4(aVertexPosition, 1.0);
+        vUV = aVertexUV;
+    }
+</script>
+
+
+
+<script type="text/javascript">
+
+    var gl;
+    function initGL(canvas) {
+        try {
+            gl = canvas.getContext("webgl") ||
+                 canvas.getContext("experimental-webgl");
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+        } catch (e) {
+        }
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+    }
+
+
+    function getShader(gl, id) {
+        var shaderScript = document.getElementById(id);
+        if (!shaderScript) {
+            return null;
+        }
+
+        var str = "";
+        var k = shaderScript.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                str += k.textContent;
+            }
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if (shaderScript.type == "x-shader/x-fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (shaderScript.type == "x-shader/x-vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } else {
+            return null;
+        }
+
+        gl.shaderSource(shader, str);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    }
+
+
+    var raytracerShaderProgram;
+    var triangleShaderProgram;
+
+    function initShader(fragment_shadername, vertex_shadername) {
+        var fragmentShader = getShader(gl, fragment_shadername);
+        var vertexShader = getShader(gl, vertex_shadername);
+
+        var shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        gl.useProgram(shaderProgram);
+
+        shaderProgram.vertexPositionAttribute = 
+                        gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+        shaderProgram.vertexUVAttribute = 
+                              gl.getAttribLocation(shaderProgram, "aVertexUV");
+        gl.enableVertexAttribArray(shaderProgram.vertexUVAttribute);
+
+        shaderProgram.pMatrixUniform =gl.getUniformLocation(shaderProgram, 
+                                                            "uPMatrix");
+        shaderProgram.mvMatrixUniform =gl.getUniformLocation(shaderProgram, 
+                                                             "uMVMatrix");
+
+        return shaderProgram;
+    }
+
+
+    var mvMatrix;
+    var mvMatrixTriangle;
+    var pMatrix;
+
+    function setUniforms(shader, mv, p) {
+        gl.uniformMatrix4fv(shader.pMatrixUniform, false, p);
+        gl.uniformMatrix4fv(shader.mvMatrixUniform, false, mv);
+
+    }
+
+
+
+    var raytracerVertexBuffer;
+
+    function initBuffers() {
+      //Create Square Position Buffer
+      raytracerVertexBuffer = createVertexBuffer(createGridMesh(2,2),5);
+    }
+
+
+    function drawScene() {
+        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
+        pMatrix = identity();
+        mvMatrix = identity();
+
+        pMatrix = ortho(-1, 1, -1, 1, 0.01, 10);
+        /*
+        pMatrix = makePerspective(
+                                 45 * Math.PI/180.0, 
+                                 gl.viewportWidth / gl.viewportHeight, 
+                                 0.1, 
+                                 100.0
+                                 );
+        */
+        mvMatrix = makeTranslation(0.0, 0.0, -0.01);
+
+        gl.useProgram(raytracerShaderProgram);
+        gl.bindBuffer(gl.ARRAY_BUFFER, raytracerVertexBuffer);
+        gl.vertexAttribPointer(
+                              raytracerShaderProgram.vertexPositionAttribute,
+                              raytracerVertexBuffer.positionElementCount, 
+                              gl.FLOAT, 
+                              false, 
+                              raytracerVertexBuffer.stride, 
+                              raytracerVertexBuffer.positionOffset
+                              );
+        gl.vertexAttribPointer(
+                              raytracerShaderProgram.vertexUVAttribute, 
+                              raytracerVertexBuffer.uvElementCount, 
+                              gl.FLOAT, 
+                              false, 
+                              raytracerVertexBuffer.stride, 
+                              raytracerVertexBuffer.uvOffset 
+                              );
+        setUniforms(raytracerShaderProgram, mvMatrix, pMatrix);
+        gl.drawArrays(
+                      gl.TRIANGLE_STRIP, 
+                      0, 
+                      raytracerVertexBuffer.numItems
+                      );
+    }
+
+
+    var mouse = [250,250];
+    var mouseRadius = 10;
+    var currentAngle = [0,0]; // [x-axis, y-axis] degrees
+    var startTime = 0.0;
+    var currTime = 0.0;
+
+    function webGLStart() {
+        var canvas = document.getElementById("webgl-canvas");
+        startTime = (new Date).getTime();
+
+        initGL(canvas);
+        raytracerShaderProgram = initShader("shader-fs-raytracer","shader-vs");
+        initBuffers();
+        
+        initEventHandlers(canvas, mouse, currentAngle);
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.disable(gl.DEPTH_TEST);
+        //gl.enable(gl.DEPTH_TEST);
+
+
+        var tick = function() {
+          currTime = ((new Date).getTime() - startTime)*0.001;
+          drawScene();
+          requestAnimationFrame(tick,canvas);
+        };
+        tick();
+    }
+
+    function initEventHandlers(canvas, mousePosition, currentAngle)
+    {
+      var lastX = -1;
+      var lastY = -1;
+      var dragging = false;
+
+      canvas.onmousedown = function(ev) {  //Mouse is pressed
+        var x = ev.clientX;
+        var y = ev.clientY;
+
+        var rect = ev.target.getBoundingClientRect();
+        if(rect.left <= x 
+            && x <= rect.right 
+            && rect.top <= y 
+            && y <= rect.bottom
+          ) {
+          lastX = x; 
+          lastY = y;
+          mousePosition[0] = x;
+          mousePosition[1] = canvas.height - y;
+          dragging = true;
+
+        }
+      };
+
+      canvas.onmouseup = function(ev){ //Mouse is released
+        dragging = false;
+      }
+
+      canvas.onmousemove = function(ev) { //Mouse is moved
+        var x = ev.clientX;
+        var y = ev.clientY;
+        if(dragging) {
+          //put some kind of dragging logiv in here
+          //Here is a roation example
+          var factor = 100/canvas.height;
+          var dx = factor * (x - lastX);
+          var dy = factor * (y - lastY);
+          //Limit x-axis roation angle to -90 to 90 degrees
+          currentAngle[0] = Math.max(Math.min(currentAngle[0] + dy, 90), -90);
+          currentAngle[1] = currentAngle[1] + dx;
+
+          mousePosition[0] = x;
+          mousePosition[1] = canvas.height - y;
+
+        }
+        lastX = x;
+        lastY = y;
+
+      }
+    }
+
+
+    function createGridMesh(n, m){
+      var numVerts = n * m;
+      var vertices = [];
+
+      var xpos = 0.0;
+      var ypos = 0.0;
+      var zpos = 0.0;
+      var xinc = 1/n;
+      var yinc = 1/m;
+      for(var j = 0; j < m; ++j){
+        for(var i = 0; i < n; ++i){
+          var lx = xpos;
+          var rx = xpos + xinc;
+          var dy = ypos; 
+          var uy = ypos + yinc;
+
+          /*
+          var uvl = lx;
+          var uvr = rx;
+          var uvd = dy;
+          var uvu = uy;
+          */
+
+          var uvl = i;
+          var uvr = i+1;
+          var uvd = j+1;
+          var uvu = j;
+
+          vertices.push(lx, dy, zpos, uvl, uvd);
+          vertices.push(rx, dy, zpos, uvr, uvd);
+          vertices.push(rx, uy, zpos, uvr, uvu);
+
+          vertices.push(lx, dy, zpos, uvl, uvd);
+          vertices.push(rx, uy, zpos, uvr, uvu);
+          vertices.push(lx, uy, zpos, uvl, uvu);
+          xpos += xinc;
+        }
+        ypos += yinc;
+        xpos = 0.0;
+      }
+      console.log(vertices);
+      console.log(n, m);
+
+      return vertices;
+    }
+
+    function createVertexBuffer(vertArray, stride){
+        var vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(
+                     gl.ARRAY_BUFFER, 
+                     new Float32Array(vertArray), 
+                     gl.STATIC_DRAW
+                     );
+        vertexBuffer.stride = stride*Float32Array.BYTES_PER_ELEMENT;
+        vertexBuffer.positionElementCount = 3;
+        vertexBuffer.positionOffset = 0;
+        vertexBuffer.uvElementCount = 2;
+        vertexBuffer.uvOffset = 3*Float32Array.BYTES_PER_ELEMENT;
+        vertexBuffer.numItems = vertArray.length/stride;
+
+        return vertexBuffer;
+    }
+
+</script>
+
+
+</head>
+
+
+<body onload="webGLStart();">
+  <canvas id="webgl-canvas" style="border: none;" width="500" height="500">
+  </canvas>
+
+</body>
+
+</html>
+
+
