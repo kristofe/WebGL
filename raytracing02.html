@@ -18,22 +18,31 @@
       vec3 center = sphere.xyz;
 
 	    vec3 diff = org - center;
-      float a = dot(dir,dir);
-      float b = 2.0 * dot(dir,diff);
+      //float a = dot(dir,dir);  //should be one because dir is normalized
+      float b = dot(2.0*dir,diff);
       float c = dot(diff,diff) - radius * radius;
-      float disc = b * b - 4.0 * a * c;
+      float disc = b * b - 4.0 * c;
       if (disc < 0.0)
       {
         returnVal = vec3(0.0,0.0,0.0);
         return returnVal;
       }
       disc = sqrt(disc);
-      returnVal.x = (-b - disc)/(2.*a);
-      returnVal.y = (-b + disc)/(2.*a);
+      returnVal.x = min((-b - disc)/(2.),(-b + disc)/(2.));
+      /*
+      if(returnVal.x > returnVal.y){
+        returnVal.z = returnVal.x;
+        returnVal.x = returnVal.y;
+        returnVal.y = returnVal.z;
+      }
+      */
       returnVal.z = 2.0;
       return returnVal;
     }
 
+    vec3 calcReflection(vec3 dir, vec3 norm) {
+      return (2.0 * dot(-dir , norm) * norm) + dir;
+    }
 /*
     vec4 shadePoint(vec3 position, vec3 normal) {
       //Gradient for background
@@ -54,20 +63,20 @@
 
     void main(void) {
       //globals
-      vec3 lightDirection = normalize(vec3(-0.5,-1.0, 1.0));
+      vec3 lightDirection = normalize(vec3(0.5,-1.0, 1.0));
       vec4 ambient = vec4(0.1, 0.1, 0.1, 1.0);
 
-      vec4 sphere1 = vec4( .07,.06,-2,.07);
+      vec4 sphere1 = vec4( .07,.00,-2,.07);
       vec4 sphere1Color = vec4(0.6, 0.6, 1.0, 1.0);
-      vec4 sphere2 = vec4(-.07,.00,-2,.07);
+      vec4 sphere2 = vec4(-.07,-.08,-2,.07);
       vec4 sphere2Color = vec4(0.0,1,0.0,1.0);
       vec4 sphere3 = vec4(0,0,-2.02,.1);
       vec4 sphere3Color = vec4(0.0,0.0,1.0, 1.0);
 
 
       //Gradient for background
-      vec4 blue = vec4(0.1, 0.1, 0.8, 1.0);
-      vec4 white = vec4(0.7, 0.7, 0.9, 1.0);
+      vec4 blue = vec4(0.0, 0.0, 0.0, 1.0);
+      vec4 white = vec4(0.6, 0.6, 0.8, 1.0);
 
       //get elevation of ray
       float angle = vUV.y;
@@ -93,7 +102,6 @@
         color = (sphere1Color * modulation) + ambient;
       }
 
-      /*
       t = intersectSphere(viewPoint, rayDirection, sphere2);
       if(t.z > 0.0)
       {
@@ -102,18 +110,32 @@
         vec3 position = viewPoint + (t.x * rayDirection);
         vec3 normal = normalize(position - sphere2.xyz);
         
-        //float modulation = dot(normal, lightDirection);
-        //modulation = clamp(modulation,0.0, 1.0);
-        //color = (sphere2Color * modulation) + ambient;
-       
-
         //If reflection ray hits nothing use sky gradient
-        //get elevation of ray
-        //Calculate refection ray then use it for gradient!
-        float angle = clamp(-normal.y, 0.0, 1.0);
-        color = mix(blue, white, angle);
+        //Reflect the ray off of the surface
+        vec3 reflection = reflect(rayDirection, normal);
+        
+        //vec3 reflection = calcReflection(normalize(rayDirection), normal);
+
+        float angle = clamp(reflection.y, -0.5, 1.0);
+        color = mix(white, blue, angle);
+        //vec3 refraction = reflect(incident, normal, refractionIndex);
+
+        //t = intersectSphere(position + (reflection * 0.01), reflection, sphere2);
+        //if(t.z < 2.0){
+        if(true){
+
+          t = intersectSphere(position, reflection, sphere1);
+          if(t.z > 0.0)
+          {
+            //hit!
+            vec3 p = position + (t.x * reflection);
+            vec3 n = normalize(p - sphere1.xyz);
+            float modulation = dot(n, lightDirection);
+            modulation = clamp(modulation,0.0, 1.0);
+            color = (sphere1Color * modulation) + ambient;
+          }
+        }
       }
-      */
 
       gl_FragColor = color;
     }
