@@ -12,7 +12,46 @@
     precision mediump float;
     varying vec2 vUV;
 
+    //globals
+    vec3 light = vec3(-0.0,-5.5,-6.0);
+    vec3 ambient = vec3(1.0,1.0,16.0);
+
+    vec3 sphere1 = vec3( .07,.06,-2,.07);
+    vec3 sphere1Color = vec3(1.0,0.0,0.0);
+
+    vec3 sphere2 = vec3(-.07,.06,-2,.07);
+    vec3 sphere2Color = vec3(0.0,1,0.0);
+
+    vec3 sphere3 = vec3(0,0,-2.02,.1);
+    vec3 sphere3Color = vec3(0.0,0.0,1.0);
+
+    /*
+      double focal_length = 3.5;        // FOCAL LENGTH OF "LENS"
+      double v[] = {0,0,0};             // VIEW POINT
+      double w[] = {0,0,-focal_length}; // RAY DIRECTION
+      double t[] = new double[2];       // PLACE TO STORE ROOTS
+      double p[] = {0,0,0};             // SURFACE POINT
+      double n[] = {0,0,0};             // SURFACE NORMAL
+    */
+
+
+    
+    //vec3 rayDirection = (0.0,0.0,-focalength);
+    //vec3 rayDirection = normalize(vec3(u-0.5, 0.5-v, -focalLength));
+
+
     void main(void) {
+      float focalLength = 3.5;
+      vec3 viewPoint = vec3(0.0,0.0,0.0);
+      vec3 rayDirection = normalize(vec3(vUV.x-0.5, 0.5-vUV.y, -focalLength));
+
+
+      //Now intersect each shape
+
+
+
+      //Old stuff
+      
       //gl_FragColor = vec4(vUV.x, vUV.y, 1.0, 1.0);
       //gl_FragColor = vec4(mod(vUV.x,1.0), mod(vUV.y,1.0), 0.0, 1.0);
       float cx = mod(vUV.x,1.0);
@@ -28,6 +67,28 @@
       gl_FragColor = vec4(c, c, c, 1.0);
     }
 
+    vec3 intersectSphere(vec3 org, vec3 dir, vec4 sphere) {
+      //Sphere is pos(x,y,z) and radius(w)
+      vec3 returnVal;
+      float radius = sphere.w;
+      vec3 center = sphere.xyz;
+
+	    vec3 diff = org - center;
+      double a = dot(dir,dir);
+      double b = 2.0 * dot(dir,diff);
+      double c = dot(diff,diff) - radius * radius;
+      double disc = b * b - 4.0 * a * c;
+      if (disc < 0.0)
+      {
+        returnVal = vec3(0.0,0.0,0.0);
+        return returnVal;
+      }
+      disc = sqrt(disc);
+      returnVal.x = (-b - disc)/(2.*a);
+      returnVal.y = (-b + disc)/(2.*a);
+      returnVal.z = 2.0;
+      return returnVal;
+    }
 </script>
 
 <script id="shader-vs" type="x-shader/x-vertex">
