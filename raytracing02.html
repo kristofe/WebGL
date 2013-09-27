@@ -114,7 +114,7 @@
       vec3 viewPoint = vec3(0.0,0.0,0.0);
       vec3 rayDirection = normalize(vec3(vUV.x-0.5, 0.5-vUV.y, -focalLength));
 
-      //if we hit nothing use the elevation of ray
+      //if we hit nothing use the gradient
       float angle = 1.0 - vUV.y;
       vec4 color = mix(light.c0, light.c1, angle);
 
@@ -133,6 +133,7 @@
       if(hit.t.z > 0.0)
       {
         //hit!
+        //Set color to gradient from reflection.
         float angle = clamp(hit.reflection.y, -0.5, 1.0);
         color = mix(light.c0, light.c1, angle);
 
