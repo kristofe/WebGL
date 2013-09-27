@@ -11,11 +11,40 @@
     precision mediump float;
     varying vec2 vUV;
 
-    vec3 intersectSphere(vec3 org, vec3 dir, vec4 sphere) {
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    uniform float uTime;
+
+    struct HitInfo {
+      vec3 t;
+      vec3 position;
+      vec3 normal;
+      vec3 reflection;
+      vec4 color;
+    };
+
+    struct Sphere {
+      vec4 posRadius;
+      vec4 color;
+    };
+
+    struct Light {
+      vec3 direction;
+      vec4 ambient;
+      vec4 c0;
+      vec4 c1;
+    };
+
+    HitInfo intersectSphere(vec3 org, vec3 dir, Sphere sphere, Light light) {
       //Sphere is pos(x,y,z) and radius(w)
-      vec3 returnVal;
-      float radius = sphere.w;
-      vec3 center = sphere.xyz;
+      HitInfo hitInfo;
+      
+      //Color if nothing is hit.  Use dir.y
+      float angle = dir.y*0.5 + 0.5;
+      hitInfo.color = mix(light.c0, light.c1, angle);
+
+      float radius = sphere.posRadius.w;
+      vec3 center = sphere.posRadius.xyz;
 
 	    vec3 diff = org - center;
       //float a = dot(dir,dir);  //should be one because dir is normalized
@@ -24,130 +53,99 @@
       float disc = b * b - 4.0 * c;
       if (disc < 0.0)
       {
-        returnVal = vec3(0.0,0.0,0.0);
-        return returnVal;
+        hitInfo.t = vec3(0.0);
+        return hitInfo;
       }
       disc = sqrt(disc);
-      returnVal.x = (-b - disc)/(2.);
-      returnVal.y = (-b + disc)/(2.);
+      hitInfo.t.x = (-b - disc)/(2.);
+      hitInfo.t.y = (-b + disc)/(2.);
       float test = 0.0;
-      if(returnVal.x < 0.0){
-        returnVal.x = 1000000.0;
+      if(hitInfo.t.x < 0.0){
+        hitInfo.t.x = 1e10;
         test += 1.0;
       }
-      if(returnVal.y < 0.0) {
-        returnVal.y = 1000000.0;
+      if(hitInfo.t.y < 0.0) {
+        hitInfo.t.y = 1e10;
         test += 1.0;
       }
-      returnVal.x = min(returnVal.x,returnVal.y); 
-      /*
-      if(returnVal.x > returnVal.y){
-        returnVal.z = returnVal.x;
-        returnVal.x = returnVal.y;
-        returnVal.y = returnVal.z;
+      hitInfo.t.x = min(hitInfo.t.x,hitInfo.t.y); 
+      hitInfo.t.y = max(hitInfo.t.x,hitInfo.t.y); 
+      hitInfo.t.z = 2.0 - test;
+
+      if(hitInfo.t.z > 0.0){
+      
+        hitInfo.position = org + (hitInfo.t.x * dir);
+        hitInfo.normal = normalize(hitInfo.position - sphere.posRadius.xyz);
+        hitInfo.reflection = reflect(dir, hitInfo.normal);
+        float modulation = dot(hitInfo.normal, light.direction);
+        modulation = clamp(modulation,0.0, 1.0);
+        hitInfo.color = (sphere.color * modulation) + light.ambient;
       }
-      */
-      returnVal.z = 2.0 - test;
-      return returnVal;
+      
+
+      return hitInfo;
+
     }
 
     vec3 calcReflection(vec3 dir, vec3 norm) {
       return (2.0 * dot(-dir , norm) * norm) + dir;
     }
-/*
-    vec4 shadePoint(vec3 position, vec3 normal) {
-      //Gradient for background
-      vec4 blue = vec4(0.1, 0.1, 0.9, 1.0);
-      vec4 white = vec4(0.9, 0.9, 0.9, 1.0);
-
-      //get elevation of ray
-      float angle = vUV.y;
-      vec4 color = mix(blue, white, angle);
-
-      //
-
-      float modulation = dot(normal, lightDirection);
-      modulation = clamp(modulation,0.0, 1.0);
-      color = (sphere1Color * modulation) + ambient;
-    }
-*/
 
     void main(void) {
+      float trans = sin(uTime);
       //globals
-      vec3 lightDirection = normalize(vec3(0.0,-1.0, 1.0));
-      vec4 ambient = vec4(0.1, 0.1, 0.1, 1.0);
+      Light light;
+      light.direction = normalize(vec3(0.0,-1.0, 1.0));
+      light.ambient = vec4(0.1, 0.1, 0.1, 1.0);
+      light.c1 = vec4(0.0, 0.0, 0.0, 1.0);
+      light.c0 = vec4(0.6, 0.6, 0.6, 1.0);
+      //light.c1 = vec4(0.7, 0.3, 0.1, 1.0);
+      //light.c0 = vec4(0.0, 0.5, 1.0, 1.0);
 
-      vec4 sphere1 = vec4(-.10, -.00,-1.95,.09);
-      vec4 sphere1Color = vec4(0.6, 0.6, 1.0, 1.0);
-      vec4 sphere2 = vec4( .09, -.06,-2,.09);
-      vec4 sphere2Color = vec4(0.0,1,0.0,1.0);
-      vec4 sphere3 = vec4(0,0,-2.02,.1);
-      vec4 sphere3Color = vec4(0.0,0.0,1.0, 1.0);
+      Sphere sphere1;
+      sphere1.posRadius = vec4(-.10, -.00,trans* -0.3 - 1.65,.09);
+      sphere1.color = vec4(0.6, 0.6, 1.0, 1.0);
 
+      Sphere sphere2;
+      sphere2.posRadius = vec4( .09, -.06,-2,.09);
+      sphere2.color = vec4(0.0,1,0.0,1.0);
 
-      //Gradient for background
-      vec4 blue = vec4(0.0, 0.0, 0.0, 1.0);
-      vec4 white = vec4(0.6, 0.6, 0.8, 1.0);
-
-      //vec4 blue = vec4(0.7, 0.3, 0.1, 1.0);
-      //vec4 white = vec4(0.0, 0.5, 1.0, 1.0);
-
-      //get elevation of ray
-      float angle = vUV.y;
-
-      
-      vec4 color = mix(blue, white, angle);
       float focalLength = 3.5;
       vec3 viewPoint = vec3(0.0,0.0,0.0);
       vec3 rayDirection = normalize(vec3(vUV.x-0.5, 0.5-vUV.y, -focalLength));
 
+      //if we hit nothing use the elevation of ray
+      float angle = 1.0 - vUV.y;
+      vec4 color = mix(light.c0, light.c1, angle);
+
+      
       //Being cheap...  making sure that each shape is not intersecting the 
       //other
 
       //Now intersect each shape
-      vec3 t = intersectSphere(viewPoint, rayDirection, sphere1);
-      if(t.z > 0.0)
+      HitInfo hit = intersectSphere(viewPoint, rayDirection, sphere1, light);
+      if(hit.t.z > 0.0)
       {
-        //hit!
-        vec3 position = viewPoint + (t.x * rayDirection);
-        vec3 normal = normalize(position - sphere1.xyz);
-        float modulation = dot(normal, lightDirection);
-        modulation = clamp(modulation,0.0, 1.0);
-        color = (sphere1Color * modulation) + ambient;
+        color = hit.color;
       }
 
-      t = intersectSphere(viewPoint, rayDirection, sphere2);
-      if(t.z > 0.0)
+      hit = intersectSphere(viewPoint, rayDirection, sphere2, light);
+      if(hit.t.z > 0.0)
       {
         //hit!
-        //Doing reflective
-        vec3 position = viewPoint + (t.x * rayDirection);
-        vec3 normal = normalize(position - sphere2.xyz);
-        
-        //If reflection ray hits nothing use sky gradient
-        //Reflect the ray off of the surface
-        vec3 reflection = reflect(rayDirection, normal);
-        
-        //vec3 reflection = calcReflection(normalize(rayDirection), normal);
+        float angle = clamp(hit.reflection.y, -0.5, 1.0);
+        color = mix(light.c0, light.c1, angle);
 
-        float angle = clamp(reflection.y, -0.5, 1.0);
-        color = mix(white, blue, angle);
-        //vec3 refraction = reflect(incident, normal, refractionIndex);
-
-        //t = intersectSphere(position + (reflection * 0.01), reflection, sphere2);
-        //if(t.z < 2.0){
-        if(true){
-
-          t = intersectSphere(position, reflection, sphere1);
-          if(t.z > 0.0)
-          {
-            //hit!
-            vec3 p = position + (t.x * reflection);
-            vec3 n = normalize(p - sphere1.xyz);
-            float modulation = dot(n, lightDirection);
-            modulation = clamp(modulation,0.0, 1.0);
-            color = (sphere1Color * modulation) + ambient;
-          }
+        HitInfo hit2 = intersectSphere(
+                                        hit.position, 
+                                        hit.reflection, 
+                                        sphere1, 
+                                        light
+                                      );
+        if(hit2.t.z > 0.0)
+        {
+          //hit!
+          color = hit2.color;
         }
       }
 
@@ -164,6 +162,7 @@
 
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
+    uniform float uTime;
 
     //These will be passed to the fragment shader and will be interpreted per
     //pixel
@@ -263,6 +262,8 @@
         shaderProgram.mvMatrixUniform =gl.getUniformLocation(shaderProgram, 
                                                              "uMVMatrix");
 
+        shaderProgram.currTime =gl.getUniformLocation(shaderProgram, "uTime");
+
         return shaderProgram;
     }
 
@@ -274,6 +275,7 @@
     function setUniforms(shader, mv, p) {
         gl.uniformMatrix4fv(shader.pMatrixUniform, false, p);
         gl.uniformMatrix4fv(shader.mvMatrixUniform, false, mv);
+        gl.uniform1f(shader.currTime, currTime);
 
     }
 
