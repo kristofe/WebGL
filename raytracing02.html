@@ -28,113 +28,12 @@
       vec4 color;
     };
 
-    struct Quad { 
-      vec3 pts[4];
-      vec4 plane;
-    };
-
-    struct Cube {
-      vec4 planes[6];
-    };
-
     struct Light {
       vec3 direction;
       vec4 ambient;
       vec4 c0;
       vec4 c1;
     };
-
-    Cube createUnitCube() {
-      Cube c;
-      c.planes[0] = vec4( 1.0, 0.0, 0.0, -1.0);
-      c.planes[1] = vec4(-1.0, 0.0, 0.0, -1.0);
-      c.planes[2] = vec4( 0.0, 1.0, 0.0, -1.0);
-      c.planes[3] = vec4( 0.0,-1.0, 0.0, -1.0);
-      c.planes[4] = vec4( 0.0, 0.0, 1.0, -1.0);
-      c.planes[5] = vec4( 0.0, 0.0,-1.0, -1.0);
-      return c;
-    }
-
-    void transformCube(Cube c, mat4 m) {
-      for(int i = 0; i < 6; i++){
-        c.planes[i] = m * c.planes[i];
-      }
-    }
-
-    //Need to represent quad as four points and a plane
-    float rayPlaneIntersect(vec3 org, vec3 dir, vec4 plane) {
-      vec3 normal = plane.xyz;
-      float D = plane.w;
-      float vd = dot(normal,dir);
-      if(vd == 0.0){ //ray is parallel to plane
-        return 0.0;
-      }
-      if(vd > 0.0){
-        return 0.0;//plane is pointing away from ray
-      }
-      float vo = -(dot(normal,org) + D);
-      return vo/vd;
-      
-      //return isInsidePolygon(org, dir, newT);
-    }
-
-    int isInsideQuad(vec3 org, vec3 dir, Quad quad, float t){
-      //this part could just be calculated once in the constructor
-      vec3 pt = org + (dir * t); 
-      //find the axis that has the greatest magnitude
-      int largestIndex = 0;
-      float largestIndexValue = 0.0;
-      for(int i = 0; i < 3; i++){
-        if(abs(pt[i]) > largestIndexValue){
-          largestIndex = i;
-          largestIndexValue = abs(pt[i]); 
-        }
-      }
-      int U, V;
-      if(largestIndex == 0){
-        U = 1; V = 2;
-      }else if(largestIndex == 1){
-        U = 0; V = 2;
-      }else{
-        U = 0; V = 1;
-      }
-
-      //translate all the points so that the intersection point is at the origin
-      vec3 newPts[4];
-      
-      for(int i = 0; i < 4; i++){
-        newPts[i][U] = quad.pts[i][U] - pt[U];
-        newPts[i][V] = quad.pts[i][V] - pt[V];
-      }
-
-      int numberOfCrossings = 0;
-      int signHolder = newPts[0][V]>=0.0?+1:-1;
-      int nextSignHolder; 
-
-      for(float i = 0.0; i < 3.0; i+=1.0){
-        int next = int(mod(i+1.0,4.0));
-        int n = int(i);
-        nextSignHolder = newPts[next][V]>=0.0?+1:-1;
-        if(signHolder != nextSignHolder){
-          if(newPts[n][U] > 0.0 && newPts[next][U] > 0.0){
-            numberOfCrossings++; 
-          }else if(newPts[n][U] > 0 || newPts[next][U]>0){
-            //compute intersection
-            float check = (newPts[n][U] - newPts[n][V])*(newPts[next][U] 
-                            - newPts[n][U])/(newPts[next][V] - newPts[n][V]);
-            if(check > 0){ //line must cross +U
-              numberOfCrossings++;
-            }
-          }
-          signHolder = nextSignHolder;
-        }
-      }
-
-      if(numberOfCrossings/2.0 == 0.0)
-        return 0;
-      else 
-        return 1;
-   }
 
     HitInfo intersectSphere(vec3 org, vec3 dir, Sphere sphere, Light light) {
       //Sphere is pos(x,y,z) and radius(w)
