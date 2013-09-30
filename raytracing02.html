@@ -15,6 +15,11 @@
     uniform mat4 uPMatrix;
     uniform float uTime;
 
+    struct Ray {
+      vec3 origin;
+      vec3 dir;
+    };
+
     struct HitInfo {
       vec3 t;
       vec3 position;
@@ -35,20 +40,20 @@
       vec4 c1;
     };
 
-    HitInfo intersectSphere(vec3 org, vec3 dir, Sphere sphere, Light light) {
+    HitInfo intersectSphere(Ray ray, Sphere sphere, Light light) {
       //Sphere is pos(x,y,z) and radius(w)
       HitInfo hitInfo;
       
       //Color if nothing is hit.  Use dir.y
-      float angle = dir.y*0.5 + 0.5;
+      float angle = ray.dir.y*0.5 + 0.5;
       hitInfo.color = mix(light.c0, light.c1, angle);
 
       float radius = sphere.posRadius.w;
       vec3 center = sphere.posRadius.xyz;
 
-	    vec3 diff = org - center;
+	    vec3 diff = ray.origin - center;
       //float a = dot(dir,dir);  //should be one because dir is normalized
-      float b = dot(2.0*dir,diff);
+      float b = dot(2.0*ray.dir,diff);
       float c = dot(diff,diff) - radius * radius;
       float disc = b * b - 4.0 * c;
       if (disc < 0.0)
@@ -74,21 +79,16 @@
 
       if(hitInfo.t.z > 0.0){
       
-        hitInfo.position = org + (hitInfo.t.x * dir);
+        hitInfo.position = ray.origin + (hitInfo.t.x * ray.dir);
         hitInfo.normal = normalize(hitInfo.position - sphere.posRadius.xyz);
-        hitInfo.reflection = reflect(dir, hitInfo.normal);
-        float modulation = dot(hitInfo.normal, light.direction);
-        modulation = clamp(modulation,0.0, 1.0);
-        hitInfo.color = (sphere.color * modulation) + light.ambient;
+        hitInfo.reflection = reflect(ray.dir, hitInfo.normal);
+        hitInfo.color = sphere.color *(light.ambient + (1.0 - light.ambient) *
+                                max(0.0,dot(hitInfo.normal, light.direction)));
       }
       
 
       return hitInfo;
 
-    }
-
-    vec3 calcReflection(vec3 dir, vec3 norm) {
-      return (2.0 * dot(-dir , norm) * norm) + dir;
     }
 
     void main(void) {
@@ -99,20 +99,16 @@
       light.ambient = vec4(0.1, 0.1, 0.1, 1.0);
       light.c1 = vec4(0.0, 0.0, 0.0, 1.0);
       light.c0 = vec4(0.6, 0.6, 0.6, 1.0);
-      //light.c1 = vec4(0.7, 0.3, 0.1, 1.0);
-      //light.c0 = vec4(0.0, 0.5, 1.0, 1.0);
 
-      Sphere sphere1;
-      sphere1.posRadius = vec4(-.10, -.00,trans* -0.3 - 1.65,.09);
-      sphere1.color = vec4(0.6, 0.6, 1.0, 1.0);
+      Sphere sphere1 = Sphere(vec4(-1.0, -.00,trans* -3.0 - 16.5,.9),
+                              vec4(0.6, 0.6, 1.0, 1.0));
 
-      Sphere sphere2;
-      sphere2.posRadius = vec4( .09, -.06,-2,.09);
-      sphere2.color = vec4(0.0,1,0.0,1.0);
+      Sphere sphere2 = Sphere(vec4( .9, -.6,-20,.9), vec4(0.0,1,0.0,1.0));
 
       float focalLength = 3.5;
-      vec3 viewPoint = vec3(0.0,0.0,0.0);
+      vec3 viewPoint = vec3(0.0,0.0, focalLength);
       vec3 rayDirection = normalize(vec3(vUV.x-0.5, 0.5-vUV.y, -focalLength));
+      Ray ray = Ray(viewPoint, rayDirection);
 
       //if we hit nothing use the gradient
       float angle = 1.0 - vUV.y;
@@ -123,13 +119,13 @@
       //other
 
       //Now intersect each shape
-      HitInfo hit = intersectSphere(viewPoint, rayDirection, sphere1, light);
+      HitInfo hit = intersectSphere(ray, sphere1, light);
       if(hit.t.z > 0.0)
       {
         color = hit.color;
       }
 
-      hit = intersectSphere(viewPoint, rayDirection, sphere2, light);
+      hit = intersectSphere(ray, sphere2, light);
       if(hit.t.z > 0.0)
       {
         //hit!
@@ -137,9 +133,9 @@
         float angle = clamp(hit.reflection.y, -0.5, 1.0);
         color = mix(light.c0, light.c1, angle);
 
+        Ray ray2 = Ray(hit.position, hit.reflection);
         HitInfo hit2 = intersectSphere(
-                                        hit.position, 
-                                        hit.reflection, 
+                                        ray2,
                                         sphere1, 
                                         light
                                       );

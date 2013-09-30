@@ -15,6 +15,17 @@
     uniform mat4 uPMatrix;
     uniform float uTime;
 
+    struct Ray {
+      vec3 origin;
+      vec3 dir;
+    };
+
+    struct AABB {
+      vec3 min;
+      vec3 max;
+      vec4 color;
+    };
+
     struct HitInfo {
       vec3 t;
       vec3 position;
@@ -68,6 +79,14 @@
       return c;
     }
 
+    AABB createAABB(vec3 min, vec3 max, vec4 color){
+      AABB b;
+      b.min = min;
+      b.max = max;
+      b.color = color;
+      return b;
+    }
+
     void transformCube(Cube c, mat4 m) {
       c.xForm = m;
       for(int i = 0; i < 6; i++){
@@ -75,14 +94,77 @@
       }
     }
 
-    HitInfo intersectCube(vec3 org, vec3 dir, Cube box, Light light) {
+    //This was taken from http://prideout.net/blog/?p=64
+    bool intersectBox(Ray r, AABB aabb, out float t_min, out float t_max)
+    {
+        vec3 invR = 1.0 / r.dir;
+        vec3 tbot = invR * (aabb.min-r.origin);
+        vec3 ttop = invR * (aabb.max-r.origin);
+        vec3 tmin = min(ttop, tbot);
+        vec3 tmax = max(ttop, tbot);
+        vec2 t = max(tmin.xx, tmin.yz);
+        t_min = max(t.x, t.y);
+        t = min(tmax.xx, tmax.yz);
+        t_max = min(t.x, t.y);
+        return t_min <= t_max;
+    }
+
+/*
+    bool intersectBox(Ray r, AABB box, out float tmin, out float tmax) {
+       float tymin, tymax, tzmin, tzmax; 
+       float flag = 1.0; 
+     
+        if (r.dir.x >= 0.0) 
+        {
+           tmin = (box.min.x - r.origin.x) / r.dir.x;
+             tmax = (box.max.x - r.origin.x) / r.dir.x;
+        }
+        else 
+        {
+           tmin = (box.max.x - r.origin.x) / r.dir.x;
+           tmax = (box.min.x - r.origin.x) / r.dir.x;
+        }
+        if (r.dir.y >= 0.0) 
+        {
+           tymin = (box.min.y - r.origin.y) / r.dir.y; 
+           tymax = (box.max.y - r.origin.y) / r.dir.y; 
+        }
+        else 
+        {
+           tymin = (box.max.y - r.origin.y) / r.dir.y; 
+           tymax = (box.min.y - r.origin.y) / r.dir.y; 
+        }
+         
+        if ((tmin > tymax) || (tymin > tmax)) flag = -1.0; 
+        if (tymin > tmin) tmin = tymin; 
+        if (tymax < tmax) tmax = tymax; 
+          
+        if (r.dir.z >= 0.0) 
+        {
+           tzmin = (box.min.z - r.origin.z) / r.dir.z; 
+           tzmax = (box.max.z - r.origin.z) / r.dir.z; 
+        }
+        else 
+        {
+           tzmin = (box.max.z - r.origin.z) / r.dir.z; 
+           tzmax = (box.min.z - r.origin.z) / r.dir.z; 
+        }
+        if ((tmin > tzmax) || (tzmin > tmax)) flag = -1.0; 
+        if (tzmin > tmin) tmin = tzmin; 
+        if (tzmax < tmax) tmax = tzmax; 
+          
+        return (flag > 0.0); 
+    }
+*/
+
+    HitInfo intersectCube(Ray ray, Cube box, Light light) {
       HitInfo hitInfo;
       float tEnter[6];
       vec4 enterPlanes[6];
       float tExit[6];
       vec4 exitPlanes[6];
-      vec4 W = vec4(dir,0.0);
-      vec4 V = vec4(org,1.0);
+      vec4 W = vec4(ray.dir,1.0);
+      vec4 V = vec4(ray.origin,1.0);
       float LDOTV;
       float LDOTW;
       float large_value = 1.0e32;
@@ -117,9 +199,9 @@
       if(t.x < t.y) {
         //We hit the cube
         hitInfo.t = vec3(t,2.0);
-        hitInfo.position = org + t.x*dir;
+        hitInfo.position = ray.origin + t.x*ray.dir;
         hitInfo.normal = normalize(hitPlane.xyz);
-        hitInfo.reflection = reflect(hitInfo.normal, dir);
+        hitInfo.reflection = reflect(hitInfo.normal, ray.dir);
         hitInfo.color = box.color *(light.ambient + (1.0 - light.ambient) *
                                 max(0.0,dot(hitInfo.normal, light.direction)));
       }
@@ -128,20 +210,20 @@
 
     }
 
-    HitInfo intersectSphere(vec3 org, vec3 dir, Sphere sphere, Light light) {
+    HitInfo intersectSphere(Ray ray, Sphere sphere, Light light) {
       //Sphere is pos(x,y,z) and radius(w)
       HitInfo hitInfo;
       
       //Color if nothing is hit.  Use dir.y
-      float angle = dir.y*0.5 + 0.5;
+      float angle = ray.dir.y*0.5 + 0.5;
       hitInfo.color = mix(light.c0, light.c1, angle);
 
       float radius = sphere.posRadius.w;
       vec3 center = sphere.posRadius.xyz;
 
-	    vec3 diff = org - center;
+	    vec3 diff = ray.origin - center;
       //float a = dot(dir,dir);  //should be one because dir is normalized
-      float b = dot(2.0*dir,diff);
+      float b = dot(2.0*ray.dir,diff);
       float c = dot(diff,diff) - radius * radius;
       float disc = b * b - 4.0 * c;
       if (disc < 0.0)
@@ -167,9 +249,9 @@
 
       if(hitInfo.t.z > 0.0){
       
-        hitInfo.position = org + (hitInfo.t.x * dir);
+        hitInfo.position = ray.origin + (hitInfo.t.x * ray.dir);
         hitInfo.normal = normalize(hitInfo.position - sphere.posRadius.xyz);
-        hitInfo.reflection = reflect(dir, hitInfo.normal);
+        hitInfo.reflection = reflect(ray.dir, hitInfo.normal);
         hitInfo.color = sphere.color *(light.ambient + (1.0 - light.ambient) *
                                 max(0.0,dot(hitInfo.normal, light.direction)));
       }
@@ -194,25 +276,29 @@
       //light.c1 = vec4(0.7, 0.3, 0.1, 1.0);
       //light.c0 = vec4(0.0, 0.5, 1.0, 1.0);
 
-      Cube box = createUnitCube(vec4(0.6, 0.6, 1.0, 1.0));
-      transformCube(box, 
+      AABB box = createAABB(
+          vec3(-0.02,-0.02,-0.02), 
+          vec3( 0.02, 0.02, 0.02),
+          vec4(0.6, 0.6, 1.0, 1.0)
+          );
+      AABB box2 = createAABB(
+          vec3( 0.03,-0.02,-0.02), 
+          vec3( 0.07, 0.02, 0.02),
+          vec4(0.6, 0.6, 1.0, 1.0)
+          );
+
+      Cube cube = createUnitCube(vec4(0.6, 0.6, 1.0, 1.0));
+      transformCube(cube, 
                           inverseTSMatrix(
-                            vec3(0.0,0.0,-2.0), vec3(.1,.1,.1)
+                            vec3(0.0,0.0,00.0), vec3(.01,.01,.01)
                           )
                     );
 
 
-      Sphere sphere1;
-      sphere1.posRadius = vec4(-.10, -.00,trans* -0.3 - 1.65,.09);
-      sphere1.color = vec4(0.6, 0.6, 1.0, 1.0);
-
-      Sphere sphere2;
-      sphere2.posRadius = vec4( .09, -.06,-2,.09);
-      sphere2.color = vec4(0.0,1,0.0,1.0);
-
       float focalLength = 3.5;
-      vec3 viewPoint = vec3(0.0,0.0,0.0);
+      vec3 viewPoint = vec3(0.0,0.0, focalLength);
       vec3 rayDirection = normalize(vec3(vUV.x-0.5, 0.5-vUV.y, -focalLength));
+      Ray ray = Ray(viewPoint, rayDirection);
 
       //if we hit nothing use the gradient
       float angle = 1.0 - vUV.y;
@@ -221,52 +307,23 @@
       
       //Being cheap...  making sure that each shape is not intersecting the 
       //other
-
-      //Now intersect each shape
-      HitInfo hit = intersectCube(viewPoint, rayDirection, box, light);
-      if(hit.t.z > 0.0)
-      {
+      HitInfo hit = intersectCube(ray, cube, light);
+      if(hit.t.z > 0.0) {
         color = hit.color;
       }
-
 
       /*
-      hit = intersectSphere(viewPoint, rayDirection, sphere1, light);
-      if(hit.t.z > 0.0)
-      {
-        color = hit.color;
+      float tnear, tfar;
+      if(intersectBox(ray,box, tnear, tfar)){
+
+          color = box.color;
       }
 
+      if(intersectBox(ray,box2, tnear, tfar)){
+
+          color = box2.color;
+      }
       */
-      hit = intersectSphere(viewPoint, rayDirection, sphere2, light);
-      if(hit.t.z > 0.0)
-      {
-        //hit!
-        //Set color to gradient from reflection.
-        float angle = clamp(hit.reflection.y, -0.5, 1.0);
-        color = mix(light.c0, light.c1, angle);
-        /*
-
-        HitInfo hit2 = intersectCube(
-                                        hit.position, 
-                                        hit.reflection, 
-                                        box, 
-                                        light
-                                      );
-
-        hit2 = intersectSphere(
-                                        hit.position, 
-                                        hit.reflection, 
-                                        sphere1, 
-                                        light
-                                      );
-        if(hit2.t.z > 0.0)
-        {
-          //hit!
-          color = hit2.color;
-        }
-        */
-      }
 
       gl_FragColor = color;
     }
