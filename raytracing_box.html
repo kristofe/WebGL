@@ -27,6 +27,7 @@
     };
 
     struct HitInfo {
+      bool hit;
       vec3 t;
       vec3 position;
       vec3 normal;
@@ -159,11 +160,12 @@
 
     HitInfo intersectCube(Ray ray, Cube box, Light light) {
       HitInfo hitInfo;
+      hitInfo.hit = false;
       float tEnter[6];
       vec4 enterPlanes[6];
       float tExit[6];
       vec4 exitPlanes[6];
-      vec4 W = vec4(ray.dir,1.0);
+      vec4 W = vec4(ray.dir,0.0);
       vec4 V = vec4(ray.origin,1.0);
       float LDOTV;
       float LDOTW;
@@ -185,21 +187,23 @@
         }
       }
 
-      vec2 t = vec2(tEnter[0], tExit[0]);
+      float t_near = tEnter[0];
+      float t_far = tExit[0];
       vec4 hitPlane = enterPlanes[0];
       for(int i = 1; i < 6; i++){
-        if(t.x < tEnter[i]){
+        if(t_near < tEnter[i]){
           hitPlane = enterPlanes[i];
-          t.x = tEnter[i];
+          t_near = tEnter[i];
         }
-        t.y = min(t.y, tExit[i]);
+        t_far = min(t_far, tExit[i]);
       }
 
       hitInfo.t = vec3(0.0);
-      if(t.x < t.y) {
+      if(t_near < t_far) {
+        hitInfo.hit = true;
         //We hit the cube
-        hitInfo.t = vec3(t,2.0);
-        hitInfo.position = ray.origin + t.x*ray.dir;
+        hitInfo.t = vec3(t_near, t_far,0.0);
+        hitInfo.position = ray.origin + t_near*ray.dir;
         hitInfo.normal = normalize(hitPlane.xyz);
         hitInfo.reflection = reflect(hitInfo.normal, ray.dir);
         hitInfo.color = box.color *(light.ambient + (1.0 - light.ambient) *
@@ -213,6 +217,7 @@
     HitInfo intersectSphere(Ray ray, Sphere sphere, Light light) {
       //Sphere is pos(x,y,z) and radius(w)
       HitInfo hitInfo;
+      hitInfo.hit = false;
       
       //Color if nothing is hit.  Use dir.y
       float angle = ray.dir.y*0.5 + 0.5;
@@ -248,7 +253,7 @@
       hitInfo.t.z = 2.0 - test;
 
       if(hitInfo.t.z > 0.0){
-      
+        hitInfo.hit = true;
         hitInfo.position = ray.origin + (hitInfo.t.x * ray.dir);
         hitInfo.normal = normalize(hitInfo.position - sphere.posRadius.xyz);
         hitInfo.reflection = reflect(ray.dir, hitInfo.normal);
@@ -273,8 +278,8 @@
       light.ambient = vec4(0.1, 0.1, 0.1, 1.0);
       light.c1 = vec4(0.0, 0.0, 0.0, 1.0);
       light.c0 = vec4(0.6, 0.6, 0.6, 1.0);
-      //light.c1 = vec4(0.7, 0.3, 0.1, 1.0);
-      //light.c0 = vec4(0.0, 0.5, 1.0, 1.0);
+
+      Sphere sphere = Sphere(vec4(0.0, 0.0, 0.0, 0.1),vec4(1.0));
 
       AABB box = createAABB(
           vec3(-0.02,-0.02,-0.02), 
@@ -288,11 +293,13 @@
           );
 
       Cube cube = createUnitCube(vec4(0.6, 0.6, 1.0, 1.0));
+      
       transformCube(cube, 
-                          inverseTSMatrix(
-                            vec3(0.0,0.0,00.0), vec3(.01,.01,.01)
+                          tsMatrix(
+                            vec3(0.0,0.0, 0.0), vec3(.01,.01,.01)
                           )
                     );
+      
 
 
       float focalLength = 3.5;
@@ -308,7 +315,12 @@
       //Being cheap...  making sure that each shape is not intersecting the 
       //other
       HitInfo hit = intersectCube(ray, cube, light);
-      if(hit.t.z > 0.0) {
+      if(hit.hit) {
+        color = hit.color;
+      }
+
+      hit = intersectSphere(ray, sphere, light);
+      if(hit.hit){
         color = hit.color;
       }
 
