@@ -8,7 +8,7 @@
 
 
 <script id="shader-fs-raytracer" type="x-shader/x-fragment">
-    precision mediump float;
+    precision highp float;
     varying vec2 vUV;
 
     uniform mat4 uMVMatrix;
@@ -40,7 +40,6 @@
       vec4 color;
     };
 
-
     struct Cube {
       vec4 unitPlanes[6];
       vec4 planes[6];
@@ -67,12 +66,12 @@
 
     Cube createUnitCube(vec4 color) {
       Cube c;
-      c.planes[0] = vec4( 1.0, 0.0, 0.0, -1.0);
-      c.planes[1] = vec4(-1.0, 0.0, 0.0, -1.0);
-      c.planes[2] = vec4( 0.0, 1.0, 0.0, -1.0);
-      c.planes[3] = vec4( 0.0,-1.0, 0.0, -1.0);
-      c.planes[4] = vec4( 0.0, 0.0, 1.0, -1.0);
-      c.planes[5] = vec4( 0.0, 0.0,-1.0, -1.0);
+      c.planes[0] = vec4( 1.0, 0.0, 0.0,  1.0);
+      c.planes[1] = vec4(-1.0, 0.0, 0.0,  1.0);
+      c.planes[2] = vec4( 0.0, 1.0, 0.0,  1.0);
+      c.planes[3] = vec4( 0.0,-1.0, 0.0,  1.0);
+      c.planes[4] = vec4( 0.0, 0.0, 1.0,  1.0);
+      c.planes[5] = vec4( 0.0, 0.0,-1.0,  1.0);
       for(int i = 0; i < 6; i++){
         c.unitPlanes[i] = c.planes[i];
       }
@@ -91,7 +90,8 @@
     void transformCube(Cube c, mat4 m) {
       c.xForm = m;
       for(int i = 0; i < 6; i++){
-        c.planes[i] = c.unitPlanes[i] * m;
+        vec4 newPlane =  c.unitPlanes[i] * m;
+        c.planes[i] = vec4(normalize(newPlane.xyz), newPlane.w);
       }
     }
 
@@ -157,6 +157,35 @@
         return (flag > 0.0); 
     }
 */
+
+    HitInfo intersectPlane(Ray ray, vec4 plane, Light light){
+      HitInfo hitInfo;
+      hitInfo.hit = false;
+      hitInfo.t = vec3(1e20,0.0, 0.0);
+      vec4 W = vec4(ray.dir,0.0);
+      vec4 V = vec4(ray.origin,1.0);
+      float LDOTV, LDOTW;
+      float t;
+      float eps = 0.0000;
+
+      //"X" Planes
+      vec4 L = plane;
+      LDOTV = dot(L,V);
+      LDOTW = dot(L,W);
+      if(LDOTW < 0.0 - eps) {
+        t = -LDOTV/LDOTW;
+        hitInfo.t = vec3(t);
+        hitInfo.hit = true;
+        hitInfo.position = ray.origin + t*ray.dir;
+        hitInfo.normal = normalize(L.xyz);
+        hitInfo.reflection = reflect(hitInfo.normal, ray.dir);
+        hitInfo.color = vec4(1.0, 0.0, 0.0, 1.0);
+                        //box.color *(light.ambient + (1.0 - light.ambient) *
+                        //        max(0.0,dot(hitInfo.normal, light.direction)));
+
+      }
+      return hitInfo;
+    }
 
     HitInfo intersectCube(Ray ray, Cube box, Light light) {
       HitInfo hitInfo;
@@ -396,11 +425,11 @@
       hitInfo.t.y = (-b + disc)/(2.);
       float test = 0.0;
       if(hitInfo.t.x < 0.0){
-        hitInfo.t.x = 1e10;
+        hitInfo.t.x = 0.0;
         test += 1.0;
       }
       if(hitInfo.t.y < 0.0) {
-        hitInfo.t.y = 1e10;
+        hitInfo.t.y = 0.0;
         test += 1.0;
       }
       hitInfo.t.x = min(hitInfo.t.x,hitInfo.t.y); 
@@ -434,7 +463,9 @@
       light.c1 = vec4(0.0, 0.0, 0.0, 1.0);
       light.c0 = vec4(0.6, 0.6, 0.6, 1.0);
 
-      Sphere sphere = Sphere(vec4(0.0, 0.0, -1.0, 0.1),vec4(1.0));
+      Sphere sphere = Sphere(vec4(0.0, 0.0, 1.0 - ((trans*0.5+0.5) *0.2), 0.2),
+                              vec4(0.6, 0.6, 1.0, 1.0));
+      //Sphere sphere = Sphere(vec4( .9, -.6,-20,.9), vec4(0.0,1,0.0,1.0));
 
       AABB box = createAABB(
           vec3(-0.02,-0.02,-0.02), 
@@ -448,13 +479,12 @@
           );
 
       Cube cube = createUnitCube(vec4(0.6, 0.6, 1.0, 1.0));
-     /* 
+      
       transformCube(cube, 
-                          inverseTSMatrix(
+                          tsMatrix(
                             vec3(0.0,0.0, 0.0), vec3(.1,.1,.1)
                           )
                     );
-                    */
        
 
 
@@ -470,14 +500,25 @@
       
       //Being cheap...  making sure that each shape is not intersecting the 
       //other
-      HitInfo hit = intersectCube(ray, cube, light);
+      HitInfo hit;
+      hit.t = vec3(1e20);
+
+      
+      hit = intersectPlane(ray, vec4(normalize(vec3(0.0, 0.0, 1.0)), -1.0), light);
+      if(hit.hit) {
+        color = vec4(hit.t.x*0.1, 0.0, 0.0, 1.0);
+      }
+      /*
+      hit = intersectCube(ray, cube, light);
       if(hit.hit) {
         color = hit.color;
       }
+      */
 
       HitInfo hit2 = intersectSphere(ray, sphere, light);
-      if(hit2.hit && hit2.t.x < hit.t.x){
-        color = hit.color;
+      //if(hit2.hit){
+      if(hit2.hit && hit2.t.x <  hit.t.x){
+        color = hit2.color;
       }
 
       /*
