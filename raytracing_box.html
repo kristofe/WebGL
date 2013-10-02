@@ -70,18 +70,19 @@
         return mat4(S.x,0.,0.,0., 0.,S.y,0.,0., 0.,0.,S.z,0., T.x,T.y,T.z,1.);
     } 
 
-    Cube createUnitCube(vec4 color) {
+    Cube createUnitCube(vec4 color, mat4 m) {
       Cube c;
-      c.planes[0] = vec4( 1.0, 0.0, 0.0, -1.0);
-      c.planes[1] = vec4(-1.0, 0.0, 0.0, -1.0);
-      c.planes[2] = vec4( 0.0, 1.0, 0.0, -1.0);
-      c.planes[3] = vec4( 0.0,-1.0, 0.0, -1.0);
-      c.planes[4] = vec4( 0.0, 0.0, 1.0, -1.0);
-      c.planes[5] = vec4( 0.0, 0.0,-1.0, -1.0);
+      c.unitPlanes[0] = vec4( 1.0, 0.0, 0.0, -1.0);
+      c.unitPlanes[1] = vec4(-1.0, 0.0, 0.0, -1.0);
+      c.unitPlanes[2] = vec4( 0.0, 1.0, 0.0, -1.0);
+      c.unitPlanes[3] = vec4( 0.0,-1.0, 0.0, -1.0);
+      c.unitPlanes[4] = vec4( 0.0, 0.0, 1.0, -1.0);
+      c.unitPlanes[5] = vec4( 0.0, 0.0,-1.0, -1.0);
       for(int i = 0; i < 6; i++){
-        c.unitPlanes[i] = c.planes[i];
+        c.planes[i] = c.unitPlanes[i] * m;
       }
       c.color = color;
+      //c.xForm = m;
       return c;
     }
 
@@ -93,14 +94,6 @@
       return b;
     }
 
-    void transformCube(Cube c, mat4 m) {
-      c.xForm = m;
-      for(int i = 0; i < 6; i++){
-        //c.planes[i] =  c.unitPlanes[i] * m;
-        vec4 newPlane =  c.unitPlanes[i] * m;
-        c.planes[i] = vec4(normalize(newPlane.xyz), newPlane.w);
-      }
-    }
 
     //This was taken from http://prideout.net/blog/?p=64
     bool intersectBox(Ray r, AABB aabb, out float t_min, out float t_max)
@@ -193,7 +186,7 @@
         } 
       }
 
-      hitInfo.t = vec3(0.0);
+      hitInfo.t = vec3(1e20, -1e20, 0.0);
       if(knownMiss == false && t_near > 0.0 && t_near < t_far){
         //We hit the cube
         hitInfo.hit = true;
@@ -265,6 +258,40 @@
       return (2.0 * dot(-dir , norm) * norm) + dir;
     }
 
+    mat4 makeScaleMatrix(vec3 s) {
+
+      return mat4(
+        s.x, 0.0, 0.0, 0.0,
+        0.0, s.y, 0.0, 0.0,
+        0.0, 0.0, s.z, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      );
+    }
+
+    mat4 makeXRotationMatrix(float angleInRadians) {
+      float c = cos(angleInRadians);
+      float s = sin(angleInRadians);
+
+      return mat4(
+        1.0, 0.0, 0.0, 0.0,
+        0.0,  c ,  s , 0.0,
+        0.0, -s ,  c , 0.0,
+        0.0, 0.0, 0.0, 1.0
+      );
+    }
+
+    mat4 makeYRotationMatrix(float angleInRadians) {
+      float c = cos(angleInRadians);
+      float s = sin(angleInRadians);
+
+      return mat4(
+         c , 0.0,  -s, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+         s , 0.0,  c , 0.0,
+        0.0, 0.0, 0.0, 1.0
+      );
+    }
+
     void main(void) {
       float trans = sin(uTime);
       //globals
@@ -274,28 +301,15 @@
       light.c1 = vec4(0.0, 0.0, 0.0, 1.0);
       light.c0 = vec4(0.6, 0.6, 0.6, 1.0);
 
-      Sphere sphere = Sphere(vec4(0.0, 0.0, 1.0 - ((trans*0.5+0.5) *0.2), 0.2),
+      //Sphere sphere = Sphere(vec4(0.05, 0.05,-0.1 + ((trans*0.5+0.5) *0.2), 0.1),
+      Sphere sphere = Sphere(vec4(0.05, 0.05, 0.00, 0.1),
                               vec4(0.6, 0.6, 1.0, 1.0));
-      //Sphere sphere = Sphere(vec4( .9, -.6,-20,.9), vec4(0.0,1,0.0,1.0));
 
-      AABB box = createAABB(
-          vec3(-0.02,-0.02,-0.02), 
-          vec3( 0.02, 0.02, 0.02),
-          vec4(0.6, 0.6, 1.0, 1.0)
-          );
-      AABB box2 = createAABB(
-          vec3( 0.03,-0.02,-0.02), 
-          vec3( 0.07, 0.02, 0.02),
-          vec4(0.6, 0.6, 1.0, 1.0)
-          );
-
-      Cube cube = createUnitCube(vec4(0.0, 0.6, 1.0, 1.0));
-      
-      transformCube(cube, 
-                          inverseTSMatrix(
-                            vec3(0.0,0.0, 0.0), vec3(0.01, 0.01, 0.01)
-                          )
-                    );
+      mat4 mR1 = makeXRotationMatrix(uTime);
+      mat4 mR2 = makeYRotationMatrix(uTime);
+      mat4 mS = makeScaleMatrix(vec3(10.0)); //Inverse of 0.1
+      mat4 m = mS * mR1 * mR2;
+      Cube cube = createUnitCube(vec4(0.0, 0.6, 1.0, 1.0), m);
        
 
 
@@ -314,7 +328,7 @@
       HitInfo hit;
       hit.t = vec3(1e20);
 
-      
+      /*
       Plane plane = Plane(
                       vec4(normalize(vec3(0.0, 0.0, 1.0)), -1.0),
                       vec4(0.6,0.6,0.3,1.0)
@@ -323,12 +337,13 @@
       if(hit.hit) {
         color = hit.color;
       }
-      /*
+      */
+      
       hit = intersectCube(ray, cube, light);
       if(hit.hit) {
         color = hit.color;
       }
-      */
+      
      
 
       HitInfo hit2 = intersectSphere(ray, sphere, light);
