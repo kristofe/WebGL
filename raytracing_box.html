@@ -20,6 +20,12 @@
       vec3 dir;
     };
 
+    struct Plane {
+      vec4 p;
+      vec4 color;
+    };
+
+
     struct AABB {
       vec3 min;
       vec3 max;
@@ -66,12 +72,12 @@
 
     Cube createUnitCube(vec4 color) {
       Cube c;
-      c.planes[0] = vec4( 1.0, 0.0, 0.0,  1.0);
-      c.planes[1] = vec4(-1.0, 0.0, 0.0,  1.0);
-      c.planes[2] = vec4( 0.0, 1.0, 0.0,  1.0);
-      c.planes[3] = vec4( 0.0,-1.0, 0.0,  1.0);
-      c.planes[4] = vec4( 0.0, 0.0, 1.0,  1.0);
-      c.planes[5] = vec4( 0.0, 0.0,-1.0,  1.0);
+      c.planes[0] = vec4( 1.0, 0.0, 0.0, -1.0);
+      c.planes[1] = vec4(-1.0, 0.0, 0.0, -1.0);
+      c.planes[2] = vec4( 0.0, 1.0, 0.0, -1.0);
+      c.planes[3] = vec4( 0.0,-1.0, 0.0, -1.0);
+      c.planes[4] = vec4( 0.0, 0.0, 1.0, -1.0);
+      c.planes[5] = vec4( 0.0, 0.0,-1.0, -1.0);
       for(int i = 0; i < 6; i++){
         c.unitPlanes[i] = c.planes[i];
       }
@@ -90,6 +96,7 @@
     void transformCube(Cube c, mat4 m) {
       c.xForm = m;
       for(int i = 0; i < 6; i++){
+        //c.planes[i] =  c.unitPlanes[i] * m;
         vec4 newPlane =  c.unitPlanes[i] * m;
         c.planes[i] = vec4(normalize(newPlane.xyz), newPlane.w);
       }
@@ -110,55 +117,7 @@
         return t_min <= t_max;
     }
 
-/*
-    bool intersectBox(Ray r, AABB box, out float tmin, out float tmax) {
-       float tymin, tymax, tzmin, tzmax; 
-       float flag = 1.0; 
-     
-        if (r.dir.x >= 0.0) 
-        {
-           tmin = (box.min.x - r.origin.x) / r.dir.x;
-           tmax = (box.max.x - r.origin.x) / r.dir.x;
-        }
-        else 
-        {
-           tmin = (box.max.x - r.origin.x) / r.dir.x;
-           tmax = (box.min.x - r.origin.x) / r.dir.x;
-        }
-        if (r.dir.y >= 0.0) 
-        {
-           tymin = (box.min.y - r.origin.y) / r.dir.y; 
-           tymax = (box.max.y - r.origin.y) / r.dir.y; 
-        }
-        else 
-        {
-           tymin = (box.max.y - r.origin.y) / r.dir.y; 
-           tymax = (box.min.y - r.origin.y) / r.dir.y; 
-        }
-         
-        if ((tmin > tymax) || (tymin > tmax)) flag = -1.0; 
-        if (tymin > tmin) tmin = tymin; 
-        if (tymax < tmax) tmax = tymax; 
-          
-        if (r.dir.z >= 0.0) 
-        {
-           tzmin = (box.min.z - r.origin.z) / r.dir.z; 
-           tzmax = (box.max.z - r.origin.z) / r.dir.z; 
-        }
-        else 
-        {
-           tzmin = (box.max.z - r.origin.z) / r.dir.z; 
-           tzmax = (box.min.z - r.origin.z) / r.dir.z; 
-        }
-        if ((tmin > tzmax) || (tzmin > tmax)) flag = -1.0; 
-        if (tzmin > tmin) tmin = tzmin; 
-        if (tzmax < tmax) tmax = tzmax; 
-          
-        return (flag > 0.0); 
-    }
-*/
-
-    HitInfo intersectPlane(Ray ray, vec4 plane, Light light){
+    HitInfo intersectPlane(Ray ray, Plane plane, Light light){
       HitInfo hitInfo;
       hitInfo.hit = false;
       hitInfo.t = vec3(1e20,0.0, 0.0);
@@ -168,8 +127,7 @@
       float t;
       float eps = 0.0000;
 
-      //"X" Planes
-      vec4 L = plane;
+      vec4 L = plane.p;
       LDOTV = dot(L,V);
       LDOTW = dot(L,W);
       if(LDOTW < 0.0 - eps) {
@@ -179,9 +137,8 @@
         hitInfo.position = ray.origin + t*ray.dir;
         hitInfo.normal = normalize(L.xyz);
         hitInfo.reflection = reflect(hitInfo.normal, ray.dir);
-        hitInfo.color = vec4(1.0, 0.0, 0.0, 1.0);
-                        //box.color *(light.ambient + (1.0 - light.ambient) *
-                        //        max(0.0,dot(hitInfo.normal, light.direction)));
+        hitInfo.color = plane.color *(light.ambient + (1.0 - light.ambient) *
+                                max(0.0,dot(hitInfo.normal, light.direction)));
 
       }
       return hitInfo;
@@ -190,201 +147,56 @@
     HitInfo intersectCube(Ray ray, Cube box, Light light) {
       HitInfo hitInfo;
       hitInfo.hit = false;
-      vec3 tenter = vec3(-1e20);
-      vec3 texit = vec3(1e20);
-      vec4 nearPlane[3], p0, p1, L;
+      bool knownMiss = false;
+      vec4 p0, p1, L;
+      float LDOTV, LDOTW, t;
+      float eps = 0.0001;
+
       vec4 W = vec4(ray.dir,0.0);
       vec4 V = vec4(ray.origin,1.0);
-      float LDOTV, LDOTW;
-      float t;
-      float eps = 0.0000;
 
-      //"X" Planes
-      L = box.planes[0];
-      LDOTV = dot(L,V);
-      LDOTW = dot(L,W);
-      if(LDOTW < 0.0 - eps) {
-        t = -LDOTV/LDOTW;
-        tenter.x = t;
-        nearPlane[0] = L;
-      }else if(LDOTW > 0.0 + eps) {
-        t = -LDOTV/LDOTW;
-        texit.x = t;
-      }
-      else if(LDOTW == 0.0 && LDOTV <= 0.0){
-        tenter.x = 0.0;
-      }
+      //Initialize the intersections to values that should be out of range
+      float tenter[6];
+      float texit[6];
+      tenter[0]= tenter[1]= tenter[2]= tenter[3]= tenter[4]= tenter[5] = -1e20;
+      texit[0]= texit[1]= texit[2]= texit[3]= texit[4]= texit[5] =  1e20;
 
-      L = box.planes[1];
-      LDOTV = dot(L,V);
-      LDOTW = dot(L,W);
-      if(LDOTW < 0.0 - eps) {
-        t = -LDOTV/LDOTW;
-        tenter.x = t;
-        nearPlane[0] = L;
-      }else if(LDOTW > 0.0 + eps) {
-        t = -LDOTV/LDOTW;
-        texit.x = t;
-      }
-      else if(LDOTW == 0.0 && LDOTV <= 0.0){
-        tenter.x =0.0;
-      }
-      
-      //"Y" Planes
-      L = box.planes[2];
-      LDOTV = dot(L,V);
-      LDOTW = dot(L,W);
-      if(LDOTW < 0.0 - eps) {
-        t = -LDOTV/LDOTW;
-        tenter.y = t;
-        nearPlane[1] = L;
-      }else if(LDOTW > 0.0 + eps) {
-        t = -LDOTV/LDOTW;
-        texit.y = t;
-      }
-      else if(LDOTW == 0.0 && LDOTV <= 0.0){
-        tenter.y =  0.0;
-      }
-
-      L = box.planes[3];
-      LDOTV = dot(L,V);
-      LDOTW = dot(L,W);
-      if(LDOTW < 0.0 - eps) {
-        t = -LDOTV/LDOTW;
-        tenter.y = t;
-        nearPlane[1] = L;
-      }else if(LDOTW > 0.0 + eps) {
-        t = -LDOTV/LDOTW;
-        texit.y = t;
-      }
-      else if(LDOTW == 0.0 && LDOTV <= 0.0){
-        tenter.y = texit.y = 0.0;
-      }
-      
-
-      //"Z" Planes
-      L = box.planes[4];
-      LDOTV = dot(L,V);
-      LDOTW = dot(L,W);
-      if(LDOTW < 0.0 - eps) {
-        t = -LDOTV/LDOTW;
-        tenter.z = t;
-        nearPlane[2] = L;
-      }else if(LDOTW > 0.0 + eps) {
-        t = -LDOTV/LDOTW;
-        texit.z = t;
-      }
-      /*else if(LDOTW == 0.0 && LDOTV > 0.0){
-        tenter.z = texit.z = 0.0;
-      }
-      */
-
-      L = box.planes[5];
-      LDOTV = dot(L,V);
-      LDOTW = dot(L,W);
-      if(LDOTW < 0.0 - eps) {
-        t = -LDOTV/LDOTW;
-        tenter.z = t;
-        nearPlane[2] = L;
-      }else if(LDOTW > 0.0 + eps) {
-        t = -LDOTV/LDOTW;
-        texit.z = t;
-      }
-      /*
-      else if(LDOTW == 0.0 && LDOTV > 0.0){
-        tenter.z = texit.z = 0.0;
-      }
-      */
-
-      float t_near, t_far;
-      vec4 hitPlane;
-      //Find max of enter points
-      if(tenter.x > tenter.y){
-          t_near = tenter.x;
-          hitPlane = nearPlane[0];
-      } else{
-          t_near = tenter.y;
-          hitPlane = nearPlane[1];
-      }
-
-      if(tenter.z > t_near){
-        t_near = tenter.z;
-        hitPlane = nearPlane[2];
-      }
-
-      //Find min of exit points
-      if(texit.x < texit.y){
-          t_far = texit.x;
-      } else{
-          t_far = texit.y;
-      }
-      if(texit.z < t_far){
-        t_far = texit.z;
-      }
-
-
-
-      hitInfo.t = vec3(0.0);
-      if(t_near < t_far && t_near > 0.0) {
-        hitInfo.hit = true;
-        //We hit the cube
-        hitInfo.t = vec3(t_near, t_far,0.0);
-        hitInfo.position = ray.origin + t_near*ray.dir;
-        hitInfo.normal = normalize(hitPlane.xyz);
-        hitInfo.reflection = reflect(hitInfo.normal, ray.dir);
-        hitInfo.color = vec4(1.0, 0.0, 0.0, 1.0);
-                        //box.color *(light.ambient + (1.0 - light.ambient) *
-                        //        max(0.0,dot(hitInfo.normal, light.direction)));
-      }
-
-      return hitInfo;
-
-    }
-/*
-    HitInfo intersectCube(Ray ray, Cube box, Light light) {
-      HitInfo hitInfo;
-      hitInfo.hit = false;
-      float tEnter[6];
-      vec4 enterPlanes[6];
-      float tExit[6];
-      vec4 exitPlanes[6];
-      vec4 W = vec4(ray.dir,0.0);
-      vec4 V = vec4(ray.origin,1.0);
-      float LDOTV;
-      float LDOTW;
-      float large_value = 1.0e32;
-      float small_value = -1.0e32;
-
+      //Loop through each plane. testing whether entering or exiting
       for(int i = 0; i < 6; i++){
-        vec4 L = box.planes[i];
+        L = box.planes[i];
         LDOTV = dot(L,V);
         LDOTW = dot(L,W);
-        tEnter[i] = small_value;
-        tExit[i] = large_value;
-        if(LDOTW < 0.0) {
-          tEnter[i] = -LDOTV/LDOTW;
-          enterPlanes[i] = L;
-        }else if(LDOTW > 0.0) {
-          tExit[i] = -LDOTV/LDOTW;
-          exitPlanes[i] = L;
+        if(LDOTW < 0.0 - eps) {
+          t = -LDOTV/LDOTW;
+          tenter[i] = t;
+        }else if(LDOTW > 0.0 + eps) {
+          t = -LDOTV/LDOTW;
+          texit[i] = t;
+        }
+        else if(abs(LDOTW) <= eps && LDOTV > 0.0){
+          knownMiss = true;
         }
       }
 
-      float t_near = tEnter[0];
-      float t_far = tExit[0];
-      vec4 hitPlane = enterPlanes[0];
+      float t_near = tenter[0];
+      float t_far = texit[0];
+      vec4 hitPlane = box.planes[0];
+
+      //Calculate max t_enter and min t_far
       for(int i = 1; i < 6; i++){
-        if(t_near < tEnter[i]){
-          hitPlane = enterPlanes[i];
-          t_near = tEnter[i];
-        }
-        t_far = min(t_far, tExit[i]);
+        if(tenter[i] > t_near){
+            t_near = tenter[i];
+            hitPlane = box.planes[i];
+        } 
+        if(texit[i] < t_far){
+            t_far = texit[i];
+        } 
       }
 
       hitInfo.t = vec3(0.0);
-      if(t_near < t_far) {
-        hitInfo.hit = true;
+      if(knownMiss == false && t_near > 0.0 && t_near < t_far){
         //We hit the cube
+        hitInfo.hit = true;
         hitInfo.t = vec3(t_near, t_far,0.0);
         hitInfo.position = ray.origin + t_near*ray.dir;
         hitInfo.normal = normalize(hitPlane.xyz);
@@ -396,7 +208,6 @@
       return hitInfo;
 
     }
-    */
 
     HitInfo intersectSphere(Ray ray, Sphere sphere, Light light) {
       //Sphere is pos(x,y,z) and radius(w)
@@ -478,11 +289,11 @@
           vec4(0.6, 0.6, 1.0, 1.0)
           );
 
-      Cube cube = createUnitCube(vec4(0.6, 0.6, 1.0, 1.0));
+      Cube cube = createUnitCube(vec4(0.0, 0.6, 1.0, 1.0));
       
       transformCube(cube, 
-                          tsMatrix(
-                            vec3(0.0,0.0, 0.0), vec3(.1,.1,.1)
+                          inverseTSMatrix(
+                            vec3(0.0,0.0, 0.0), vec3(0.01, 0.01, 0.01)
                           )
                     );
        
@@ -504,9 +315,13 @@
       hit.t = vec3(1e20);
 
       
-      hit = intersectPlane(ray, vec4(normalize(vec3(0.0, 0.0, 1.0)), -1.0), light);
+      Plane plane = Plane(
+                      vec4(normalize(vec3(0.0, 0.0, 1.0)), -1.0),
+                      vec4(0.6,0.6,0.3,1.0)
+                      );
+      hit = intersectPlane(ray, plane, light);
       if(hit.hit) {
-        color = vec4(hit.t.x*0.1, 0.0, 0.0, 1.0);
+        color = hit.color;
       }
       /*
       hit = intersectCube(ray, cube, light);
@@ -514,6 +329,7 @@
         color = hit.color;
       }
       */
+     
 
       HitInfo hit2 = intersectSphere(ray, sphere, light);
       //if(hit2.hit){
