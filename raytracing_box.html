@@ -296,28 +296,52 @@
     struct Quadric{
       vec4 cap1;
       vec4 cap2;
-      float[10] c;
+      vec4 color;
+      float cA,cB,cC,cD,cE,cF,cG,cH,cI,cJ;
       mat4 m;
     };
 
-   void createCylinderCoeffs(out float[10] c) {
-     c = {1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,-1.0};
+   void initCylinderCoeffs(inout Quadric q){
+     q.cA = 1.0;
+     q.cB = 1.0;
+     q.cC = 0.0;
+     q.cD = 0.0;
+     q.cE = 0.0;
+     q.cF = 0.0;
+     q.cG = 0.0;
+     q.cH = 0.0;
+     q.cI = 0.0;
+     q.cJ = -1.0;
    }
 
-   void createConeCoeffs(out float[10] c) {
-     c = {1.0, 1.0,-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,-1.0};
+   void initConeCoeffs(inout Quadric q) {
+     q.cA = 1.0;
+     q.cB = 1.0;
+     q.cC = -1.0;
+     q.cD = 0.0;
+     q.cE = 0.0;
+     q.cF = 0.0;
+     q.cG = 0.0;
+     q.cH = 0.0;
+     q.cI = 0.0;
+     q.cJ = -1.0;
    }
 
-   Quadric createQuadric(float[10] c, vec4 cap1, vec4 cap2, vec4 color){
+   Quadric initQuadric(bool createCylinder, vec4 cap1, vec4 cap2, vec4 color){
       Quadric q;
       q.cap1 = cap1;
       q.cap2 = cap2;
-      q.c = c;
+      if(createCylinder){
+        initCylinderCoeffs(q);
+      }else{
+        initConeCoeffs(q);
+      }
+     
       q.m = mat4( 
-          c[0], c[5], c[4], c[6],
-           0.0, c[1], c[3], c[7],
-           0.0,  0.0, c[2], c[8],
-           0.0,  0.0,  0.0, c[9]
+          q.cA, q.cF, q.cE, q.cG,
+           0.0, q.cB, q.cD, q.cH,
+           0.0,  0.0, q.cC, q.cI,
+           0.0,  0.0,  0.0, q.cJ
           );
       return q;
    }
@@ -326,24 +350,17 @@
      q.cap1 = mInv * q.cap1;
      q.cap2 = mInv * q.cap2;
      mat4 m = mInvTranspose * q.m * mInv;
-     /*
-     q.m = mat4( 
-           m0,    m4+m1,  m8+m2,  m12+m3,
-           0.0,      m5,  m9+m6,  m13+m7,
-           0.0,     0.0,    m10,  m14+m6,
-           0.0,     0.0,    0.0,     m15 
-          );
-     */
-     q.coeffs[0] = m0;
-     q.coeffs[1] = m5;
-     q.coeffs[2] = m10;
-     q.coeffs[3] = m9+m6;
-     q.coeffs[4] = m8+m2;
-     q.coeffs[5] = m4+m1;
-     q.coeffs[6] = m12+m3;
-     q.coeffs[7] = m13+m7;
-     q.coeffs[8] = m14+m6;
-     q.coeffs[9] = m15;
+
+     q.cA = q.m[0][0];
+     q.cB = q.m[1][1];
+     q.cC = q.m[2][2];
+     q.cD = q.m[2][1]+q.m[1][2];
+     q.cE = q.m[2][0]+q.m[0][2];
+     q.cF = q.m[1][0]+q.m[0][1];
+     q.cG = q.m[3][0]+q.m[0][3];
+     q.cH = q.m[3][1]+q.m[1][3];
+     q.cI = q.m[3][2]+q.m[2][3];
+     q.cJ = q.m[3][3];
    }
 
 
@@ -351,34 +368,34 @@
      HitInfo hitInfo;
      vec4 W = vec4(ray.dir,0.0);
      vec4 V = vec4(ray.origin,1.0);
-     vec4 WSQR = dot(W,W);
-     vec4 VSQR = dot(V,V);
+     vec4 WSQR = W*W;
+     vec4 VSQR = V*V;
 
-     float A = q.c[0]*WSQR.x 
-              + q.c[1]*WSQR.y 
-              + q.c[2]*WQSR.z 
-              + q.c[3]*W.y*W.z
-              + q.c[4]*W.z*W.x 
-              + q.c[5]*W.x*W.y;
+     float A = q.cA*WSQR.x 
+              + q.cB*WSQR.y 
+              + q.cC*WSQR.z 
+              + q.cD*W.y*W.z
+              + q.cE*W.z*W.x 
+              + q.cF*W.x*W.y;
 
-     float B = 2.0*(q.c[0]*V.x*W.x + q.c[1]*V.y*W.y + q.c[2]*V.z*W.z)
-                + q.c[3]*(V.y*W.z+V*z*W.y) 
-                + q.c[4]*(V.z*W.x+V.x*W.z) 
-                + q.c[5]*(V.x*W.y+V*y*W.x) 
-                + q.c[6]*W.x 
-                + q.c[7]*W.y 
-                + q.c[8]*W.z; 
+     float B = 2.0*(q.cA*V.x*W.x + q.cB*V.y*W.y + q.cC*V.z*W.z)
+                + q.cD*(V.y*W.z+V.z*W.y) 
+                + q.cE*(V.z*W.x+V.x*W.z) 
+                + q.cF*(V.x*W.y+V.y*W.x) 
+                + q.cG*W.x 
+                + q.cH*W.y 
+                + q.cI*W.z; 
 
-     float C =   q.c[0]*VSQR.x
-               + q.c[1]*VSQR.y
-               + q.c[2]*VSQR.z
-               + q.c[3]*V.y*V.z
-               + q.c[4]*V.z*V.x
-               + q.c[5]*V.x*V.y
-               + q.c[6]*V.x
-               + q.c[7]*V.y
-               + q.c[8]*V.z
-               + q.c[9];
+     float C =   q.cA*VSQR.x
+               + q.cB*VSQR.y
+               + q.cC*VSQR.z
+               + q.cD*V.y*V.z
+               + q.cE*V.z*V.x
+               + q.cF*V.x*V.y
+               + q.cG*V.x
+               + q.cH*V.y
+               + q.cI*V.z
+               + q.cJ;
 
       float disc = B * B - 4.0 * A * C;
       if (disc < 0.0 || A == 0.0)
@@ -402,13 +419,16 @@
       hitInfo.t.y = max(hitInfo.t.x,hitInfo.t.y); 
       hitInfo.t.z = 2.0 - test;
 
-       if(hitInfo.t.z > 0.0){
+      if(hitInfo.t.z > 0.0){
         hitInfo.hit = true;
         hitInfo.position = ray.origin + (hitInfo.t.x * ray.dir);
-        hit.normal = normalize(
-                    2.0*q.c[0]*p.x + q.c[4]*p.z + q.c[5]*p.y + q.c[6],
-                    2.0*q.c[1]*p.y + q.c[3]*p.z + q.c[5]*p.x + q.c[7],
-                    2.0*q.c[2]*p.z + q.c[3]*p.y + q.c[4]*p.x + q.c[8],
+        vec3 p = hitInfo.position;
+        hitInfo.normal = normalize(
+                          vec3(
+                            2.0*q.cA*p.x + q.cE*p.z + q.cF*p.y + q.cG,
+                            2.0*q.cB*p.y + q.cD*p.z + q.cF*p.x + q.cH,
+                            2.0*q.cC*p.z + q.cD*p.y + q.cE*p.x + q.cI 
+                          )
                    );
         hitInfo.reflection = reflect(ray.dir, hitInfo.normal);
         hitInfo.color = q.color *(light.ambient + (1.0 - light.ambient) *
@@ -567,7 +587,9 @@
         gl.compileShader(shader);
 
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(gl.getShaderInfoLog(shader));
+          var errStr = gl.getShaderInfoLog(shader);
+            console.error(errStr);
+            alert(errStr);
             return null;
         }
 
