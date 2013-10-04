@@ -292,6 +292,19 @@
       );
     }
 
+//-----------------------------------------------------------------------------
+    struct Quadric{
+      vec4 p;
+      mat4 m;
+    };
+
+   HitInfo intersectQuadric(Ray ray, Quadric q, Light light){
+     HitInfo hitInfo;
+     //f(p) = dot(q.p, q.m*q.p);
+     return hitInfo;
+   }
+
+//-----------------------------------------------------------------------------
     void main(void) {
       float trans = sin(uTime);
       //globals
