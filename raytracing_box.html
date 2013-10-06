@@ -117,7 +117,8 @@
       float t = -1e20;
       LDOTV = dot(L,V);
       LDOTW = dot(L,W);
-      if(LDOTW < 0.0) {
+      if(LDOTW < 0.0)
+      {
         t = -LDOTV/LDOTW;
       }
       return t;
@@ -316,6 +317,27 @@
       );
     }
 
+    mat4 makeZRotationMatrix(float angleInRadians) {
+      float c = cos(angleInRadians);
+      float s = sin(angleInRadians);
+
+      return mat4(
+         c ,   s,  0.0, 0.0,
+         -s,   c,  0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      );
+    }
+
+   mat4 transpose(mat4 m){
+     mat4 o;
+     for(int c = 0; c < 4; c++)
+     for(int r = 0; r < 4; r++)
+       o[c][r] = m[c][r]; 
+     return o;
+   }
+
+
 //-----------------------------------------------------------------------------
     struct Quadric{
       vec4 cap1;
@@ -329,8 +351,8 @@
 
    void initCylinderCoeffs(inout Quadric q){
      q.cA = 1.0;
-     q.cB = 1.0;
-     q.cC = 0.0;
+     q.cB = 0.0;
+     q.cC = 1.0;
      q.cD = 0.0;
      q.cE = 0.0;
      q.cF = 0.0;
@@ -357,6 +379,7 @@
       Quadric q;
       q.cap1 = cap1;
       q.cap2 = cap2;
+      q.color = color;
       if(createCylinder){
         initCylinderCoeffs(q);
       }else{
@@ -372,11 +395,10 @@
       return q;
    }
 
-   void transformQuadric(inout Quadric q, mat4 mInvTranspose, mat4 mInv){
-     q.xformCap1 = q.cap1 * mInv;
-     q.xformCap2 = q.cap2 * mInv;
-     mat4 m = mInvTranspose * q.m * mInv;
-     
+   void transformQuadric(inout Quadric q, mat4 mat, mat4 mCap){
+     q.xformCap1 = q.cap1 * mCap;
+     q.xformCap2 = q.cap2 * mCap; 
+     mat4 m = transpose(mat) * q.m * mat;
 
      q.cA = m[0][0];
      q.cB = m[1][1];
@@ -424,67 +446,110 @@
                + q.cI*V.z
                + q.cJ;
 
-      float disc = B * B - 4.0 * A * C;
-      if (disc < 0.0 || A == 0.0)
-      {
-        hitInfo.t = vec3(0.0);
-        return hitInfo;
+      bool missed = false;
+
+      if(A != 0.0){
+         float disc = B * B - 4.0 * A * C;
+         if (disc < 0.0)
+         {
+           hitInfo.t = vec3(1e20, 1e20,0.0);
+           return hitInfo;
+         }
+         disc = sqrt(disc);
+         float t1 = (-B - disc)/(2.0*A);
+         float t2 = (-B + disc)/(2.0*A);
+
+         if(t1 < 0.0){
+            if(t2 < 0.0) {
+               hitInfo.t = vec3(1e20, 1e20,0.0);
+               return hitInfo;
+            }else{
+               hitInfo.t.x = t2;
+               hitInfo.t.z = 1.0;
+            }
+         }else{
+            if(t2 < 0.0) {
+               hitInfo.t.x = t1;
+               hitInfo.t.z = 1.0;
+            }else{
+               if(t2 < t1){
+                 //swap
+                 float tmp = t1;
+                 t1 = t2;
+                 t2 = tmp;
+               }
+               hitInfo.t.x = t1;
+               hitInfo.t.y = t2;
+               hitInfo.t.z = 2.0;
+
+            }
+         }
+      }else{
+         hitInfo.t.x = -C/B;
+         hitInfo.t.z = 1.0;
       }
-      disc = sqrt(disc);
-      hitInfo.t.x = (-B - disc)/(2.0*A);
-      hitInfo.t.y = (-B + disc)/(2.0*A);
-      float test = 0.0;
-
-      if(hitInfo.t.x < 0.0){
-        hitInfo.t.x = 1e20;
-        test += 1.0;
-      }
-      if(hitInfo.t.y < 0.0) {
-        hitInfo.t.y = 1e20;
-        test += 1.0;
-      }
-
-      hitInfo.t.x = min(hitInfo.t.x,hitInfo.t.y); 
-      hitInfo.t.y = max(hitInfo.t.x,hitInfo.t.y); 
-      hitInfo.t.z = 2.0 - test;
-
-
+      
       //Now check planes
       float tc1 = intersectRayPlane(ray, q.xformCap1);
-      float tc2 = intersectRayPlane(ray, q.xformCap2);
 
-      hitInfo.t.x = max(hitInfo.t.x, tc1);
-      hitInfo.t.y = max(hitInfo.t.y, tc2);
+      float tc2 = intersectRayPlane(ray, q.xformCap2);
+      float nearestCapT = min(tc1, tc2);
+      float farthestCapT = max(tc1, tc2);
+
+      float nearestT = max(nearestCapT, hitInfo.t.x);
+      float farthesT = min(farthestCapT, hitInfo.t.x);
+
+      bool useOtherNormal = false;
+      vec3 otherNormal;
+      
+      hitInfo.t.y = nearestT;
+      if(tc1 == nearestT){
+         useOtherNormal = true;
+         otherNormal = normalize(q.xformCap1.xyz);
+      }
+      else if(tc2 == nearestT){
+         useOtherNormal = true;
+         otherNormal = normalize(q.xformCap2.xyz);
+      }
       //Plane p;
       //p.p = q.xformCap1;
       //p.color = q.color;
       //hitInfo = intersectPlane(ray,p, light); 
+      missed = true;
+      vec3 pos = ray.origin + (hitInfo.t.x * ray.dir);
+      if(
+         dot(pos, normalize(q.xformCap1.xyz)) > q.xformCap1.w
+         && 
+         dot(pos, normalize(q.xformCap2.xyz)) > q.xformCap2.w
+         )
+      {
+         missed = false;
+         //hitInfo.t.x = 0.0;
+      }
+      hitInfo.hit = !missed;
+     
 
-      if(hitInfo.t.z > 0.0){
+      if(hitInfo.t.x > 0.0 && missed == false){
         hitInfo.hit = true;
         hitInfo.position = ray.origin + (hitInfo.t.x * ray.dir);
         vec3 p = hitInfo.position;
-        hitInfo.normal = normalize(
-                          vec3(
-                            2.0*q.cA*p.x + q.cE*p.z + q.cF*p.y + q.cG,
-                            2.0*q.cB*p.y + q.cD*p.z + q.cF*p.x + q.cH,
-                            2.0*q.cC*p.z + q.cD*p.y + q.cE*p.x + q.cI 
-                          )
-                   );
+        if(useOtherNormal == false){
+           hitInfo.normal = normalize(
+                             vec3(
+                               2.0*q.cA*p.x + q.cE*p.z + q.cF*p.y + q.cG,
+                               2.0*q.cB*p.y + q.cD*p.z + q.cF*p.x + q.cH,
+                               2.0*q.cC*p.z + q.cD*p.y + q.cE*p.x + q.cI 
+                             )
+                            );
+        } else {
+           hitInfo.normal = otherNormal;
+        }
         hitInfo.reflection = reflect(ray.dir, hitInfo.normal);
-        hitInfo.color =  vec4(hitInfo.normal,1.0);
-        //hitInfo.color = q.color *(light.ambient + (1.0 - light.ambient) * max(0.0,dot(hitInfo.normal, light.direction)));
+        //hitInfo.color =  vec4(hitInfo.normal,1.0);
+        hitInfo.color = q.color * (light.ambient + (1.0 - light.ambient) * max(0.0,dot(hitInfo.normal, light.direction)));
       }
 
       return hitInfo;
-   }
-
-   mat4 transpose(mat4 m){
-     mat4 o;
-     for(int c = 0; c < 4; c++)
-     for(int r = 0; r < 4; r++)
-       o[c][r] = m[c][r]; 
-     return o;
    }
 //-----------------------------------------------------------------------------
     void main(void) {
@@ -496,7 +561,7 @@
       light.c1 = vec4(0.0, 0.0, 0.0, 1.0);
       light.c0 = vec4(0.6, 0.6, 0.6, 1.0);
 
-      float focalLength = 3.5;
+      float focalLength = 5.0;
       vec3 viewPoint = vec3(0.0,0.0, focalLength);
       vec3 rayDirection = normalize(vec3(vUV.x-0.5, 0.5-vUV.y, -focalLength));
       Ray ray = Ray(viewPoint, rayDirection);
@@ -508,55 +573,51 @@
       HitInfo hit;
       hit.t = vec3(1e20);
 
-      Quadric cyl = createQuadric(
-                                true, 
-                                vec4(0., 0., 1., -1.0), 
-                                vec4(0., 0.,-1., -1.0), 
-                                vec4( .1, .1, 0.,  1.)
-                                //vec4( .6, .6, 1.,  1.)
-                                );
-      mat4 mR1 = makeXRotationMatrix(-uTime);
-      mat4 mS = makeScaleMatrix(vec3(5.0)); //Inverse of 0.1
-      mat4 mX = makeTranslationMatrix(vec3(0.0, 0.0, -8.0));
-      mat4 m = mS * mR1 * mX;
-      //mat4 m = mX * mR1 * mS;
-      /*
-      mat4 m = mat4(
+      mat4 ident = mat4(
           1., 0., 0., 0.,
           0., 1., 0., 0.,
           0., 0., 1., 0.,
           0., 0., 0., 1.
           );
-      */
-      mat4 tm = transpose(m);
-      transformQuadric(cyl, tm, m);
+
+      Quadric cyl = createQuadric(
+                                true, 
+                                vec4( 0.,  1., 0., -0.2), 
+                                vec4( 0., -1., 0., -0.2), 
+                                vec4( .6, .6, 1.,  1.)
+                                );
+      mat4 mR1 = makeZRotationMatrix(0.0);
+      mat4 mR1Inv = makeZRotationMatrix(-0.0);
+      mat4 mR2 = makeYRotationMatrix(uTime);
+      mat4 mR = mR1;
+      mat4 mRInv = mR1Inv;
+      mat4 mS = makeScaleMatrix(vec3(10.0, 10.0, 10.0)); //Inverse of 0.1
+      mat4 mSInv = makeScaleMatrix(vec3(0.1, 0.1, 0.1)); //Inverse of 0.1
+      mat4 mX = makeTranslationMatrix(vec3(0.0,0.0, 0.0));
+      mat4 mXInv = makeTranslationMatrix(vec3(0.0,0.0, 0.0));
+      //mat4 m = mR * mS;
+      mat4 m = mS * mX * mR;
+      mat4 mInv = mSInv * mXInv * mRInv;
+      transformQuadric(cyl, m, mInv);
 
       hit = intersectQuadric(ray, cyl, light);
       if(hit.hit) {
         color = hit.color;
       }
-      /*
-      //Sphere sphere = Sphere(vec4(0.05, 0.05,-0.1 + ((trans*0.5+0.5) *0.2), 0.1),
-      Sphere sphere = Sphere(vec4(0.05, 0.05, 0.00, 0.1),
-                              vec4(0.6, 0.6, 1.0, 1.0));
 
-      mat4 mR1 = makeXRotationMatrix(uTime);
-      mat4 mR2 = makeYRotationMatrix(uTime);
-      mat4 mS = makeScaleMatrix(vec3(10.0)); //Inverse of 0.1
-      mat4 m = mS * mR1 * mR2;
-      Cube cube = createUnitCube(vec4(0.0, 0.6, 1.0, 1.0), m);
+      mat4 R1 = makeXRotationMatrix(uTime);
+      mat4 R2 = makeYRotationMatrix(uTime);
+      mat4 S = makeScaleMatrix(vec3(10.0)); //Inverse of 0.1
+      mat4 mm = S * R1 * R2;
+      Cube cube = createUnitCube(vec4(0.0, 0.6, 1.0, 1.0), mm);
 
-      hit = intersectCube(ray, cube, light);
-      if(hit.hit) {
-        color = hit.color;
+      float minT = hit.t.x;
+      HitInfo hitCube = intersectCube(ray, cube, light);
+      if(hitCube.hit && hitCube.t.x < hit.t.x) {
+        color = hitCube.color;
       }
 
-      HitInfo hit2 = intersectSphere(ray, sphere, light);
-      if(hit2.hit && hit2.t.x <  hit.t.x){
-        color = hit2.color;
-      }
 
-      */
 
       gl_FragColor = color;
     }
