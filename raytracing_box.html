@@ -448,49 +448,37 @@
 
       bool missed = false;
 
-      if(A != 0.0){
-         float disc = B * B - 4.0 * A * C;
-         if (disc < 0.0)
-         {
-           hitInfo.t = vec3(1e20, 1e20,0.0);
-           return hitInfo;
-         }
-         disc = sqrt(disc);
-         float t1 = (-B - disc)/(2.0*A);
-         float t2 = (-B + disc)/(2.0*A);
+       float disc = B * B - 4.0 * A * C;
+       if (disc < 0.0)
+       {
+         hitInfo.hit = false;
+         hitInfo.t = vec3(1e20, 1e20,0.0);
+         return hitInfo;
+       }
+       disc = sqrt(disc);
+       float twoAInv = 1.0/(2.0*A);
+       float t1 = (-B - disc)*twoAInv;
+       float t2 = (-B + disc)*twoAInv;
 
-         if(t1 < 0.0){
-            if(t2 < 0.0) {
-               hitInfo.t = vec3(1e20, 1e20,0.0);
-               return hitInfo;
-            }else{
-               hitInfo.t.x = t2;
-               hitInfo.t.z = 1.0;
-            }
-         }else{
-            if(t2 < 0.0) {
-               hitInfo.t.x = t1;
-               hitInfo.t.z = 1.0;
-            }else{
-               if(t2 < t1){
-                 //swap
-                 float tmp = t1;
-                 t1 = t2;
-                 t2 = tmp;
-               }
-               hitInfo.t.x = t1;
-               hitInfo.t.y = t2;
-               hitInfo.t.z = 2.0;
+       //Trying to avoid branches here;
+       t1 = step(0.0, t1)* t1;//returns 0.0 if t1 < 0.0 otherwise t1
+       t2 = step(0.0, t2)* t2;//returns 0.0 if t2 < 0.0 otherwise t2
 
-            }
-         }
-      }else{
-         hitInfo.t.x = -C/B;
-         hitInfo.t.z = 1.0;
-      }
+       float nearest = min(t1,t2);
+       float farthest = max(t1,t2);
+       hitInfo.t.x = nearest;
+       hitInfo.t.y = farthest;
+       if(farthest == 0.0){
+             hitInfo.hit = false;
+             hitInfo.t = vec3(1e20, 1e20,0.0);
+             return hitInfo;
+       }
       
       //Now check planes
-      float tc1 = intersectRayPlane(ray, q.xformCap1);
+      bool useOtherNormal = false;
+      vec3 otherNormal;
+      /*
+       float tc1 = intersectRayPlane(ray, q.xformCap1);
 
       float tc2 = intersectRayPlane(ray, q.xformCap2);
       float nearestCapT = min(tc1, tc2);
@@ -499,8 +487,6 @@
       float nearestT = max(nearestCapT, hitInfo.t.x);
       float farthesT = min(farthestCapT, hitInfo.t.x);
 
-      bool useOtherNormal = false;
-      vec3 otherNormal;
       
       hitInfo.t.y = nearestT;
       if(tc1 == nearestT){
@@ -511,10 +497,8 @@
          useOtherNormal = true;
          otherNormal = normalize(q.xformCap2.xyz);
       }
-      //Plane p;
-      //p.p = q.xformCap1;
-      //p.color = q.color;
-      //hitInfo = intersectPlane(ray,p, light); 
+      */
+
       missed = true;
       vec3 pos = ray.origin + (hitInfo.t.x * ray.dir);
       if(
@@ -695,6 +679,7 @@
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
           var errStr = gl.getShaderInfoLog(shader);
             console.error(errStr);
+            console.log(errStr);
             alert(errStr);
             return null;
         }
