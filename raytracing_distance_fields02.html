@@ -179,9 +179,9 @@
       vec2 res = vec2( 
                         dfBox(
                                   repeatPos,
-                                  vec3(0.15)
+                                  vec3(0.125)
                                 )
-                        +0.05 * noise((repeatPos+noiseOffset)* 0.8 + vec3(uTime))
+                        +0.05 * noise((repeatPos+noiseOffset)* 1.6 + vec3(uTime))
                       ,
                       3.0 
                     ); 
@@ -224,8 +224,12 @@
       for(int i = 0; i < 30; i++)
       {
         //Exit if we get close to something or if we go too far
-        if(abs(nextStepSize) < cutoff || t >= maxT) 
+        if(abs(nextStepSize) < cutoff || t >= maxT){
+          //If we went too far force a result that intersected nothing
+          if(t > maxT)
+            objectID = -1.0;
           continue;
+        }
 
         t += nextStepSize;
         vec2 result = testRayAgainstScene( ray.origin+ray.dir*t );
@@ -237,8 +241,6 @@
         objectID = result.y;
       }
 
-      //If we exited but went too far force a result that intersected nothing
-      if( t>maxT ) objectID=-1e20;
       return vec2( t, objectID );
     }
 
