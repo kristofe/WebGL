@@ -379,7 +379,7 @@
     
     vec2 testRayAgainstScene( in vec3 pos){
       vec2 res = vec2( dfCylinder(  pos-vec3( -0.8,0.41,-0.5), vec2(0.2,0.4) ), 1.0 );
-      res = Union(res, vec2( dfTorus(  pos-vec3(-0.2, -0.14, -0.5),vec2( 0.2,0.81)),0.2 ), 2.0); 
+      res = Union(res, vec2( dfTorus(  pos-vec3(-0.1, 0.4, -0.2),vec2( 0.3,0.1)),5.0 )); 
       //res = Union(res, vec2( dfCapsule(  pos-vec3(-0.2, -0.14, -0.5),vec3( 0.0,0.81,0.0), vec3(0.0,0.3,0.0),0.2 ), 2.0)); 
       res = Union(res, vec2( dfCapsule(  pos-vec3(0.6,0.0,0.0),vec3( 0.0,0.81,-0.0), vec3(0.0,0.3,0.0),0.2 ) +
                                0.03*sin(30.0*pos.x+uTime)*sin(30.0*pos.y+4.0*uTime)*sin(30.0*pos.z+2.0*uTime), 3.0)); 
