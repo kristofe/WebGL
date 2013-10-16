@@ -7,6 +7,7 @@
 <script type="text/javascript" src="matrix.js"></script>
 
 
+
 <script id="shader-fs-raytracer" type="x-shader/x-fragment">
     precision mediump float;
     varying vec2 vUV;
@@ -70,6 +71,11 @@
     float sdCylinder( vec3 p, vec2 h )
     {
       return max( length(p.xz)-h.x, abs(p.y)-h.y );
+    }
+
+    float simpleCylinder( vec3 p, vec3 c )
+    {
+      return length(p.xz-c.xy)-c.z;
     }
 
     float sdCone( in vec3 p, in vec3 c )
@@ -141,13 +147,13 @@
 
     vec2 map( in vec3 pos )
     {
-      vec2 res = vec2( opS(
-                   udRoundBox(  pos-vec3(-0.5,0.2, 0.0), vec3(0.15),0.05),
-                     sdSphere(    pos-vec3(-0.5,0.2, 0.0), 0.25)), 13.0 ) ;
-      res = opU( res, vec2( sdCylinder(  pos-vec3( 0.0,0.21,-0.5), vec2(0.1,0.2) ), 8.0 ) );
+      vec2 res = vec2( sdCylinder(  pos-vec3( 0.0,0.21,0.5), vec2(0.1,0.2) ), 8.0 );
       res = opU( res, vec2( sdPlane(     pos), 1.0 ));
 
 #if 0
+      vec2 res = vec2( opS(
+                   udRoundBox(  pos-vec3(-0.5,0.2, 0.0), vec3(0.15),0.05),
+                     sdSphere(    pos-vec3(-0.5,0.2, 0.0), 0.25)), 13.0 ) ;
       vec2 res = opU( vec2( sdPlane(     pos), 1.0 ),
                       vec2( sdSphere(    pos-vec3( 0.0,0.25, 0.0), 0.25 ), 46.9 ) );
       res = opU( res, vec2( sdBox(       pos-vec3( 1.0,0.25, 0.0), vec3(0.25) ), 3.0 ) );
@@ -186,28 +192,27 @@
 
 
 
-
     vec2 castRay( in vec3 ro, in vec3 rd, in float maxd )
     {
       float precis = 0.001;
-        float h=precis*2.0;
-        float t = 0.0;
-        float m = -1.0;
-        for( int i=0; i<60; i++ )
-        {
-          if( abs(h)<precis||t>maxd ) continue;//break;
-          t += h;
-          vec2 res = map( ro+rd*t );
-          h = res.x;
-          m = res.y;
-        }
+      float h=precis*2.0;
+      float t = 0.0;
+      float m = -1.0;
+      for( int i=0; i<60; i++ )
+      {
+        if( abs(h)<precis||t>maxd ) continue;//break;
+        t += h;
+        vec2 res = map( ro+rd*t );
+        h = res.x;
+        m = res.y;
+      }
 
-        if( t>maxd ) m=-1.0;
-        return vec2( t, m );
+      if( t>maxd ) m=-1.0;
+      return vec2( t, m );
     }
 
 
-    float softshadow( in vec3 ro, in vec3 rd, in float mint, in float maxt, 
+    float softshadowOld( in vec3 ro, in vec3 rd, in float mint, in float maxt, 
                       in float k )
     {
       float res = 1.0;
@@ -225,7 +230,7 @@
 
     }
 
-    vec3 calcNormal( in vec3 pos )
+    vec3 calcNormalOld( in vec3 pos )
     {
       vec3 eps = vec3( 0.001, 0.0, 0.0 );
       vec3 nor = vec3(
@@ -241,58 +246,61 @@
       float sca = 1.0;
       for( int aoi=0; aoi<5; aoi++ )
       {
-          float hr = 0.01 + 0.05*float(aoi);
-          vec3 aopos =  nor * hr + pos;
-          float dd = map( aopos ).x;
-          totao += -(dd-hr)*sca;
-          sca *= 0.75;
+        float hr = 0.01 + 0.05*float(aoi);
+        vec3 aopos =  nor * hr + pos;
+        float dd = map( aopos ).x;
+        totao += -(dd-hr)*sca;
+        sca *= 0.75;
       }
       return clamp( 1.0 - 4.0*totao, 0.0, 1.0 );
     }
 
-    vec3 render( in vec3 ro, in vec3 rd )
+    vec3 renderOld( in vec3 ro, in vec3 rd )
     { 
-        vec3 col = vec3(0.0);
-        vec2 res = castRay(ro,rd,20.0);
-        float t = res.x;
-        float m = res.y;
-        if( m>-0.5 )
-        {
-            vec3 pos = ro + t*rd;
-            vec3 nor = calcNormal( pos );
+      vec3 col = vec3(0.0);
+      vec2 res = castRay(ro,rd,20.0);
+      float t = res.x;
+      float m = res.y;
+      if( m>-0.5 )
+      {
+        vec3 pos = ro + t*rd;
+        vec3 normal = calcNormalOld( pos );
 
         //col = vec3(0.6) + 0.4*sin( vec3(0.05,0.08,0.10)*(m-1.0) );
         col = vec3(0.6) + 0.4*sin( vec3(0.05,0.08,0.10)*(m-1.0) );
-        
-            float ao = calcAO( pos, nor );
+      
+        float ao = calcAO( pos, normal );
 
-        vec3 lig = normalize( vec3(-0.6, 0.7, -0.5) );
-        float amb = clamp( 0.5+0.5*nor.y, 0.0, 1.0 );
-            float dif = clamp( dot( nor, lig ), 0.0, 1.0 );
-            float bac = clamp( 
-                              dot( nor, normalize(vec3(-lig.x,0.0,-lig.z))), 
-                              0.0,
-                              1.0 
-                              )
-                         * clamp( 1.0-pos.y,0.0,1.0);
+        vec3 light = normalize( vec3(-0.6, 0.7, -0.5) );
+        float ambient = clamp( 0.5+0.5*normal.y, 0.0, 1.0 );
+        float diffuse = clamp( dot( normal, light ), 0.0, 1.0 );
 
-        float sh = 1.0;
-        if( dif > 0.02 ) { 
-          sh = softshadow( pos, lig, 0.02, 10.0, 7.0 ); 
-          dif *= sh; 
+        float bac = clamp( 
+                          dot( normal, normalize(vec3(-light.x,0.0,-light.z))), 
+                          0.0,
+                          1.0 
+                          )
+                     * clamp( 1.0-pos.y,0.0,1.0);
+
+        float shadow = 1.0;
+        if( diffuse > 0.02 ) { 
+          shadow = softshadowOld( pos, light, 0.02, 10.0, 7.0 ); 
+          diffuse *= shadow; 
         }
 
         vec3 brdf = vec3(0.0);
-        brdf += 0.20*amb*vec3(0.10,0.11,0.13)*ao;
-            brdf += 0.20*bac*vec3(0.15,0.15,0.15)*ao;
-            brdf += 1.20*dif*vec3(1.00,0.90,0.70);
+        brdf += 0.20*ambient*vec3(0.10,0.10,0.10)*ao;
+        brdf += 0.80*diffuse*vec3(0.90,0.90,0.90);
+        ///brdf += 0.20*ambient*vec3(0.10,0.11,0.13)*ao;
+        brdf += 0.20*bac*vec3(0.15,0.15,0.15)*ao;
+        //brdf += 1.20*diffuse*vec3(1.00,0.90,0.70);
 
-        float pp = clamp( dot( reflect(rd,nor), lig ), 0.0, 1.0 );
-        float spe = sh*pow(pp,16.0);
-        float fre = ao*pow( clamp(1.0+dot(nor,rd),0.0,1.0), 2.0 );
+        float pp = clamp( dot( reflect(rd,normal), light ), 0.0, 1.0 );
+        float specular = shadow*pow(pp,16.0);
+        float fresnel = ao*pow( clamp(1.0+dot(normal,rd),0.0,1.0), 2.0 );
 
-        col = col*brdf + vec3(1.0)*col*spe + 0.2*fre*(0.5+0.5*col);
-        
+        col = col*brdf + vec3(1.0)*col*specular + 0.2*fresnel*(0.5+0.5*col);
+      
       } 
 
       col *= exp( -0.01*t*t );
@@ -301,36 +309,222 @@
       return vec3( clamp(col,0.0,1.0) );
     }
 
+///////////////////////////////////////////////////////////////////////////////
+
+    struct Light {
+      vec3 direction;
+      vec4 ambient;
+      vec4 c0;
+      vec4 c1;
+    };
+
+    struct Ray {
+      vec3 origin;
+      vec3 dir;
+    };
+
+///////////////////////////////////////////////////////////////////////////////
+
+    float dfPlane( vec3 p )
+    {
+      return p.y;
+    }
+
+    float dfSphere( vec3 p, float s )
+    {
+        return length(p)-s;
+    }
+
+    float dfBox( vec3 p, vec3 b )
+    {
+      vec3 d = abs(p) - b;
+      return min(max(d.x,max(d.y,d.z)),0.0) +
+             length(max(d,0.0));
+    }
+
+    float dfTorus( vec3 p, vec2 t )
+    {
+      vec2 q = vec2(length(p.xz)-t.x,p.y);
+      return length(q)-t.y;
+    }
+
+    float dfCapsule( vec3 p, vec3 a, vec3 b, float r )
+    {
+      vec3 pa = p - a;
+      vec3 ba = b - a;
+      float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+      
+      return length( pa - ba*h ) - r;
+    }
+
+    float dfCylinder( vec3 p, vec2 h )
+    {
+      return max( length(p.xz)-h.x, abs(p.y)-h.y );
+    }
+
+///////////////////////////////////////////////////////////////////////////////
+
+    float SubtractFields( float d1, float d2 )
+    {
+        return max(-d2,d1);
+    }
+
+    vec2 Union( vec2 d1, vec2 d2 )
+    {
+      return (d1.x<d2.x) ? d1 : d2;
+    }
+
+
+///////////////////////////////////////////////////////////////////////////////
+    
+    vec2 testRayAgainstScene( in vec3 pos){
+      vec2 res = vec2( dfCylinder(  pos-vec3( -0.8,0.41,-0.5), vec2(0.2,0.4) ), 1.0 );
+      res = Union(res, vec2( dfTorus(  pos-vec3(-0.2, -0.14, -0.5),vec2( 0.2,0.81)),0.2 ), 2.0); 
+      //res = Union(res, vec2( dfCapsule(  pos-vec3(-0.2, -0.14, -0.5),vec3( 0.0,0.81,0.0), vec3(0.0,0.3,0.0),0.2 ), 2.0)); 
+      res = Union(res, vec2( dfCapsule(  pos-vec3(0.6,0.0,0.0),vec3( 0.0,0.81,-0.0), vec3(0.0,0.3,0.0),0.2 ) +
+                               0.03*sin(30.0*pos.x+uTime)*sin(30.0*pos.y+4.0*uTime)*sin(30.0*pos.z+2.0*uTime), 3.0)); 
+      res = Union( res, vec2( dfSphere(    pos-vec3(1.5,0.5,0.0), 0.4 ) + 
+                               0.03*sin(40.0*pos.x)*sin(40.0*pos.y+8.0*uTime)*sin(40.0*pos.z), 
+                                         6.0 ) );
+      res = Union( res, vec2( dfPlane(     pos), 4.0 ));
+      return res;
+    }
+
+    vec3 calcNormal( in vec3 pos )
+    {
+      vec3 eps = vec3( 0.001, 0.0, 0.0 );
+      vec3 nor = vec3(
+          testRayAgainstScene(pos+eps.xyy).x - testRayAgainstScene(pos-eps.xyy).x,
+          testRayAgainstScene(pos+eps.yxy).x - testRayAgainstScene(pos-eps.yxy).x,
+          testRayAgainstScene(pos+eps.yyx).x - testRayAgainstScene(pos-eps.yyx).x );
+      return normalize(nor);
+    }
+
+
+    vec2 rayCast( in Ray ray, in float maxd )
+    {
+      float cutoff = 0.001;
+      float stepSize=cutoff*2.0; //stepsize
+      float t = 0.0;
+      float objectID = -1.0;
+      for( int i=0; i<50; i++ )
+      {
+        if( abs(stepSize) < cutoff || t>maxd ) continue;//break;
+        t += stepSize;
+        vec2 result = testRayAgainstScene( ray.origin+ray.dir*t );
+        //vec2 result = map( ray.origin+ray.dir*t );
+        stepSize = result.x;
+        objectID = result.y;
+      }
+
+      if( t>maxd ) objectID=-1.0;
+      return vec2( t, objectID );
+    }
+
+    float hardshadow( in vec3 pos, in vec3 lightDir)
+    {
+      Ray ray = Ray(pos + lightDir*0.03, lightDir);
+      float id = rayCast(ray, 10.0).y;
+      return 1.0 - step(0.0, id);
+
+    }
+
+    vec3 render(in Ray ray, in Light light)
+    { 
+      vec3 col = vec3(0.0);
+      vec2 result = rayCast(ray,20.0);
+      const float maxObjectID = 6.0;
+      float t = result.x;
+      float objectID = result.y;
+      if( objectID > 0.0 )
+      {
+        vec3 pos = ray.origin + t*ray.dir;
+        vec3 normal = calcNormal( pos );
+
+        vec3 albedo = vec3(0.8, 0.6, 0.5) * (objectID/maxObjectID);
+        float diffuse = max(0.0, dot(normal, light.direction.xyz));
+        diffuse *= hardshadow( pos, light.direction.xyz);
+        col = albedo * (light.ambient.xyz + (1.0 - light.ambient.xyz) * diffuse);
+              
+        
+
+        /*
+        //col = vec3(0.6) + 0.4*sin( vec3(0.05,0.08,0.10)*(m-1.0) );
+        col = vec3(0.6) + 0.4*sin( vec3(0.05,0.08,0.10)*(m-1.0) );
+      
+        float ao = calcAO( pos, normal );
+
+        vec3 light = normalize( vec3(-0.6, 0.7, -0.5) );
+        float ambient = clamp( 0.5+0.5*normal.y, 0.0, 1.0 );
+        float diffuse = clamp( dot( normal, light ), 0.0, 1.0 );
+
+        float bac = clamp( 
+                          dot( normal, normalize(vec3(-light.x,0.0,-light.z))), 
+                          0.0,
+                          1.0 
+                          )
+                     * clamp( 1.0-pos.y,0.0,1.0);
+
+        float shadow = 1.0;
+        if( diffuse > 0.02 ) { 
+          shadow = softshadow( pos, light, 0.02, 10.0, 7.0 ); 
+          diffuse *= shadow; 
+        }
+
+        vec3 brdf = vec3(0.0);
+        brdf += 0.20*ambient*vec3(0.10,0.10,0.10)*ao;
+        brdf += 0.80*diffuse*vec3(0.90,0.90,0.90);
+        ///brdf += 0.20*ambient*vec3(0.10,0.11,0.13)*ao;
+        brdf += 0.20*bac*vec3(0.15,0.15,0.15)*ao;
+        //brdf += 1.20*diffuse*vec3(1.00,0.90,0.70);
+
+        float pp = clamp( dot( reflect(ray.dir,normal), light ), 0.0, 1.0 );
+        float specular = shadow*pow(pp,16.0);
+        float fresnel = ao*pow( clamp(1.0+dot(normal,ray.dir),0.0,1.0), 2.0 );
+
+        col = col*brdf + vec3(1.0)*col*specular + 0.2*fresnel*(0.5+0.5*col);
+        */
+        
+      
+      } 
+
+      //col *= exp( -0.02*t*t );
+
+
+      return vec3( clamp(col,0.0,1.0) );
+    }
+
+
+    
     void main( void )
     {
-      vec2 q = gl_FragCoord.xy/uResoltion.xy;
-        vec2 p = -1.0+2.0*q;
+      vec2 normazliedCoord = gl_FragCoord.xy/uResoltion.xy;
+
+      //Transforms the coord from [0,1] to -1,1]
+      vec2 p = -1.0+2.0*normazliedCoord; 
+
+      //Center the viepoint along the horizontal axis
       p.x *= uResoltion.x/uResoltion.y;
-        vec2 mo = uMouse.xy/uResoltion.xy;
-         
-      float time = 15.0 + uTime;
-
-      // camera	
-      vec3 ro = vec3(
-                    -0.5+3.2*cos(0.1*time + 6.0*mo.x), 
-                    1.0 + 2.0*mo.y, 
-                    0.5 + 3.2*sin(0.1*time + 6.0*mo.x)
-                    );
-      vec3 ta = vec3( -0.5, -0.4, 0.5 );
       
-      // camera tx
-      vec3 cw = normalize( ta-ro );
-      vec3 cp = vec3( 0.0, 1.0, 0.0 );
-      vec3 cu = normalize( cross(cw,cp) );
-      vec3 cv = normalize( cross(cu,cw) );
-      vec3 rd = normalize( p.x*cu + p.y*cv + 2.5*cw );
-
       
-        vec3 col = render( ro, rd );
+      Light light;
+      light.direction = normalize(vec3(1.0,1.0, 1.0));
+      light.ambient = vec4(0.2, 0.2, 0.2, 1.0);
+      light.c1 = vec4(0.0, 0.0, 0.0, 1.0);
+      light.c0 = vec4(0.6, 0.6, 0.6, 1.0);
+
+      //Traditional ray 
+      float focalLength = 3.0;
+      vec3 viewPoint = vec3(0.0, 2.0, focalLength);
+      vec3 rayDirection = normalize(vec3(0.5 - p.x, p.y - 1.6, -focalLength));
+
+      Ray ray = Ray(viewPoint, rayDirection);
+
+      vec3 col = render(ray, light);
 
       col = sqrt( col );
 
-        gl_FragColor=vec4( col, 1.0 );
+      gl_FragColor=vec4( col, 1.0 );
     }
 
 </script>
@@ -535,10 +729,11 @@
     var currentAngle = [0,0]; // [x-axis, y-axis] degrees
     var startTime = 0.0;
     var currTime = 0.0;
-    var resolution = [500.0, 500.0, 0.0];
+    var resolution = [0.0, 0.0, 0.0];
 
     function webGLStart() {
         var canvas = document.getElementById("webgl-canvas");
+        resolution = [canvas.width, canvas.height, 0.0];
         startTime = (new Date).getTime();
 
         initGL(canvas);
@@ -578,8 +773,9 @@
           ) {
           lastX = x; 
           lastY = y;
-          mousePosition[0] = x;
-          mousePosition[1] = canvas.height - y;
+          mousePosition[x, canvas.height - y, 0, 0];
+          //mousePosition[0] = x;
+          //mousePosition[1] = canvas.height - y;
           dragging = true;
 
         }
@@ -686,7 +882,7 @@
 
 
 <body onload="webGLStart();">
-  <canvas id="webgl-canvas" style="border: none;" width="500" height="500">
+  <canvas id="webgl-canvas" style="border: none;" width="800" height="500">
   </canvas>
 
 </body>
