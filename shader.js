@@ -123,4 +123,27 @@ ShaderProgram.prototype.cacheUniformData = function( gl ) {
 
 }
 
+    /* Uniform Types */
+/*
+gl.FLOAT
+gl.FLOAT_VEC2
+gl.FLOAT_VEC3
+gl.FLOAT_VEC4
+gl.INT
+gl.INT_VEC2
+gl.INT_VEC3
+gl.INT_VEC4
+gl.BOOL
+gl.BOOL_VEC2
+gl.BOOL_VEC3
+gl.BOOL_VEC4
+gl.FLOAT_MAT2
+gl.FLOAT_MAT3
+gl.FLOAT_MAT4
+gl.SAMPLER_2D
+gl.SAMPLER_CUBE
+*/
+
+
+
 
