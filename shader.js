@@ -173,7 +173,6 @@ gl.FLOAT_MAT4
 gl.SAMPLER_2D
 gl.SAMPLER_CUBE
 */
-*/
 
 ShaderProgram.prototype.initShader = function(gl,fragment_shadername, vertex_shadername) {
   this.fragShaderID = this.getShader(gl, fragment_shadername);
