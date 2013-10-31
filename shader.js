@@ -10,12 +10,13 @@ function ShaderProgram() {
 
   this.attributeSlots = [
                           ["aVertexPosition", 0 ],
-                          ["aVertexUV", 1]
+                          ["aVertexNormal", 1]
+                          ["aVertexUV", 2]
                         ];
   this.uniformSlots = [];
 }
 
-
+/*
 ShaderProgram.prototype.getTextOfScriptElement = function(id) {
   var scriptElement = document.getElementById(id);
   if (!scriptElement) {
@@ -36,22 +37,6 @@ ShaderProgram.prototype.getTextOfScriptElement = function(id) {
 }
 ShaderProgram.prototype.loadShaderFromDocument = function (gl, id) {
   var str = this.getTextOfScriptElement(id);
-  /*
-  var shaderScript = document.getElementById(id);
-  if (!shaderScript) {
-      return null;
-  }
-
-  var str = "";
-  var k = shaderScript.firstChild;
-  while (k) {
-      if (k.nodeType == 3) {
-          str += k.textContent;
-      }
-      k = k.nextSibling;
-  }
-  */
-
   var shader;
   if (shaderScript.type == "x-shader/x-fragment") {
       shader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -67,15 +52,61 @@ ShaderProgram.prototype.loadShaderFromDocument = function (gl, id) {
   gl.compileShader(shader);
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      alert(gl.getShaderInfoLog(shader));
+      var err = gl.getShaderInfoLog(shader);
+      console.error(err);
+      alert(err);
       return null;
   }
 
   return shader;
 }
+*/
  
+ShaderProgram.prototype.getShader = function(gl, id) {
+  var shaderScript = document.getElementById(id);
+  if (!shaderScript) {
+      var err = "couldn't find shader";
+      console.error(err);
+      alert(err);
+      return null;
+  }
 
+  var str = "";
+  var k = shaderScript.firstChild;
+  while (k) {
+      if (k.nodeType == 3) {
+          str += k.textContent;
+      }
+      k = k.nextSibling;
+  }
 
+  var shader;
+  if (shaderScript.type == "x-shader/x-fragment") {
+      shader = gl.createShader(gl.FRAGMENT_SHADER);
+  } else if (shaderScript.type == "x-shader/x-vertex") {
+      shader = gl.createShader(gl.VERTEX_SHADER);
+  } else {
+      var err = "couldn't determine type of shader";
+      console.error(err);
+      alert(err);
+      return null;
+  }
+  
+
+  gl.shaderSource(shader, str);
+  gl.compileShader(shader);
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      var err = gl.getShaderInfoLog(shader);
+      console.error(err);
+      alert(err);
+      return null;
+  }
+
+  return shader;
+}
+
+/*
 ShaderProgram.prototype.initShaders = 
   function(gl, fragment_shadername, vertex_shadername) 
 {
@@ -122,5 +153,80 @@ ShaderProgram.prototype.cacheUniformData = function( gl ) {
   }
 
 }
+*/
+
+ShaderProgram.prototype.initShader = function(gl,fragment_shadername, vertex_shadername) {
+  this.fragShaderID = this.getShader(gl, fragment_shadername);
+  this.vertShaderID = this.getShader(gl, vertex_shadername);
+
+  var shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, this.vertShaderID);
+  gl.attachShader(shaderProgram, this.fragShaderID);
+  gl.linkProgram(shaderProgram);
+
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+      alert("Could not initialise shaders");
+  }
+  console.debug("linked shader");
+
+  gl.useProgram(shaderProgram);
+
+  shaderProgram.vertexPositionAttribute = 
+                  gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+  shaderProgram.vertexNormalAttribute = 
+                        gl.getAttribLocation(shaderProgram, "aVertexNormal");
+  gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
+
+  shaderProgram.vertexUVAttribute = 
+                        gl.getAttribLocation(shaderProgram, "aVertexUV");
+  gl.enableVertexAttribArray(shaderProgram.vertexUVAttribute);
+
+  //---------------------------------------------------------------------------
+
+  shaderProgram.pMatrixUniform =gl.getUniformLocation(shaderProgram, 
+                                                      "uPMatrix");
+  shaderProgram.mvMatrixUniform =gl.getUniformLocation(shaderProgram, 
+                                                       "uMVMatrix");
+  shaderProgram.mvInverseTransposeUniform =gl.getUniformLocation(shaderProgram, 
+                                                       "uMVInverseTranspose");
+  this.programID = shaderProgram;
+}
 
 
+ShaderProgram.prototype.bindShader = function(gl,mesh){
+  gl.useProgram(this.programID);
+  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
+  gl.vertexAttribPointer(
+                        this.programID.vertexPositionAttribute,
+                        mesh.vertexBuffer.positionElementCount, 
+                        gl.FLOAT, 
+                        false, 
+                        mesh.vertexBuffer.stride, 
+                        mesh.vertexBuffer.positionOffset
+                        );
+  gl.vertexAttribPointer(
+                        this.programID.vertexNormalAttribute, 
+                        mesh.vertexBuffer.normalElementCount, 
+                        gl.FLOAT, 
+                        false, 
+                        mesh.vertexBuffer.stride, 
+                        mesh.vertexBuffer.normalOffset 
+                        );
+  gl.vertexAttribPointer(
+                        this.programID.vertexUVAttribute, 
+                        mesh.vertexBuffer.uvElementCount, 
+                        gl.FLOAT, 
+                        false, 
+                        mesh.vertexBuffer.stride, 
+                        mesh.vertexBuffer.uvOffset 
+                        );
+}
+
+ShaderProgram.prototype.setUniforms = function(gl, mv, mvIT, p) {
+  gl.uniformMatrix4fv(this.programID.pMatrixUniform, false, p);
+  gl.uniformMatrix4fv(this.programID.mvMatrixUniform, false, mv);
+  gl.uniformMatrix4fv(this.programID.mvInverseTransposeUniform, false, mvIT);
+
+}
