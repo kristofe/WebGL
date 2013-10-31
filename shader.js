@@ -153,29 +153,6 @@ ShaderProgram.prototype.cacheUniformData = function( gl ) {
   }
 
 }
-*/
-
-ShaderProgram.prototype.initShader = function(gl,fragment_shadername, vertex_shadername) {
-  this.fragShaderID = this.getShader(gl, fragment_shadername);
-  this.vertShaderID = this.getShader(gl, vertex_shadername);
-
-  var shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, this.vertShaderID);
-  gl.attachShader(shaderProgram, this.fragShaderID);
-  gl.linkProgram(shaderProgram);
-
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-      alert("Could not initialise shaders");
-  }
-  console.debug("linked shader");
-
-  gl.useProgram(shaderProgram);
-
-<<<<<<< HEAD
-  shaderProgram.vertexPositionAttribute = 
-                  gl.getAttribLocation(shaderProgram, "aVertexPosition");
-  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-=======
     /* Uniform Types */
 /*
 gl.FLOAT
@@ -196,10 +173,27 @@ gl.FLOAT_MAT4
 gl.SAMPLER_2D
 gl.SAMPLER_CUBE
 */
+*/
 
+ShaderProgram.prototype.initShader = function(gl,fragment_shadername, vertex_shadername) {
+  this.fragShaderID = this.getShader(gl, fragment_shadername);
+  this.vertShaderID = this.getShader(gl, vertex_shadername);
 
+  var shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, this.vertShaderID);
+  gl.attachShader(shaderProgram, this.fragShaderID);
+  gl.linkProgram(shaderProgram);
 
->>>>>>> 50cfbfd3b73075ba8b0bcdaeb165f40520d18b6c
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+      alert("Could not initialise shaders");
+  }
+  console.debug("linked shader");
+
+  gl.useProgram(shaderProgram);
+
+  shaderProgram.vertexPositionAttribute = 
+                  gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
   shaderProgram.vertexNormalAttribute = 
                         gl.getAttribLocation(shaderProgram, "aVertexNormal");
