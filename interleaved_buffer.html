@@ -283,6 +283,22 @@
       }
     }
 
+    function listProgramUniformsAndAttributes(gl, program){
+      var na = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
+      console.log(na, 'attributes');
+      for (var i = 0; i < na; ++i) {
+        var a = gl.getActiveAttrib(program, i);
+        console.log(i, a.size, a.type, a.name);
+      }
+      var nu = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+      console.log(nu, 'uniforms');
+      for (var i = 0; i < nu; ++i) {
+        var u = gl.getActiveUniform(program, i);
+        console.log(i, u.size, u.type, u.name);
+      }
+    }
+
+
 </script>
 
 

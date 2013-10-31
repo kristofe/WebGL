@@ -171,9 +171,35 @@ ShaderProgram.prototype.initShader = function(gl,fragment_shadername, vertex_sha
 
   gl.useProgram(shaderProgram);
 
+<<<<<<< HEAD
   shaderProgram.vertexPositionAttribute = 
                   gl.getAttribLocation(shaderProgram, "aVertexPosition");
   gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+=======
+    /* Uniform Types */
+/*
+gl.FLOAT
+gl.FLOAT_VEC2
+gl.FLOAT_VEC3
+gl.FLOAT_VEC4
+gl.INT
+gl.INT_VEC2
+gl.INT_VEC3
+gl.INT_VEC4
+gl.BOOL
+gl.BOOL_VEC2
+gl.BOOL_VEC3
+gl.BOOL_VEC4
+gl.FLOAT_MAT2
+gl.FLOAT_MAT3
+gl.FLOAT_MAT4
+gl.SAMPLER_2D
+gl.SAMPLER_CUBE
+*/
+
+
+
+>>>>>>> 50cfbfd3b73075ba8b0bcdaeb165f40520d18b6c
 
   shaderProgram.vertexNormalAttribute = 
                         gl.getAttribLocation(shaderProgram, "aVertexNormal");

@@ -1,3 +1,4 @@
+
 <html>
 
 <head>
@@ -7,34 +8,12 @@
 <script type="text/javascript" src="matrix.js"></script>
 
 
-<script id="shader-fs-triangle" type="x-shader/x-fragment">
+<script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
     varying vec2 vUV;
 
     void main(void) {
-      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    }
-
-</script>
-
-<script id="shader-fs-square" type="x-shader/x-fragment">
-    precision mediump float;
-    varying vec2 vUV;
-
-    void main(void) {
-      //gl_FragColor = vec4(vUV.x, vUV.y, 1.0, 1.0);
-      //gl_FragColor = vec4(mod(vUV.x,1.0), mod(vUV.y,1.0), 0.0, 1.0);
-      float cx = mod(vUV.x,1.0);
-      float cy = mod(vUV.y,1.0);
-      float cmax = max(cx,cy);
-      float cmin = min(cx,cy);
-
-      //Create a grid pattern. White(1.0) as .1 width.
-      float c = max(step(0.95,cmax) , step(0.95,1.0 - cmin));
-
-      //Reverse the gray value
-      c = 1.0 - clamp(c,0.0,1.0);
-      gl_FragColor = vec4(c, c, c, 1.0);
+      gl_FragColor = vec4(vUV.x, vUV.y, 1.0, 1.0);
     }
 
 </script>
@@ -114,14 +93,13 @@
     }
 
 
-    var squareShaderProgram;
-    var triangleShaderProgram;
+    var shaderProgram;
 
-    function initShader(fragment_shadername, vertex_shadername) {
-        var fragmentShader = getShader(gl, fragment_shadername);
-        var vertexShader = getShader(gl, vertex_shadername);
+    function initShaders() {
+        var fragmentShader = getShader(gl, "shader-fs");
+        var vertexShader = getShader(gl, "shader-vs");
 
-        var shaderProgram = gl.createProgram();
+        shaderProgram = gl.createProgram();
         gl.attachShader(shaderProgram, vertexShader);
         gl.attachShader(shaderProgram, fragmentShader);
         gl.linkProgram(shaderProgram);
@@ -129,6 +107,8 @@
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
         }
+
+        listProgramUniformsAndAttributes(gl, shaderProgram);
 
         gl.useProgram(shaderProgram);
 
@@ -144,32 +124,44 @@
                                                             "uPMatrix");
         shaderProgram.mvMatrixUniform =gl.getUniformLocation(shaderProgram, 
                                                              "uMVMatrix");
-
-        return shaderProgram;
     }
 
 
     var mvMatrix;
-    var mvMatrixTriangle;
     var pMatrix;
 
-    function setUniforms(shader, mv, p) {
-        gl.uniformMatrix4fv(shader.pMatrixUniform, false, p);
-        gl.uniformMatrix4fv(shader.mvMatrixUniform, false, mv);
+    function setUniforms() {
+        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
 
     }
 
 
 
     var squareVertexBuffer;
-    var triangleVertexBuffer;
 
     function initBuffers() {
       //Create Square Position Buffer
-      squareVertexBuffer = createVertexBuffer(createGridMesh(10,10),5);
+        squareVertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexBuffer);
+        var vertices = [
+             1.0,  1.0,  0.0, 1.0, 1.0, //x, y, z, u, v
+            -1.0,  1.0,  0.0, 0.0, 1.0,
+             1.0, -1.0,  0.0, 1.0, 0.0,
+            -1.0, -1.0,  0.0, 0.0, 0.0
+        ];
+        gl.bufferData(
+                     gl.ARRAY_BUFFER, 
+                     new Float32Array(vertices), 
+                     gl.STATIC_DRAW
+                     );
+        squareVertexBuffer.stride = 5*Float32Array.BYTES_PER_ELEMENT;
+        squareVertexBuffer.positionElementCount = 3;
+        squareVertexBuffer.positionOffset = 0;
+        squareVertexBuffer.uvElementCount = 2;
+        squareVertexBuffer.uvOffset = 3*Float32Array.BYTES_PER_ELEMENT;
+        squareVertexBuffer.numItems = 4;
 
-      //Create triangle Position Buffer
-      triangleVertexBuffer = createVertexBuffer(createGridMesh(10,10),5);
     }
 
 
@@ -192,10 +184,9 @@
         */
         mvMatrix = makeTranslation(0.0, 0.0, -0.01);
 
-        gl.useProgram(squareShaderProgram);
         gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexBuffer);
         gl.vertexAttribPointer(
-                              squareShaderProgram.vertexPositionAttribute,
+                              shaderProgram.vertexPositionAttribute,
                               squareVertexBuffer.positionElementCount, 
                               gl.FLOAT, 
                               false, 
@@ -203,47 +194,18 @@
                               squareVertexBuffer.positionOffset
                               );
         gl.vertexAttribPointer(
-                              squareShaderProgram.vertexUVAttribute, 
+                              shaderProgram.vertexUVAttribute, 
                               squareVertexBuffer.uvElementCount, 
                               gl.FLOAT, 
                               false, 
                               squareVertexBuffer.stride, 
                               squareVertexBuffer.uvOffset 
                               );
-        setUniforms(squareShaderProgram, mvMatrix, pMatrix);
+        setUniforms();
         gl.drawArrays(
                       gl.TRIANGLE_STRIP, 
                       0, 
                       squareVertexBuffer.numItems
-                      );
-
-        //Draw triangle
-        var rot = makeZRotation(currTime);
-        mvMatrixTriangle = matrixMultiply(rot, mvMatrix);
-
-        gl.useProgram(triangleShaderProgram);
-        gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexBuffer);
-        gl.vertexAttribPointer(
-                              triangleShaderProgram.vertexPositionAttribute,
-                              triangleVertexBuffer.positionElementCount, 
-                              gl.FLOAT, 
-                              false, 
-                              triangleVertexBuffer.stride, 
-                              triangleVertexBuffer.positionOffset
-                              );
-        gl.vertexAttribPointer(
-                              triangleShaderProgram.vertexUVAttribute, 
-                              triangleVertexBuffer.uvElementCount, 
-                              gl.FLOAT, 
-                              false, 
-                              triangleVertexBuffer.stride, 
-                              triangleVertexBuffer.uvOffset 
-                              );
-        setUniforms(triangleShaderProgram, mvMatrixTriangle, pMatrix);
-        gl.drawArrays(
-                      gl.TRIANGLE_STRIP, 
-                      0, 
-                      triangleVertexBuffer.numItems
                       );
     }
 
@@ -251,27 +213,20 @@
     var mouse = [250,250];
     var mouseRadius = 10;
     var currentAngle = [0,0]; // [x-axis, y-axis] degrees
-    var startTime = 0.0;
-    var currTime = 0.0;
 
     function webGLStart() {
         var canvas = document.getElementById("webgl-canvas");
-        startTime = (new Date).getTime();
-
         initGL(canvas);
-        squareShaderProgram = initShader("shader-fs-square","shader-vs");
-        triangleShaderProgram = initShader("shader-fs-triangle","shader-vs");
+        initShaders();
         initBuffers();
         
         initEventHandlers(canvas, mouse, currentAngle);
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        gl.disable(gl.DEPTH_TEST);
-        //gl.enable(gl.DEPTH_TEST);
+        gl.enable(gl.DEPTH_TEST);
 
 
         var tick = function() {
-          currTime = ((new Date).getTime() - startTime)*0.001;
           drawScene();
           requestAnimationFrame(tick,canvas);
         };
@@ -330,71 +285,6 @@
       }
     }
 
-
-    function createGridMesh(n, m){
-      var numVerts = n * m;
-      var vertices = [];
-
-      var xpos = 0.0;
-      var ypos = 0.0;
-      var zpos = 0.0;
-      var xinc = 1/n;
-      var yinc = 1/m;
-      for(var j = 0; j < m; ++j){
-        for(var i = 0; i < n; ++i){
-          var lx = xpos;
-          var rx = xpos + xinc;
-          var dy = ypos; 
-          var uy = ypos + yinc;
-
-          /*
-          var uvl = lx;
-          var uvr = rx;
-          var uvd = dy;
-          var uvu = uy;
-          */
-
-          var uvl = i;
-          var uvr = i+1;
-          var uvd = j+1;
-          var uvu = j;
-
-          vertices.push(lx, dy, zpos, uvl, uvd);
-          vertices.push(rx, dy, zpos, uvr, uvd);
-          vertices.push(rx, uy, zpos, uvr, uvu);
-
-          vertices.push(lx, dy, zpos, uvl, uvd);
-          vertices.push(rx, uy, zpos, uvr, uvu);
-          vertices.push(lx, uy, zpos, uvl, uvu);
-          xpos += xinc;
-        }
-        ypos += yinc;
-        xpos = 0.0;
-      }
-      console.log(vertices);
-      console.log(n, m);
-
-      return vertices;
-    }
-
-    function createVertexBuffer(vertArray, stride){
-        var vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.bufferData(
-                     gl.ARRAY_BUFFER, 
-                     new Float32Array(vertArray), 
-                     gl.STATIC_DRAW
-                     );
-        vertexBuffer.stride = stride*Float32Array.BYTES_PER_ELEMENT;
-        vertexBuffer.positionElementCount = 3;
-        vertexBuffer.positionOffset = 0;
-        vertexBuffer.uvElementCount = 2;
-        vertexBuffer.uvOffset = 3*Float32Array.BYTES_PER_ELEMENT;
-        vertexBuffer.numItems = vertArray.length/stride;
-
-        return vertexBuffer;
-    }
-
     function listProgramUniformsAndAttributes(gl, program){
       var na = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
       console.log(na, 'attributes');
@@ -423,5 +313,4 @@
 </body>
 
 </html>
-
 
