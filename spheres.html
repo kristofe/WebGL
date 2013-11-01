@@ -49,7 +49,7 @@
       vec4 tex = texture2D(uTexture01,vUV);
       tex.xyz *= c;
       gl_FragColor = tex;
-      //gl_FragColor = vec4(vNormal.xyz, 1.0);
+      //:egl_FragColor = vec4(vNormal.xyz, 1.0);
     }
 
 </script>
@@ -133,11 +133,11 @@
                       );
                 
         //Draw plane
-        var rot = makeXRotation(-0.0*Math.PI);
-        var rotInv = makeXRotation(0.0*Math.PI);
-        //var scale = makeScale(50.0,50.0,50.0);
-        var scale = makeScale(10.0,10.0,10.0);
-        mvMatrix = matrixMultiply(rot,makeTranslation(-0.0, -1.1, -12.0));
+        var rot = makeXRotation(-0.5*Math.PI);
+        var rotInv = makeXRotation(0.5*Math.PI);
+        var scale = makeScale(10.0,20.0,1.0);
+        //var scale = makeScale(10.0,10.0,10.0);
+        mvMatrix = matrixMultiply(rot,makeTranslation(-0.0, -1.1, -10.0));
         mvMatrix = matrixMultiply(scale,mvMatrix);
        
         diffuseShader.bindShader(planeMesh);
