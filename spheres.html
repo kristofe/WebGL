@@ -24,6 +24,7 @@
     precision mediump float;
     varying vec2 vUV;
     varying vec3 vNormal;
+    uniform sampler2D uTexture01;
 
     void main(void) {
       //gl_FragColor = vec4(vUV.x, vUV.y, 1.0, 1.0);
@@ -45,8 +46,10 @@
       float d = dot(vNormal, normalize(vec3(1,1,1)));
       d = clamp(d, 0.0, 1.0);
       float c = mix(0.1, 1.0, d);
+      vec4 tex = texture2D(uTexture01,vUV);
+      tex.xyz *= c;
+      gl_FragColor = tex;
       //gl_FragColor = vec4(vNormal.xyz, 1.0);
-      gl_FragColor = vec4(c,c,c, 1.0);
     }
 
 </script>
@@ -60,6 +63,9 @@
     uniform mat4 uMVMatrix;
     uniform mat4 uMVInverseTranspose;
     uniform mat4 uPMatrix;
+
+    uniform sampler2D uTexture01;
+    uniform sampler2D uTexture02;
 
     //These will be passed to the fragment shader and will be interpreted per
     //pixel
@@ -97,14 +103,14 @@
 
 
     function initBuffers() {
-      sphereMesh = new Mesh();
-      planeMesh = new Mesh();
+      sphereMesh = new Mesh(gl);
+      planeMesh = new Mesh(gl);
       //Create Square Position Buffer
-      //squareVertexBuffer = sphereMesh.createGridMesh(gl, 10,10);
-      sphereMesh.createSphereMesh(gl, 10,10);
+      //squareVertexBuffer = sphereMesh.createGridMesh( 10,10);
+      sphereMesh.createSphereMesh( 10,10);
 
       //Create triangle Position Buffer
-      planeMesh.createGridMesh(gl,10,10);
+      planeMesh.createGridMesh(10,10);
     }
 
 
@@ -118,8 +124,8 @@
         var rotInv = makeXRotation(-currTime);
         mvMatrix = matrixMultiply(rot,makeTranslation(0.0, 0.0, -5.0));
         
-        diffuseShader.bindShader(gl,sphereMesh);
-        diffuseShader.setUniforms(gl, mvMatrix,rotInv, pMatrix);
+        diffuseShader.bindShader(sphereMesh);
+        diffuseShader.setUniforms(mvMatrix,rotInv, pMatrix);
         gl.drawArrays(
                       gl.TRIANGLES, 
                       0, 
@@ -127,14 +133,15 @@
                       );
                 
         //Draw plane
-        var rot = makeXRotation(-0.5*Math.PI);
-        var rotInv = makeXRotation(0.5*Math.PI);
-        var scale = makeScale(50.0,50.0,50.0);
+        var rot = makeXRotation(-0.0*Math.PI);
+        var rotInv = makeXRotation(0.0*Math.PI);
+        //var scale = makeScale(50.0,50.0,50.0);
+        var scale = makeScale(10.0,10.0,10.0);
         mvMatrix = matrixMultiply(rot,makeTranslation(-0.0, -1.1, -12.0));
         mvMatrix = matrixMultiply(scale,mvMatrix);
        
-        diffuseShader.bindShader(gl,planeMesh);
-        diffuseShader.setUniforms(gl, mvMatrix,rotInv, pMatrix);
+        diffuseShader.bindShader(planeMesh);
+        diffuseShader.setUniforms(mvMatrix,rotInv, pMatrix);
         gl.drawArrays(
                       gl.TRIANGLE_STRIP, 
                       0, 
@@ -156,6 +163,7 @@
     var sphereMesh;
     var planeMesh;
     var diffuseShader;
+    var texture01;
 
     function webGLStart() {
         var canvas = document.getElementById("webgl-canvas");
@@ -163,15 +171,21 @@
 
         initGL(canvas);
         initBuffers();
-        diffuseShader = new ShaderProgram();
-        diffuseShader.initShader(gl,"shader-fs-diffuse","shader-vs");
+        diffuseShader = new ShaderProgram(gl);
+        diffuseShader.initShader("shader-fs-diffuse","shader-vs");
         //diffuseShader = initShader("shader-fs-diffuse","shader-vs");
         
+        
+        texture01 = new Texture(gl);
+        texture01.load("testTexture.jpg", 0);
+
         initEventHandlers(canvas, mouse, currentAngle);
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         //gl.disable(gl.DEPTH_TEST);
         gl.enable(gl.DEPTH_TEST);
+        gl.enable(gl.CULL_FACE);
+        gl.frontFace(gl.CCW);
 
         pMatrix = identity();
         pMatrix = makePerspective(
@@ -241,6 +255,49 @@
       }
     }
 
+///////////////////////////////////////////////////////////////////////////////
+//  Texture routines - Start
+///////////////////////////////////////////////////////////////////////////////
+function Texture(gl) {
+  this.gl = gl;
+  this.glTexture = -1;
+  this.glTextureUnit = 0;
+  this.image = {};
+  this.name = "";
+}
+
+Texture.prototype.load = function(name, unit) {
+  console.debug("Starting loadTexture " + name + " " + this.gl);
+  var gl = this.gl;
+  this.name = name;
+  this.glTexture = gl.createTexture(); 
+  this.glTextureUnit = unit;
+  var image = new Image();
+  var unit = this.glTextureUnit;
+  var glTexID = this.glTexture;
+  image.onload = function() {loadTextureComplete(gl, unit, glTexID, image);};
+  image.src = name;
+}
+
+function loadTextureComplete(gl, unit, glTexID, image){
+
+  console.debug("Starting loadTextureComplete " + gl + " " + image);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_2D, glTexID);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+}
+
+Texture.prototype.activateTexture = function() {
+  gl.activeTexture(gl.TEXTURE0 + this.glTextureUnit);
+  gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//  Texture routines - End
+///////////////////////////////////////////////////////////////////////////////
 
 </script>
 
@@ -251,6 +308,13 @@
 <body onload="webGLStart();">
   <canvas id="webgl-canvas" style="border: none;" width="500" height="500">
   </canvas>
+  <br>
+  <hr>
+  Linked Javascript Files:
+  <br>
+  <a href="matrix.js" target="_blank"> matrix.js</a><br>
+  <a href="mesh.js" target="_blank"> mesh.js</a><br>
+  <a href="shader.js" target="_blank"> shader.js</a><br>
 
 </body>
 

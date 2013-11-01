@@ -1,5 +1,6 @@
-function ShaderProgram() {
-  this.programID = -1;
+function ShaderProgram(gl) {
+  this.gl = gl;
+  this.glProgram = -1;
   this.uniforms = {};
   this.fragShaderName = "";
   this.vertShaderName = "";
@@ -35,7 +36,7 @@ ShaderProgram.prototype.getTextOfScriptElement = function(id) {
   return str;
 
 }
-ShaderProgram.prototype.loadShaderFromDocument = function (gl, id) {
+ShaderProgram.prototype.loadShaderFromDocument = function (id) {
   var str = this.getTextOfScriptElement(id);
   var shader;
   if (shaderScript.type == "x-shader/x-fragment") {
@@ -62,7 +63,8 @@ ShaderProgram.prototype.loadShaderFromDocument = function (gl, id) {
 }
 */
  
-ShaderProgram.prototype.getShader = function(gl, id) {
+ShaderProgram.prototype.getShader = function(id) {
+  var gl = this.gl;
   var shaderScript = document.getElementById(id);
   if (!shaderScript) {
       var err = "couldn't find shader";
@@ -108,13 +110,13 @@ ShaderProgram.prototype.getShader = function(gl, id) {
 
 /*
 ShaderProgram.prototype.initShaders = 
-  function(gl, fragment_shadername, vertex_shadername) 
+  function(fragment_shadername, vertex_shadername) 
 {
   this.fragShaderName = fragment_shadername;
   this.vertShaderName = vertex_shadername;
 
-  this.fragShaderID = this.loadShaderFromShader(gl, fragment_shadername);
-  this.vertShaderID = this.loadShaderFromShader(gl, vertex_shadername);
+  this.fragShaderID = this.loadShaderFromShader(fragment_shadername);
+  this.vertShaderID = this.loadShaderFromShader(vertex_shadername);
 
   var shaderProgram = gl.createProgram();
   gl.attachShader(this.shaderProgramID, this.vertShaderID);
@@ -174,51 +176,59 @@ gl.SAMPLER_2D
 gl.SAMPLER_CUBE
 */
 
-ShaderProgram.prototype.initShader = function(gl,fragment_shadername, vertex_shadername) {
-  this.fragShaderID = this.getShader(gl, fragment_shadername);
-  this.vertShaderID = this.getShader(gl, vertex_shadername);
+ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shadername) {
+  var gl = this.gl;
+  this.fragShaderID = this.getShader(fragment_shadername);
+  this.vertShaderID = this.getShader(vertex_shadername);
 
-  var shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, this.vertShaderID);
-  gl.attachShader(shaderProgram, this.fragShaderID);
-  gl.linkProgram(shaderProgram);
+  //var shaderProgram = gl.createProgram();
+  this.glProgram = gl.createProgram();
+  gl.attachShader(this.glProgram, this.vertShaderID);
+  gl.attachShader(this.glProgram, this.fragShaderID);
+  gl.linkProgram(this.glProgram);
 
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+  if (!gl.getProgramParameter(this.glProgram, gl.LINK_STATUS)) {
       alert("Could not initialise shaders");
   }
   console.debug("linked shader");
 
-  gl.useProgram(shaderProgram);
+  gl.useProgram(this.glProgram);
 
-  shaderProgram.vertexPositionAttribute = 
-                  gl.getAttribLocation(shaderProgram, "aVertexPosition");
-  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+  this.vertexPositionAttribute = 
+                  gl.getAttribLocation(this.glProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(this.vertexPositionAttribute);
 
-  shaderProgram.vertexNormalAttribute = 
-                        gl.getAttribLocation(shaderProgram, "aVertexNormal");
-  gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
+  this.vertexNormalAttribute = 
+                        gl.getAttribLocation(this.glProgram, "aVertexNormal");
+  gl.enableVertexAttribArray(this.vertexNormalAttribute);
 
-  shaderProgram.vertexUVAttribute = 
-                        gl.getAttribLocation(shaderProgram, "aVertexUV");
-  gl.enableVertexAttribArray(shaderProgram.vertexUVAttribute);
+  this.vertexUVAttribute = 
+                        gl.getAttribLocation(this.glProgram, "aVertexUV");
+  gl.enableVertexAttribArray(this.vertexUVAttribute);
 
   //---------------------------------------------------------------------------
+  // Uniforms
+  //---------------------------------------------------------------------------
 
-  shaderProgram.pMatrixUniform =gl.getUniformLocation(shaderProgram, 
+  this.pMatrixUniform =gl.getUniformLocation(this.glProgram, 
                                                       "uPMatrix");
-  shaderProgram.mvMatrixUniform =gl.getUniformLocation(shaderProgram, 
+  this.mvMatrixUniform =gl.getUniformLocation(this.glProgram, 
                                                        "uMVMatrix");
-  shaderProgram.mvInverseTransposeUniform =gl.getUniformLocation(shaderProgram, 
+  this.mvInverseTransposeUniform =gl.getUniformLocation(this.glProgram, 
                                                        "uMVInverseTranspose");
-  this.programID = shaderProgram;
+  this.texture01 =gl.getUniformLocation(this.glProgram, 
+                                                       "uTexture01");
+  this.texture02 =gl.getUniformLocation(this.glProgram, 
+                                                       "uTexture02");
 }
 
 
-ShaderProgram.prototype.bindShader = function(gl,mesh){
-  gl.useProgram(this.programID);
+ShaderProgram.prototype.bindShader = function(mesh){
+  var gl = this.gl;
+  gl.useProgram(this.glProgram);
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
   gl.vertexAttribPointer(
-                        this.programID.vertexPositionAttribute,
+                        this.vertexPositionAttribute,
                         mesh.vertexBuffer.positionElementCount, 
                         gl.FLOAT, 
                         false, 
@@ -226,7 +236,7 @@ ShaderProgram.prototype.bindShader = function(gl,mesh){
                         mesh.vertexBuffer.positionOffset
                         );
   gl.vertexAttribPointer(
-                        this.programID.vertexNormalAttribute, 
+                        this.vertexNormalAttribute, 
                         mesh.vertexBuffer.normalElementCount, 
                         gl.FLOAT, 
                         false, 
@@ -234,7 +244,7 @@ ShaderProgram.prototype.bindShader = function(gl,mesh){
                         mesh.vertexBuffer.normalOffset 
                         );
   gl.vertexAttribPointer(
-                        this.programID.vertexUVAttribute, 
+                        this.vertexUVAttribute, 
                         mesh.vertexBuffer.uvElementCount, 
                         gl.FLOAT, 
                         false, 
@@ -243,9 +253,12 @@ ShaderProgram.prototype.bindShader = function(gl,mesh){
                         );
 }
 
-ShaderProgram.prototype.setUniforms = function(gl, mv, mvIT, p) {
-  gl.uniformMatrix4fv(this.programID.pMatrixUniform, false, p);
-  gl.uniformMatrix4fv(this.programID.mvMatrixUniform, false, mv);
-  gl.uniformMatrix4fv(this.programID.mvInverseTransposeUniform, false, mvIT);
+ShaderProgram.prototype.setUniforms = function(mv, mvIT, p) {
+  var gl = this.gl;
+  gl.uniformMatrix4fv(this.pMatrixUniform, false, p);
+  gl.uniformMatrix4fv(this.mvMatrixUniform, false, mv);
+  gl.uniformMatrix4fv(this.mvInverseTransposeUniform, false, mvIT);
+  gl.uniform1i(this.texture01, false, 0);
+  gl.uniform1i(this.texture02, false, 1);
 
 }

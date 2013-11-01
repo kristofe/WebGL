@@ -1,4 +1,5 @@
-function Mesh() {
+function Mesh(gl) {
+  this.gl = gl;
   this.useVertices = false;
   this.vertices = [];
   this.indices = [];
@@ -8,9 +9,8 @@ function Mesh() {
 
 }
 
-Mesh.prototype.createSphereMesh = function(gl, slices, stacks){
+Mesh.prototype.createSphereMesh = function(slices, stacks){
   this.vertexBuffer = this.createVertexBuffer(
-                            gl,
                             this.createSphereMeshData(slices,stacks),
                             8
       );
@@ -98,9 +98,8 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
 
       //First Triangle
       vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v);
-      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext);
       vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, v);
-
+      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext);
       //Second Triangle
       vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, v);
       vertices.push(xBottomNext, yBottom, zBottomNext, xBottomNext,yBottom,zBottomNext, uNext, vNext);
@@ -113,13 +112,55 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
   return vertices;
 }
 
-Mesh.prototype.createGridMesh = function(gl, n, m, tileUVs){
+Mesh.prototype.createGridMesh = function(n, m, tileUVs){
   this.vertexBuffer = this.createVertexBuffer(
-                            gl,
-                            this.createGridMeshData(n,m),
+                            this.createTriStripGridMeshData(n,m),
                             8
       );
   return this.vertexBuffer;
+}
+Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
+  var numVerts = n * m;
+  var vertices = [];
+
+  var xpos = 0.0;
+  var ypos = 0.0;
+  var zpos = 0.0;
+  var xinc = 1/n;
+  var yinc = 1/m;
+
+  var x, y, y2, z, u, v, v2;
+  for(var j = 0; j < m; ++j){
+    for(var i = 0; i <= n; ++i){
+      x = 0.5-xpos;
+      y = 0.5-ypos; 
+      y2 = y + yinc;
+      z = zpos;
+
+      u = 0.5 + x;
+      v =  0.5 + y - yinc;
+      v2 = 0.5 + y2 - yinc;
+
+      
+
+      //Part of degenerate triangle
+      if(i == 0 && j > 0){
+        vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v);
+      }
+      vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v);
+      vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2);
+      xpos += xinc;
+    }
+    //Part of degenerate triangle
+    vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2);
+
+    ypos += yinc;
+    xpos = 0.0;
+  }
+  console.log(vertices);
+  console.log(n, m);
+
+  return vertices;
 }
 
 Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
@@ -170,7 +211,8 @@ Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
   return vertices;
 }
 
-Mesh.prototype.createVertexBuffer = function (gl, vertArray, stride){
+Mesh.prototype.createVertexBuffer = function (vertArray, stride){
+  var gl = this.gl;
   var vertexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   gl.bufferData(
