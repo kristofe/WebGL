@@ -121,38 +121,19 @@
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+        var q = new Quaternion();
+        q.rotateX(currTime);
+        sphereModel.transform.setRotation(q);
+        sphereModel.transform.setPosition(new Vector3(0.0, 0.0,-5.0));
         sphereModel.draw(pMatrix);
-        /*
-        mvMatrix = identity();
 
-        var rot = makeXRotation(currTime);
-        var rotInv = makeXRotation(-currTime);
-        mvMatrix = matrixMultiply(rot,makeTranslation(0.0, 0.0, -5.0));
-        
-        diffuseShader.bindShader(sphereMesh);
-        diffuseShader.setUniforms(mvMatrix,rotInv, pMatrix.m);
-        gl.drawArrays(
-                      gl.TRIANGLES, 
-                      0, 
-                      sphereMesh.vertexBuffer.numItems
-                      );
-                
-        //Draw plane
-        var rot = makeXRotation(-0.5*Math.PI);
-        var rotInv = makeXRotation(0.5*Math.PI);
-        var scale = makeScale(10.0,20.0,1.0);
-        //var scale = makeScale(10.0,10.0,10.0);
-        mvMatrix = matrixMultiply(rot,makeTranslation(-0.0, -1.1, -10.0));
-        mvMatrix = matrixMultiply(scale,mvMatrix);
-       
-        diffuseShader.bindShader(planeMesh);
-        diffuseShader.setUniforms(mvMatrix,rotInv, pMatrix.m);
-        gl.drawArrays(
-                      gl.TRIANGLE_STRIP, 
-                      0, 
-                      planeMesh.vertexBuffer.numItems
-                      );
-                      */
+
+        q = new Quaternion();
+        q.rotateX(-0.5*Math.PI);
+        planeModel.transform.setRotation(q);
+        planeModel.transform.setScale(new Vector3(10.0, 20.0,1.0));
+        planeModel.transform.setPosition(new Vector3(0.0, -1.1,-10.0));
+        planeModel.draw(pMatrix);
     }
 
 
@@ -179,20 +160,16 @@
 
         initGL(canvas);
         initBuffers();
-        /*
-        diffuseShader = new ShaderProgram(gl);
-        diffuseShader.initShader("shader-fs-diffuse","shader-vs");
-        //diffuseShader = initShader("shader-fs-diffuse","shader-vs");
-        
-        
-        texture01 = new Texture(gl);
-        texture01.load("testTexture.jpg", 0);
-        */
 
         sphereModel = new Model(gl);
         sphereModel.material.shader.initShader("shader-fs-diffuse","shader-vs");
         sphereModel.material.texture.load("testTexture.jpg", 0);
         sphereModel.mesh.createSphereMesh( 10,10);
+
+        planeModel = new Model(gl);
+        planeModel.material = sphereModel.material;
+        //planeModel.material.shader.initShader("shader-fs-triangle","shader-vs");
+        planeModel.mesh.createGridMesh( 10,10);
 
         initEventHandlers(canvas, mouse, currentAngle);
 
@@ -308,15 +285,11 @@ function Model(gl){
 
 
 Model.prototype.draw = function(projMat){
-  var q = new Quaternion();
-  q.rotateX(currTime);
-  this.transform.setPosition(new Vector3(0.0, 0.0,-5.0));
-  this.transform.setRotation(q);
  
   this.material.bind(this.mesh);
   this.material.setUniforms(this.transform.matrix.m,this.transform.inverse.m, projMat.m);
   this.gl.drawArrays(
-                gl.TRIANGLES, 
+                this.mesh.primitiveType,
                 0, 
                 this.mesh.vertexBuffer.numItems
                 );

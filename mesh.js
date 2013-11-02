@@ -5,6 +5,7 @@ function Mesh(gl) {
   this.indices = [];
   this.vertexBuffer = -1;
   this.indexBuffer = -1;
+  this.primitiveType = gl.TRIANGLES;
 
 
 }
@@ -160,6 +161,7 @@ Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
   //console.log(vertices);
   //console.log(n, m);
 
+  this.primitiveType = gl.TRIANGLE_STRIP;
   return vertices;
 }
 
