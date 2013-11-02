@@ -34,6 +34,8 @@ Matrix44.prototype.identity = function(){
      0,  0,  1,  0,
      0,  0,  0,  1
   ];
+
+  return this;
 }
 
 Matrix44.prototype.ortho = function(left, right, bottom, top, near, far) {
@@ -58,6 +60,8 @@ Matrix44.prototype.ortho = function(left, right, bottom, top, near, far) {
   dest[14] = -(far*near*2) / fn;
   dest[15] = 0;
   this.m = dest;
+
+  return this;
 }
 
 Matrix44.prototype.perspective = function(fieldOfViewInRadians, aspect, near, far) {
@@ -70,6 +74,7 @@ Matrix44.prototype.perspective = function(fieldOfViewInRadians, aspect, near, fa
     0, 0, (near + far) * rangeInv, -1,
     0, 0, near * far * rangeInv * 2, 0
   ];
+  return this;
 };
 
 Matrix44.prototype.translate = function(tx, ty, tz) {
@@ -80,6 +85,7 @@ Matrix44.prototype.translate = function(tx, ty, tz) {
     tx, ty, tz,  1
   ];
   this.preMultiply(m);
+  return this;
 }
 
 Matrix44.prototype.transpose = function() {
@@ -152,81 +158,83 @@ Matrix44.prototype.invert = function() {
 }
 
 Matrix44.prototype.fromQuat = function (q) {
-    var x = q[0], y = q[1], z = q[2], w = q[3],
-        x2 = x + x,
-        y2 = y + y,
-        z2 = z + z,
+  var x = q[0], y = q[1], z = q[2], w = q[3],
+      x2 = x + x,
+      y2 = y + y,
+      z2 = z + z,
 
-        xx = x * x2,
-        xy = x * y2,
-        xz = x * z2,
-        yy = y * y2,
-        yz = y * z2,
-        zz = z * z2,
-        wx = w * x2,
-        wy = w * y2,
-        wz = w * z2;
+      xx = x * x2,
+      xy = x * y2,
+      xz = x * z2,
+      yy = y * y2,
+      yz = y * z2,
+      zz = z * z2,
+      wx = w * x2,
+      wy = w * y2,
+      wz = w * z2;
 
-    this.m[0] = 1 - (yy + zz);
-    this.m[1] = xy + wz;
-    this.m[2] = xz - wy;
-    this.m[3] = 0;
+  this.m[0] = 1 - (yy + zz);
+  this.m[1] = xy + wz;
+  this.m[2] = xz - wy;
+  this.m[3] = 0;
 
-    this.m[4] = xy - wz;
-    this.m[5] = 1 - (xx + zz);
-    this.m[6] = yz + wx;
-    this.m[7] = 0;
+  this.m[4] = xy - wz;
+  this.m[5] = 1 - (xx + zz);
+  this.m[6] = yz + wx;
+  this.m[7] = 0;
 
-    this.m[8] = xz + wy;
-    this.m[9] = yz - wx;
-    this.m[10] = 1 - (xx + yy);
-    this.m[11] = 0;
+  this.m[8] = xz + wy;
+  this.m[9] = yz - wx;
+  this.m[10] = 1 - (xx + yy);
+  this.m[11] = 0;
 
-    this.m[12] = 0;
-    this.m[13] = 0;
-    this.m[14] = 0;
-    this.m[15] = 1;
+  this.m[12] = 0;
+  this.m[13] = 0;
+  this.m[14] = 0;
+  this.m[15] = 1;
+  return this;
 
 }
 
 Matrix44.prototype.rotate = function(q) {
-    var x = q.x, y = q.y, z = q.z, w = q.w,
-        x2 = x + x,
-        y2 = y + y,
-        z2 = z + z,
+  var x = q.x, y = q.y, z = q.z, w = q.w,
+      x2 = x + x,
+      y2 = y + y,
+      z2 = z + z,
 
-        xx = x * x2,
-        xy = x * y2,
-        xz = x * z2,
-        yy = y * y2,
-        yz = y * z2,
-        zz = z * z2,
-        wx = w * x2,
-        wy = w * y2,
-        wz = w * z2;
+      xx = x * x2,
+      xy = x * y2,
+      xz = x * z2,
+      yy = y * y2,
+      yz = y * z2,
+      zz = z * z2,
+      wx = w * x2,
+      wy = w * y2,
+      wz = w * z2;
 
-    var m =  new Float32Array(16);
-    m[0] = 1 - (yy + zz);
-    m[1] = xy + wz;
-    m[2] = xz - wy;
-    m[3] = 0;
+  var m =  new Float32Array(16);
+  m[0] = 1 - (yy + zz);
+  m[1] = xy + wz;
+  m[2] = xz - wy;
+  m[3] = 0;
 
-    m[4] = xy - wz;
-    m[5] = 1 - (xx + zz);
-    m[6] = yz + wx;
-    m[7] = 0;
+  m[4] = xy - wz;
+  m[5] = 1 - (xx + zz);
+  m[6] = yz + wx;
+  m[7] = 0;
 
-    m[8] = xz + wy;
-    m[9] = yz - wx;
-    m[10] = 1 - (xx + yy);
-    m[11] = 0;
+  m[8] = xz + wy;
+  m[9] = yz - wx;
+  m[10] = 1 - (xx + yy);
+  m[11] = 0;
 
-    m[12] = 0;
-    m[13] = 0;
-    m[14] = 0;
-    m[15] = 1;
+  m[12] = 0;
+  m[13] = 0;
+  m[14] = 0;
+  m[15] = 1;
 
-    this.preMultiply(m);
+  this.preMultiply(m);
+  return this;
 }
 
 
@@ -242,6 +250,7 @@ Matrix44.prototype.rotateX = function(angleInRadians) {
     0, 0, 0, 1
   ];
   this.preMultiply(m);
+  return this;
 };
 
 Matrix44.prototype.rotateY = function(angleInRadians) {
@@ -254,7 +263,8 @@ Matrix44.prototype.rotateY = function(angleInRadians) {
     s, 0, c, 0,
     0, 0, 0, 1
   ];
-  this.preMultiply(m);
+  this.preMultiply(m)
+  return this;
 };
 
 Matrix44.prototype.rotateZ = function(angleInRadians) {
@@ -267,6 +277,7 @@ Matrix44.prototype.rotateZ = function(angleInRadians) {
      0, 0, 0, 1,
   ];
   this.preMultiply(m);
+  return this;
 }
 
 Matrix44.prototype.scale = function(sx, sy, sz) {
@@ -277,6 +288,7 @@ Matrix44.prototype.scale = function(sx, sy, sz) {
     0,  0,  0,  1,
   ];
   this.preMultiply(m);
+  return this;
 }
 
 Matrix44.prototype.postMultiply = function(b) {
@@ -329,6 +341,7 @@ Matrix44.prototype.postMultiply = function(b) {
           a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31,
           a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32,
           a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33];
+  return this;
 }
 
 Matrix44.prototype.preMultiply = function(a) {
@@ -381,6 +394,7 @@ Matrix44.prototype.preMultiply = function(a) {
           a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31,
           a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32,
           a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33];
+  return this;
 }
 
 

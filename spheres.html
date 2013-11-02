@@ -327,10 +327,12 @@ Transform.prototype.setPosition = function(p){
 
 Transform.prototype.setScale = function(s){
   this.scale = s;
+  this.update();
 }
 
 Transform.prototype.setRotation = function(r){
   this.rotation = r;
+  this.update();
 }
 
 Transform.prototype.rotateEulerAngles = function(r){
@@ -338,6 +340,7 @@ Transform.prototype.rotateEulerAngles = function(r){
   this.rotation.rotateX(r.x);
   this.rotation.rotateY(r.y);
   this.rotation.rotateZ(r.z);
+  this.update();
 }
 
 
