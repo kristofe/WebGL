@@ -105,18 +105,6 @@
     }
 
 
-    function initBuffers() {
-      sphereMesh = new Mesh(gl);
-      planeMesh = new Mesh(gl);
-      //Create Square Position Buffer
-      //squareVertexBuffer = sphereMesh.createGridMesh( 10,10);
-      sphereMesh.createSphereMesh( 10,10);
-
-      //Create triangle Position Buffer
-      planeMesh.createGridMesh(10,10);
-    }
-
-
     function drawScene() {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -143,35 +131,30 @@
     var startTime = 0.0;
     var currTime = 0.0;
 
-    var mvMatrix;
-    var mvInverseTranspose;
-    var mvMatrixTriangle;
     var pMatrix;
-    var sphereMesh;
-    var planeMesh;
-    var diffuseShader;
-    var texture01;
-
     var sphereModel;
+    var planeModel;
+
+    function initScene(){
+      sphereModel = new Model(gl);
+      sphereModel.material.shader.initShader("shader-fs-diffuse","shader-vs");
+      sphereModel.material.texture.load("testTexture.jpg", 0);
+      sphereModel.mesh.createSphereMesh( 10,10);
+
+      planeModel = new Model(gl);
+      planeModel.material = sphereModel.material;
+      //planeModel.material.shader.initShader("shader-fs-triangle","shader-vs");
+      planeModel.mesh.createGridMesh( 10,10);
+    }
 
     function webGLStart() {
         var canvas = document.getElementById("webgl-canvas");
         startTime = (new Date).getTime();
 
         initGL(canvas);
-        initBuffers();
-
-        sphereModel = new Model(gl);
-        sphereModel.material.shader.initShader("shader-fs-diffuse","shader-vs");
-        sphereModel.material.texture.load("testTexture.jpg", 0);
-        sphereModel.mesh.createSphereMesh( 10,10);
-
-        planeModel = new Model(gl);
-        planeModel.material = sphereModel.material;
-        //planeModel.material.shader.initShader("shader-fs-triangle","shader-vs");
-        planeModel.mesh.createGridMesh( 10,10);
-
         initEventHandlers(canvas, mouse, currentAngle);
+        initScene();
+
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         //gl.disable(gl.DEPTH_TEST);
