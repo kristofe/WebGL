@@ -51,6 +51,7 @@ Matrix44.prototype.identity = function(){
   return this;
 }
 
+//adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.ortho = function(left, right, bottom, top, near, far) {
   var dest = new Float32Array(16);
   var rl = (right - left);
@@ -101,6 +102,7 @@ Matrix44.prototype.translate = function(tx, ty, tz) {
   return this;
 }
 
+//adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.transpose = function() {
   var a01 = this.m[1], a02 = this.m[2], a03 = this.m[3],
       a12 = this.m[6], a13 = this.m[7],
@@ -170,6 +172,7 @@ Matrix44.prototype.invert = function() {
   return this;
 }
 
+//adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.fromQuat = function (q) {
   var x = q[0], y = q[1], z = q[2], w = q[3],
       x2 = x + x,
@@ -209,6 +212,7 @@ Matrix44.prototype.fromQuat = function (q) {
 
 }
 
+//adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.rotate = function(q) {
   var x = q.x, y = q.y, z = q.z, w = q.w,
       x2 = x + x,
@@ -304,6 +308,7 @@ Matrix44.prototype.scale = function(sx, sy, sz) {
   return this;
 }
 
+//adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.postMultiply = function(b) {
   var a00 = this.m[0*4+0];
   var a01 = this.m[0*4+1];
@@ -357,6 +362,7 @@ Matrix44.prototype.postMultiply = function(b) {
   return this;
 }
 
+//adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.preMultiply = function(a) {
   var a00 = a[0*4+0];
   var a01 = a[0*4+1];
@@ -420,6 +426,7 @@ function Quaternion() {
   this.w = 1.0;
 }
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.identity = function() {
   this.x = 0.0;
   this.y = 0.0;
@@ -428,6 +435,7 @@ Quaternion.prototype.identity = function() {
 }
 
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.setAxisAngle = function(axis, rad) {
     rad = rad * 0.5;
     var s = Math.sin(rad);
@@ -438,6 +446,7 @@ Quaternion.prototype.setAxisAngle = function(axis, rad) {
 };
 
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.multiply = function( b) {
     var ax = this.x, ay = this.y, az = this.z, aw = this.w,
         bx = b.x, by = b.y, bz = b.z, bw = b.w;
@@ -448,6 +457,7 @@ Quaternion.prototype.multiply = function( b) {
     this.w = aw * bw - ax * bx - ay * by - az * bz;
 };
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.rotateX = function (rad) {
     rad *= 0.5; 
 
@@ -460,6 +470,7 @@ Quaternion.prototype.rotateX = function (rad) {
     this.w = aw * bw - ax * bx;
 };
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.rotateY = function (rad) {
     rad *= 0.5; 
 
@@ -472,6 +483,7 @@ Quaternion.prototype.rotateY = function (rad) {
     this.w = aw * bw - ay * by;
 };
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.rotateZ = function (rad) {
     rad *= 0.5; 
 
@@ -484,6 +496,7 @@ Quaternion.prototype.rotateZ = function (rad) {
     this.w = aw * bw - az * bz;
 };
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.calculateW = function (a) {
     var x = this.x, y = this.y, z = this.z;
 
@@ -493,6 +506,7 @@ Quaternion.prototype.calculateW = function (a) {
     this.w = -Math.sqrt(Math.abs(1.0 - x * x - y * y - z * z));
 };
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.slerp = function (b, t) {
     var ax = this.x, ay = this.y, az = this.z, aw = this.w,
         bx = b.x, by = b.y, bz = b.z, bw = b.w;
@@ -529,6 +543,7 @@ Quaternion.prototype.slerp = function (b, t) {
     this.w = scale0 * aw + scale1 * bw;
 };
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.invert = function() {
     var a0 = this.x, a1 = this.y, a2 = this.z, a3 = this.w,
         dot = a0*a0 + a1*a1 + a2*a2 + a3*a3,
@@ -542,6 +557,7 @@ Quaternion.prototype.invert = function() {
     this.w = a3*invDot;
 };
 
+//adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.conjugate = function () {
     this.x = -this.x;
     this.y = -this.y;
