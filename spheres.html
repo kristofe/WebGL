@@ -262,8 +262,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 function Material(gl){
   this.gl = gl;
-  this.shader = [];
-  this.texture = [];
+  this.shader = new ShaderProgram(gl);
+  this.texture = Texture(gl);
   
 }
 
@@ -279,9 +279,9 @@ Material.prototype.setTexture = function(texture){
 ///////////////////////////////////////////////////////////////////////////////
 function Model(gl){
   this.gl = gl;
-  this.material = [];
-  this.mesh = [];
-  this.transform = [];
+  this.material = new Material(gl);
+  this.mesh = new Mesh(gl);
+  this.transform = new Transform();
   
 }
 
