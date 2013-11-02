@@ -4,9 +4,13 @@
 <title>WebGL</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 <script type="text/javascript" src="matrix.js"></script>
+<script type="text/javascript" src="math.js"></script>
 <script type="text/javascript" src="mesh.js"></script>
 <script type="text/javascript" src="shader.js"></script>
 <script type="text/javascript" src="texture.js"></script>
+<script type="text/javascript" src="model.js"></script>
+<script type="text/javascript" src="material.js"></script>
+<script type="text/javascript" src="transform.js"></script>
 
 
 
@@ -229,136 +233,6 @@
 
       }
     }
-///////////////////////////////////////////////////////////////////////////////
-// Material Class
-///////////////////////////////////////////////////////////////////////////////
-function Material(gl){
-  this.gl = gl;
-  this.shader = new ShaderProgram(gl);
-  this.texture = new Texture(gl);
-  
-}
-
-Material.prototype.setShader = function(shader){
-  this.shader = shader;
-}
-
-Material.prototype.setTexture = function(texture){
-  this.texture = texture;
-}
-
-Material.prototype.bind = function(mesh){
-  this.shader.bind(mesh);
-}
-
-Material.prototype.setUniforms = function(mv, mvIT, p){
-  this.shader.setUniforms(mv, mvIT, p);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Model Class
-///////////////////////////////////////////////////////////////////////////////
-function Model(gl){
-  this.gl = gl;
-  this.material = new Material(gl);
-  this.mesh = new Mesh(gl);
-  this.transform = new Transform();
-  
-}
-
-
-Model.prototype.draw = function(projMat){
- 
-  this.material.bind(this.mesh);
-  this.material.setUniforms(this.transform.matrix.m,this.transform.inverse.m, projMat.m);
-  this.gl.drawArrays(
-                this.mesh.primitiveType,
-                0, 
-                this.mesh.vertexBuffer.numItems
-                );
-}
-
-
-Model.prototype.bindMaterial = function(){
-        this.material.shader.bind(this.mesh);
-}
-                
-
-Model.prototype.setMaterial = function(material){
-  this.shader = shader;
-}
-
-Model.prototype.setMesh = function(mesh){
-  this.mesh = mesh;
-}
-
-Model.prototype.setTransform = function(transform){
-  this.transform = transform;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Transform Class
-///////////////////////////////////////////////////////////////////////////////
-function Transform(){
-  this.matrix = new Matrix44();
-  this.inverse = new Matrix44();
-  this.inverseTranspose = new Matrix44();
-  this.position = new Vector3(0.0, 0.0, 0.0);
-  this.scale = new Vector3(1.0,1.0,1.0);
-  this.rotation = new Quaternion();
-  
-}
-
-Transform.prototype.update = function(){
-  this.matrix.identity();  
-  //rts
-  this.matrix.translate(this.position.x,this.position.y,this.position.z);
-  this.matrix.rotate(this.rotation);
-  this.matrix.scale(this.scale.x,this.scale.y,this.scale.z);
-
-  this.inverse = this.matrix.clone().invert();
-  this.inverseTranspose = this.inverse.clone().transpose();
-}
-
-Transform.prototype.setPosition = function(p){
-  this.position = p;
-  this.update();
-}
-
-Transform.prototype.setScale = function(s){
-  this.scale = s;
-  this.update();
-}
-
-Transform.prototype.setRotation = function(r){
-  this.rotation = r;
-  this.update();
-}
-
-Transform.prototype.rotateEulerAngles = function(r){
-
-  this.rotation.rotateX(r.x);
-  this.rotation.rotateY(r.y);
-  this.rotation.rotateZ(r.z);
-  this.update();
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Vector3 Class
-///////////////////////////////////////////////////////////////////////////////
-function Vector3(x,y,z){
-  this.x = x; 
-  this.y = y; 
-  this.z = z; 
-}
-
-Model.prototype.set = function(x,y,z){
-  this.x = x;
-  this.y = y;
-  this.z = z;
-}
-
 
 </script>
 
@@ -374,8 +248,14 @@ Model.prototype.set = function(x,y,z){
   Linked Javascript Files:
   <br>
   <a href="matrix.js" target="_blank"> matrix.js</a><br>
+  <a href="math.js" target="_blank"> math.js</a><br>
   <a href="mesh.js" target="_blank"> mesh.js</a><br>
   <a href="shader.js" target="_blank"> shader.js</a><br>
+  <a href="texture.js" target="_blank"> texture.js</a><br>
+  <a href="model.js" target="_blank"> model.js</a><br>
+  <a href="material.js" target="_blank"> material.js</a><br>
+  <a href="transform.js" target="_blank"> transform.js</a><br>
+
 
 </body>
 
