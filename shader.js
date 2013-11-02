@@ -223,7 +223,7 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
 }
 
 
-ShaderProgram.prototype.bindShader = function(mesh){
+ShaderProgram.prototype.bind = function(mesh){
   var gl = this.gl;
   gl.useProgram(this.glProgram);
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);

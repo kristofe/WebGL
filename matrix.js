@@ -1,7 +1,30 @@
 function Matrix44(){
-  this.m = this.identity();
+  this.m = new Float32Array(16);
+  this.identity();
 }
 
+Matrix44.prototype.clone = function(){
+  var o = new Matrix44();
+  o.m[0] = this.m[0];
+  o.m[1] = this.m[1];
+  o.m[2] = this.m[2];
+  o.m[3] = this.m[3];
+  o.m[4] = this.m[4];
+  o.m[5] = this.m[5];
+  o.m[6] = this.m[6];
+  o.m[7] = this.m[7];
+  o.m[8] = this.m[8];
+  o.m[9] = this.m[9];
+  o.m[10] = this.m[10];
+  o.m[11] = this.m[11];
+  o.m[12] = this.m[12];
+  o.m[13] = this.m[13];
+  o.m[14] = this.m[14];
+  o.m[15] = this.m[15];
+
+  return o;
+}
+   
 
 Matrix44.prototype.identity = function(){
   this.m =
@@ -76,6 +99,8 @@ Matrix44.prototype.transpose = function() {
   this.m[12] = a03;
   this.m[13] = a13;
   this.m[14] = a23;
+
+  return this;
 }
 
 //adapted from https://github.com/toji/gl-matrix
@@ -102,7 +127,7 @@ Matrix44.prototype.invert = function() {
       det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 
   if (!det) { 
-      return; 
+      return this; 
   }
   det = 1.0 / det;
 
@@ -122,6 +147,8 @@ Matrix44.prototype.invert = function() {
   this.m[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
   this.m[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
   this.m[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+
+  return this;
 }
 
 Matrix44.prototype.fromQuat = function (q) {
@@ -221,7 +248,7 @@ Matrix44.prototype.rotateY = function(angleInRadians) {
   var c = Math.cos(angleInRadians);
   var s = Math.sin(angleInRadians);
 
-  this.m = [
+  var m = [
     c, 0, -s, 0,
     0, 1, 0, 0,
     s, 0, c, 0,
@@ -233,7 +260,7 @@ Matrix44.prototype.rotateY = function(angleInRadians) {
 Matrix44.prototype.rotateZ = function(angleInRadians) {
   var c = Math.cos(angleInRadians);
   var s = Math.sin(angleInRadians);
-  this.m = [
+  var m = [
      c, s, 0, 0,
     -s, c, 0, 0,
      0, 0, 1, 0,
@@ -243,7 +270,7 @@ Matrix44.prototype.rotateZ = function(angleInRadians) {
 }
 
 Matrix44.prototype.scale = function(sx, sy, sz) {
-  this.m = [
+  var m = [
     sx, 0,  0,  0,
     0, sy,  0,  0,
     0,  0, sz,  0,

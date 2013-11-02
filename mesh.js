@@ -106,8 +106,8 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
       vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext);
     }
   }
-  console.log(vertices);
-  console.log(slices, stacks);
+  //console.log(vertices);
+  //console.log(slices, stacks);
 
   return vertices;
 }
@@ -157,8 +157,8 @@ Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
     ypos += yinc;
     xpos = 0.0;
   }
-  console.log(vertices);
-  console.log(n, m);
+  //console.log(vertices);
+  //console.log(n, m);
 
   return vertices;
 }
