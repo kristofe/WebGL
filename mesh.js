@@ -13,7 +13,7 @@ function Mesh(gl) {
 Mesh.prototype.createSphereMesh = function(slices, stacks){
   this.vertexBuffer = this.createVertexBuffer(
                             this.createSphereMeshData(slices,stacks),
-                            8
+                            16
       );
   return this.vertexBuffer;
 }
@@ -38,7 +38,7 @@ Mesh.prototype.createSphereMeshDataWithIndices = function(slices, stacks){
       var u = 1 - (slice / slices);
       var v = 1 - (stack / stacks);
 
-      vertices.push(x,y,z, x,y,z, u,v);
+      vertices.push(x,y,z, x,y,z, u,v,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
   }
 
@@ -98,13 +98,13 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
       var vNext = 1 - ((stack + 1) / stacks);
 
       //First Triangle
-      vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v);
-      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, v);
-      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext);
+      vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       //Second Triangle
-      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, v);
-      vertices.push(xBottomNext, yBottom, zBottomNext, xBottomNext,yBottom,zBottomNext, uNext, vNext);
-      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext);
+      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xBottomNext, yBottom, zBottomNext, xBottomNext,yBottom,zBottomNext, uNext, vNext, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
   }
   //console.log(vertices);
@@ -116,7 +116,7 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
 Mesh.prototype.createGridMesh = function(n, m, tileUVs){
   this.vertexBuffer = this.createVertexBuffer(
                             this.createTriStripGridMeshData(n,m),
-                            8
+                            16
       );
   return this.vertexBuffer;
 }
@@ -146,14 +146,14 @@ Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
 
       //Part of degenerate triangle
       if(i == 0 && j > 0){
-        vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v);
+        vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       }
-      vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v);
-      vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2);
+      vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       xpos += xinc;
     }
     //Part of degenerate triangle
-    vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2);
+    vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     ypos += yinc;
     xpos = 0.0;
@@ -195,13 +195,13 @@ Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
         var uvu = j;
       }
 
-      vertices.push(lx, dy, zpos, 0.0, 0.0, 1.0, uvl, uvd);
-      vertices.push(rx, dy, zpos, 0.0, 0.0, 1.0, uvr, uvd);
-      vertices.push(rx, uy, zpos, 0.0, 0.0, 1.0, uvr, uvu);
+      vertices.push(lx, dy, zpos, 0.0, 0.0, 1.0, uvl, uvd, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(rx, dy, zpos, 0.0, 0.0, 1.0, uvr, uvd, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(rx, uy, zpos, 0.0, 0.0, 1.0, uvr, uvu, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
-      vertices.push(lx, dy, zpos, 0.0, 0, 1.0, uvl, uvd);
-      vertices.push(rx, uy, zpos, 0.0, 0, 1.0, uvr, uvu);
-      vertices.push(lx, uy, zpos, 0.0, 0, 1.0, uvl, uvu);
+      vertices.push(lx, dy, zpos, 0.0, 0, 1.0, uvl, uvd, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(rx, uy, zpos, 0.0, 0, 1.0, uvr, uvu, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(lx, uy, zpos, 0.0, 0, 1.0, uvl, uvu, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       xpos += xinc;
     }
     ypos += yinc;
@@ -227,8 +227,12 @@ Mesh.prototype.createVertexBuffer = function (vertArray, stride){
   vertexBuffer.positionOffset = 0;
   vertexBuffer.normalElementCount = 3;
   vertexBuffer.normalOffset = 3*Float32Array.BYTES_PER_ELEMENT;
-  vertexBuffer.uvElementCount = 2;
+  vertexBuffer.uvElementCount = 3;
   vertexBuffer.uvOffset = 6*Float32Array.BYTES_PER_ELEMENT;
+  vertexBuffer.uv2ElementCount = 3;
+  vertexBuffer.uv2Offset = 9*Float32Array.BYTES_PER_ELEMENT;
+  vertexBuffer.colorElementCount = 4;
+  vertexBuffer.colorOffset = 12*Float32Array.BYTES_PER_ELEMENT;
   vertexBuffer.numItems = vertArray.length/stride;
 
   return vertexBuffer;

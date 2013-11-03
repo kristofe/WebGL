@@ -11,8 +11,10 @@ function ShaderProgram(gl) {
 
   this.attributeSlots = [
                           ["aVertexPosition", 0 ],
-                          ["aVertexNormal", 1]
-                          ["aVertexUV", 2]
+                          ["aVertexNormal", 1],
+                          ["aVertexUV", 2],
+                          ["aVertexUV2", 3],
+                          ["aVertexColor", 4]
                         ];
   this.uniformSlots = [];
 }
@@ -205,6 +207,14 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
   this.vertexUVAttribute = 
                         gl.getAttribLocation(this.glProgram, "aVertexUV");
   gl.enableVertexAttribArray(this.vertexUVAttribute);
+
+  this.vertexUV2Attribute = 
+                        gl.getAttribLocation(this.glProgram, "aVertexUV2");
+  gl.enableVertexAttribArray(this.vertexUV2Attribute);
+
+  this.vertexColorAttribute = 
+                        gl.getAttribLocation(this.glProgram, "aVertexColor");
+  gl.enableVertexAttribArray(this.vertexColorAttribute);
 
   //---------------------------------------------------------------------------
   // Uniforms
