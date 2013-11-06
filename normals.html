@@ -21,9 +21,12 @@
     varying vec3 vNormal;
     varying vec3 vTangent;
     varying vec4 vVertColor;
+    varying mat3 mNorm;
+
     uniform sampler2D uTexture01;
     uniform sampler2D uTexture02;
     uniform float uTime;
+    uniform mat4 uMVMatrix;
 
     void main(void) {
         vec3 texColor = texture2D(uTexture01, vUV).rgb;
@@ -40,14 +43,18 @@
                       srcNormal.z * vNormal;
 				
 				normal = normalize(normal);
-				vec3 light = normalize(vec3(0.0, 0.1, 1.0));
-				
+				vec3 light = normalize(vec3(0.0, 0.1, -1.0));
+        
 				float d = dot(normal, light);
-        float s = dot(reflect(-light, normal), normalize(-vPosition.xyz));
-        s = pow(s, 16.0);
+        vec3 viewDirection = normalize(vec3(0.0, 0.0, -1.0));
+
+        float s=pow(max(0.0, dot(reflect(-light, normal), viewDirection)),16.0);
+        //float s=pow(dot(reflect(-light, normal), viewDirection),16.0);
+
 				//I know that this is potentially oversaturated
-        vec3 color = texColor * (0.6 + 0.35 * d + 0.35 * s); 
-			
+        vec3 color = texColor * (0.4 + 0.3 * d + 0.3 * s); 
+        //vec3 color = texColor * (0.6 + 0.4 * d);
+
 				gl_FragColor = vec4(color, 1.0);
     }
 
@@ -76,6 +83,7 @@
     varying vec3 vNormal;
     varying vec3 vTangent;
     varying vec4 vVertColor;
+    varying mat3 mNorm;
 
     void main(void) {
         vPosition = uMVMatrix * vec4(aVertexPosition,1.0);
@@ -83,9 +91,10 @@
         //gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         //The line below will ignore any translation of perspective matrix
         //gl_Position =  vec4(aVertexPosition, 1.0);
-        vUV = aVertexUV.xy * 4.0;
+        mNorm = mat3(uMVMatrix[0].xyz, uMVMatrix[1].xyz, uMVMatrix[2].xyz);
+        vUV = aVertexUV.xy * 2.0;
         vec4 norm = vec4(normalize(aVertexNormal),0.0) * uMVInverseTranspose;
-        vNormal = norm.xyz;
+        vNormal = normalize(norm.xyz);
         vec4 tangent = vec4(normalize(aVertexUV2),0.0) * uMVInverseTranspose;
         vTangent = tangent.xyz;
         vVertColor = aVertexColor;
@@ -120,8 +129,10 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         var q = new Quaternion();
-        q.rotateY(currTime);
+        q.rotateZ(currTime*0.2);
+        q.rotateX(currTime*0.2);
         sphereModel.transform.setRotation(q);
+        sphereModel.transform.setScale(new Vector3(2.0, 2.0,2.0));
         sphereModel.transform.setPosition(new Vector3(0.0, 0.0,-5.0));
         sphereModel.draw(pMatrix, currTime);
 
