@@ -97,14 +97,25 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
       var v = 1 - (stack / stacks);
       var vNext = 1 - ((stack + 1) / stacks);
 
+      var tanX = xTopNext - xTop;
+      var tanY = - yTop;
+      var tanZ = zTopNext - zTop;
+
+
       //First Triangle
-      vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v, 0.0, tanX, tanY, 
+          tanZ, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, 
+          v, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, 
+          vNext, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
       //Second Triangle
-      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(xBottomNext, yBottom, zBottomNext, xBottomNext,yBottom,zBottomNext, uNext, vNext, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, vNext, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, 
+          v, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xBottomNext, yBottom, zBottomNext, xBottomNext,yBottom,
+          zBottomNext,uNext, vNext, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, 
+          vNext, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
     }
   }
   //console.log(vertices);
@@ -146,14 +157,18 @@ Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
 
       //Part of degenerate triangle
       if(i == 0 && j > 0){
-        vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 1.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0);
       }
-      vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0);
+      vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 1.0, 0.0, 0.0, 0.0, 
+          0.0, 0.0, 0.0);
       xpos += xinc;
     }
     //Part of degenerate triangle
-    vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0);
 
     ypos += yinc;
     xpos = 0.0;
@@ -195,13 +210,19 @@ Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
         var uvu = j;
       }
 
-      vertices.push(lx, dy, zpos, 0.0, 0.0, 1.0, uvl, uvd, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, dy, zpos, 0.0, 0.0, 1.0, uvr, uvd, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, uy, zpos, 0.0, 0.0, 1.0, uvr, uvu, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(lx, dy, zpos, 0.0, 0.0, 1.0, uvl, uvd, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0);
+      vertices.push(rx, dy, zpos, 0.0, 0.0, 1.0, uvr, uvd, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0);
+      vertices.push(rx, uy, zpos, 0.0, 0.0, 1.0, uvr, uvu, 0.0, 0.0, 0.0, 0.0,
+          0.0, 0.0, 0.0, 0.0);
 
-      vertices.push(lx, dy, zpos, 0.0, 0, 1.0, uvl, uvd, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, uy, zpos, 0.0, 0, 1.0, uvr, uvu, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(lx, uy, zpos, 0.0, 0, 1.0, uvl, uvu, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(lx, dy, zpos, 0.0, 0, 1.0, uvl, uvd, 0.0, 0.0, 0.0, 0.0, 
+          0.0, 0.0, 0.0, 0.0);
+      vertices.push(rx, uy, zpos, 0.0, 0, 1.0, uvr, uvu, 0.0, 0.0, 0.0, 0.0, 
+          0.0, 0.0, 0.0, 0.0);
+      vertices.push(lx, uy, zpos, 0.0, 0, 1.0, uvl, uvu, 0.0, 0.0, 0.0, 0.0, 
+          0.0, 0.0, 0.0, 0.0);
       xpos += xinc;
     }
     ypos += yinc;

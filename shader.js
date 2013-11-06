@@ -286,8 +286,8 @@ ShaderProgram.prototype.setUniforms = function(mv, mvIT, p, pTime) {
   gl.uniformMatrix4fv(this.pMatrixUniform, false, p);
   gl.uniformMatrix4fv(this.mvMatrixUniform, false, mv);
   gl.uniformMatrix4fv(this.mvInverseTransposeUniform, false, mvIT);
-  gl.uniform1i(this.texture01, false, 0);
-  gl.uniform1i(this.texture02, false, 1);
+  gl.uniform1i(this.texture01,0);
+  gl.uniform1i(this.texture02,1);
   gl.uniform1f(this.time, pTime);
 
 }
