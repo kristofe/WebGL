@@ -26,7 +26,7 @@ Texture.prototype.loadTextureComplete = function(){
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.image);
 }
 
-Texture.prototype.activateTexture = function() {
+Texture.prototype.activate = function() {
   gl.activeTexture(gl.TEXTURE0 + this.glTextureUnit);
   gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
 }

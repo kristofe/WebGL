@@ -230,6 +230,8 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
                                                        "uTexture01");
   this.texture02 =gl.getUniformLocation(this.glProgram, 
                                                        "uTexture02");
+  this.time =gl.getUniformLocation(this.glProgram, 
+                                                       "uTime");
 }
 
 
@@ -261,14 +263,31 @@ ShaderProgram.prototype.bind = function(mesh){
                         mesh.vertexBuffer.stride, 
                         mesh.vertexBuffer.uvOffset 
                         );
+  gl.vertexAttribPointer(
+                        this.vertexUV2Attribute, 
+                        mesh.vertexBuffer.uv2ElementCount, 
+                        gl.FLOAT, 
+                        false, 
+                        mesh.vertexBuffer.stride, 
+                        mesh.vertexBuffer.uv2Offset 
+                        );
+  gl.vertexAttribPointer(
+                        this.vertexColorAttribute, 
+                        mesh.vertexBuffer.colorElementCount, 
+                        gl.FLOAT, 
+                        false, 
+                        mesh.vertexBuffer.stride, 
+                        mesh.vertexBuffer.colorOffset 
+                        );
 }
 
-ShaderProgram.prototype.setUniforms = function(mv, mvIT, p) {
+ShaderProgram.prototype.setUniforms = function(mv, mvIT, p, pTime) {
   var gl = this.gl;
   gl.uniformMatrix4fv(this.pMatrixUniform, false, p);
   gl.uniformMatrix4fv(this.mvMatrixUniform, false, mv);
   gl.uniformMatrix4fv(this.mvInverseTransposeUniform, false, mvIT);
   gl.uniform1i(this.texture01, false, 0);
   gl.uniform1i(this.texture02, false, 1);
+  gl.uniform1f(this.time, pTime);
 
 }

@@ -146,14 +146,14 @@ Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
 
       //Part of degenerate triangle
       if(i == 0 && j > 0){
-        vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       }
-      vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       xpos += xinc;
     }
     //Part of degenerate triangle
-    vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     ypos += yinc;
     xpos = 0.0;
