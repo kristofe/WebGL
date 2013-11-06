@@ -4,6 +4,7 @@ function Texture(gl) {
   this.glTextureUnit = 0;
   this.image = {};
   this.name = "";
+  this.loaded = false;
 }
 
 Texture.prototype.load = function(name, unit) {
@@ -22,12 +23,17 @@ Texture.prototype.loadTextureComplete = function(){
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
   gl.activeTexture(gl.TEXTURE0 + this.glTextureUnit);
   gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, this.image);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  this.loaded = true;
 }
 
 Texture.prototype.activate = function() {
-  gl.activeTexture(gl.TEXTURE0 + this.glTextureUnit);
-  gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+  if(this.loaded){
+    gl.activeTexture(gl.TEXTURE0 + this.glTextureUnit);
+    gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+  }
 }
 
