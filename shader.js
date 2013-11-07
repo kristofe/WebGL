@@ -224,8 +224,10 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
                                                       "uPMatrix");
   this.mvMatrixUniform =gl.getUniformLocation(this.glProgram, 
                                                        "uMVMatrix");
-  this.mvInverseTransposeUniform =gl.getUniformLocation(this.glProgram, 
-                                                       "uMVInverseTranspose");
+  this.mInverse =gl.getUniformLocation(this.glProgram, 
+                                                       "uInverse");
+  this.mInverseTranspose =gl.getUniformLocation(this.glProgram, 
+                                                       "uInverseTranspose");
   this.texture01 =gl.getUniformLocation(this.glProgram, 
                                                        "uTexture01");
   this.texture02 =gl.getUniformLocation(this.glProgram, 
@@ -281,11 +283,12 @@ ShaderProgram.prototype.bind = function(mesh){
                         );
 }
 
-ShaderProgram.prototype.setUniforms = function(mv, mvIT, p, pTime) {
+ShaderProgram.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p, pTime) {
   var gl = this.gl;
   gl.uniformMatrix4fv(this.pMatrixUniform, false, p);
   gl.uniformMatrix4fv(this.mvMatrixUniform, false, mv);
-  gl.uniformMatrix4fv(this.mvInverseTransposeUniform, false, mvIT);
+  gl.uniformMatrix4fv(this.mInverse, false, mInverse);
+  gl.uniformMatrix4fv(this.mInverseTranspose, false, mInverseTranspose);
   gl.uniform1i(this.texture01,0);
   gl.uniform1i(this.texture02,1);
   gl.uniform1f(this.time, pTime);

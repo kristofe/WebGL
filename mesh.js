@@ -97,25 +97,43 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
       var v = 1 - (stack / stacks);
       var vNext = 1 - ((stack + 1) / stacks);
 
-      var tanX = xTopNext - xTop;
-      var tanY = - yTop;
-      var tanZ = zTopNext - zTop;
 
+      var topPos = new Vector3(xTop, yTop, zTop);
+      var topNextPos = new Vector3(xTopNext, yTop, zTopNext);
+      var bottomPos = new Vector3(xBottom, yBottom, zBottom);
+      var bottomNextPos = new Vector3(xBottomNext, yBottom, zBottomNext);
+
+      topPos.normalize();
+      topNextPos.normalize();
+      bottomPos.normalize();
+      bottomNextPos.normalize();
+
+      var topTan = topPos.getTangent();
+      var topNextTan = topNextPos.getTangent();
+      var bottomTan = bottomPos.getTangent();
+      var bottomNextTan = bottomNextPos.getTangent();
+      
+      var dot = Math.abs(Vector3.dot(topTan,topPos));
+      if(dot > 0.001){
+        console.error("sphere tangent is not orthogonal to normal");
+        console.error(topTan, topPos, dot);
+
+      }
 
       //First Triangle
-      vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v, 0.0, tanX, tanY, 
-          tanZ, 0.0, 0.0, 0.0, 0.0);
+      vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v, 0.0, topTan.x, topTan.y, 
+          topTan.z, 0.0, 0.0, 0.0, 0.0);
       vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, 
-          v, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
+          v, 0.0, topNextTan.x, topNextTan.y, topNextTan.z, 0.0, 0.0, 0.0, 0.0);
       vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, 
-          vNext, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
+          vNext, 0.0, bottomTan.x, bottomTan.y, bottomTan.z, 0.0, 0.0, 0.0, 0.0);
       //Second Triangle
       vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, 
-          v, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
+          v, 0.0, topNextTan.x, topNextTan.y, topNextTan.z, 0.0, 0.0, 0.0, 0.0);
       vertices.push(xBottomNext, yBottom, zBottomNext, xBottomNext,yBottom,
-          zBottomNext,uNext, vNext, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
+          zBottomNext,uNext, vNext, 0.0, bottomNextTan.x, bottomNextTan.y, bottomNextTan.z, 0.0, 0.0, 0.0, 0.0);
       vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, 
-          vNext, 0.0, tanX, tanY, tanZ, 0.0, 0.0, 0.0, 0.0);
+          vNext, 0.0, bottomTan.x, bottomTan.y, bottomTan.z, 0.0, 0.0, 0.0, 0.0);
     }
   }
   //console.log(vertices);
@@ -260,5 +278,69 @@ Mesh.prototype.createVertexBuffer = function (vertArray, stride){
 } 
 
 
-
-
+/*
+void CalculateTangentArray(long vertexCount, const Point3D *vertex, const Vector3D *normal,
+        const Point2D *texcoord, long triangleCount, const Triangle *triangle, Vector4D *tangent)
+{
+    Vector3D *tan1 = new Vector3D[vertexCount * 2];
+    Vector3D *tan2 = tan1 + vertexCount;
+    ZeroMemory(tan1, vertexCount * sizeof(Vector3D) * 2);
+    
+    for (long a = 0; a < triangleCount; a++)
+    {
+        long i1 = triangle->index[0];
+        long i2 = triangle->index[1];
+        long i3 = triangle->index[2];
+        
+        const Point3D& v1 = vertex[i1];
+        const Point3D& v2 = vertex[i2];
+        const Point3D& v3 = vertex[i3];
+        
+        const Point2D& w1 = texcoord[i1];
+        const Point2D& w2 = texcoord[i2];
+        const Point2D& w3 = texcoord[i3];
+        
+        float x1 = v2.x - v1.x;
+        float x2 = v3.x - v1.x;
+        float y1 = v2.y - v1.y;
+        float y2 = v3.y - v1.y;
+        float z1 = v2.z - v1.z;
+        float z2 = v3.z - v1.z;
+        
+        float s1 = w2.x - w1.x;
+        float s2 = w3.x - w1.x;
+        float t1 = w2.y - w1.y;
+        float t2 = w3.y - w1.y;
+        
+        float r = 1.0F / (s1 * t2 - s2 * t1);
+        Vector3D sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r,
+                (t2 * z1 - t1 * z2) * r);
+        Vector3D tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,
+                (s1 * z2 - s2 * z1) * r);
+        
+        tan1[i1] += sdir;
+        tan1[i2] += sdir;
+        tan1[i3] += sdir;
+        
+        tan2[i1] += tdir;
+        tan2[i2] += tdir;
+        tan2[i3] += tdir;
+        
+        triangle++;
+    }
+    
+    for (long a = 0; a < vertexCount; a++)
+    {
+        const Vector3D& n = normal[a];
+        const Vector3D& t = tan1[a];
+        
+        // Gram-Schmidt orthogonalize
+        tangent[a] = (t - n * Dot(n, t)).Normalize();
+        
+        // Calculate handedness
+        tangent[a].w = (Dot(Cross(n, t), tan2[a]) < 0.0F) ? -1.0F : 1.0F;
+    }
+    
+    delete[] tan1;
+}
+*/

@@ -1,7 +1,7 @@
 function Transform(){
   this.matrix = new Matrix44();
   this.inverse = new Matrix44();
-  this.inverseTranspose = new Matrix44();
+  this.inverseTranspose = new Matrix33();
   this.position = new Vector3(0.0, 0.0, 0.0);
   this.scale = new Vector3(1.0,1.0,1.0);
   this.rotation = new Quaternion();

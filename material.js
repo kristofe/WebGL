@@ -30,8 +30,8 @@ Material.prototype.bind = function(mesh){
   this.shader.bind(mesh);
 }
 
-Material.prototype.setUniforms = function(mv, mvIT, p, time){
-  this.shader.setUniforms(mv, mvIT, p, time);
+Material.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p, time){
+  this.shader.setUniforms(mv, mInverse, mInverseTranspose, p, time);
 }
 
 

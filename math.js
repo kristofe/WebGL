@@ -10,6 +10,68 @@ Vector3.prototype.set = function(x,y,z){
   this.z = z;
 }
 
+Vector3.prototype.clone = function() {
+  var out = new Vector3(0.0, 0.0, 0.0);
+  out.x = this.x;
+  out.y = this.y;
+  out.z = this.z;
+
+  return out;
+}
+
+Vector3.cross = function(a,b) {
+  var out = new Vector3(0,0,0);
+  var ax = a.x, ay = a.y, az = a.z,
+      bx = b.x, by = b.y, bz = b.z;
+
+  out.x = ay * bz - az * by;
+  out.y = az * bx - ax * bz;
+  out.z = ax * by - ay * bx;
+  return out;
+}
+
+Vector3.dot = function(a,b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+Vector3.prototype.getTangent = function() {
+  //start with up vector
+  var other = new Vector3(0.0, 1.0, 0.0);
+  var dir = this.clone();
+  dir = dir.normalize();
+
+  /*
+  var d = Vector3.dot(dir,other);
+  if(Math.abs(d) > 0.9) {
+    other.set(1.0, 0.0, 0.0);
+  }
+  */
+
+  var tan = Vector3.cross(dir,other);
+
+  return other;
+
+}
+
+Vector3.prototype.normalize = function() {
+  var len = this.dot(this);
+  len = Math.sqrt(len);
+  if(len > 0.0) {
+    this.x /= len; 
+    this.y /= len; 
+    this.z /= len; 
+  }
+  return this;
+}
+
+Vector3.prototype.dot = function(other) {
+  return Vector3.dot(this, other);
+}
+
+Vector3.prototype.cross = function(other) {
+    return Vector3.cross(this,other);
+}
+
 
 function Matrix44(){
   this.m = new Float32Array(16);
@@ -174,7 +236,7 @@ Matrix44.prototype.invert = function() {
 
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.fromQuat = function (q) {
-  var x = q[0], y = q[1], z = q[2], w = q[3],
+  var x = q.x, y = q.y, z = q.z, w = q.w,
       x2 = x + x,
       y2 = y + y,
       z2 = z + z,
@@ -325,7 +387,7 @@ Matrix44.prototype.postMultiply = function(b) {
   var a30 = this.m[3*4+0];
   var a31 = this.m[3*4+1];
   var a32 = this.m[3*4+2];
-  var a33 = a[3*4+3];
+  var a33 = this.m[3*4+3];
   var b00 = b[0*4+0];
   var b01 = b[0*4+1];
   var b02 = b[0*4+2];
@@ -426,12 +488,22 @@ function Quaternion() {
   this.w = 1.0;
 }
 
+Quaternion.prototype.clone = function() {
+  var q = new Quaternion();
+  q.x = this.x;
+  q.y = this.y;
+  q.z = this.z;
+  q.w = this.w;
+  return q;
+}
+
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.identity = function() {
   this.x = 0.0;
   this.y = 0.0;
   this.z = 0.0;
   this.w = 1.0;
+  return this;
 }
 
 
@@ -443,6 +515,7 @@ Quaternion.prototype.setAxisAngle = function(axis, rad) {
     this.y = s * axis.y;
     this.z = s * axis.z;
     this.w = Math.cos(rad);
+  return this;
 };
 
 
@@ -455,6 +528,7 @@ Quaternion.prototype.multiply = function( b) {
     this.y = ay * bw + aw * by + az * bx - ax * bz;
     this.z = az * bw + aw * bz + ax * by - ay * bx;
     this.w = aw * bw - ax * bx - ay * by - az * bz;
+  return this;
 };
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
@@ -468,6 +542,7 @@ Quaternion.prototype.rotateX = function (rad) {
     this.y = ay * bw + az * bx;
     this.z = az * bw - ay * bx;
     this.w = aw * bw - ax * bx;
+  return this;
 };
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
@@ -481,6 +556,7 @@ Quaternion.prototype.rotateY = function (rad) {
     this.y = ay * bw + aw * by;
     this.z = az * bw + ax * by;
     this.w = aw * bw - ay * by;
+  return this;
 };
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
@@ -494,6 +570,7 @@ Quaternion.prototype.rotateZ = function (rad) {
     this.y = ay * bw - ax * bz;
     this.z = az * bw + aw * bz;
     this.w = aw * bw - az * bz;
+  return this;
 };
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
@@ -504,6 +581,7 @@ Quaternion.prototype.calculateW = function (a) {
     this.y = y;
     this.z = z;
     this.w = -Math.sqrt(Math.abs(1.0 - x * x - y * y - z * z));
+  return this;
 };
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
@@ -541,6 +619,7 @@ Quaternion.prototype.slerp = function (b, t) {
     this.y = scale0 * ay + scale1 * by;
     this.z = scale0 * az + scale1 * bz;
     this.w = scale0 * aw + scale1 * bw;
+  return this;
 };
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
@@ -555,6 +634,7 @@ Quaternion.prototype.invert = function() {
     this.y = -a1*invDot;
     this.z = -a2*invDot;
     this.w = a3*invDot;
+  return this;
 };
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
@@ -563,5 +643,316 @@ Quaternion.prototype.conjugate = function () {
     this.y = -this.y;
     this.z = -this.z;
     this.w = this.w;
+  return this;
 };
 
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+function Matrix33() {
+  this.m = new Float32Array(9);
+  this.m[0] = 1;
+  this.m[1] = 0;
+  this.m[2] = 0;
+  this.m[3] = 0;
+  this.m[4] = 1;
+  this.m[5] = 0;
+  this.m[6] = 0;
+  this.m[7] = 0;
+  this.m[8] = 1;
+};
+
+Matrix33.prototype.fromMatrix44 = function(p) {
+  var a = p.m;
+    this.m[0] = a[0];
+    this.m[1] = a[1];
+    this.m[2] = a[2];
+    this.m[3] = a[4];
+    this.m[4] = a[5];
+    this.m[5] = a[6];
+    this.m[6] = a[8];
+    this.m[7] = a[9];
+    this.m[8] = a[10];
+    return this;
+};
+
+Matrix33.prototype.clone = function() {
+    var out = new Float32Array(9);
+    out[0] = this.m[0];
+    out[1] = this.m[1];
+    out[2] = this.m[2];
+    out[3] = this.m[3];
+    out[4] = this.m[4];
+    out[5] = this.m[5];
+    out[6] = this.m[6];
+    out[7] = this.m[7];
+    out[8] = this.m[8];
+    return out;
+};
+
+Matrix33.prototype.copy = function(p) {
+  var a = p.m;
+    this.m[0] = a[0];
+    this.m[1] = a[1];
+    this.m[2] = a[2];
+    this.m[3] = a[3];
+    this.m[4] = a[4];
+    this.m[5] = a[5];
+    this.m[6] = a[6];
+    this.m[7] = a[7];
+    this.m[8] = a[8];
+    return this;
+};
+
+Matrix33.prototype.identity = function() {
+    this.m[0] = 1;
+    this.m[1] = 0;
+    this.m[2] = 0;
+    this.m[3] = 0;
+    this.m[4] = 1;
+    this.m[5] = 0;
+    this.m[6] = 0;
+    this.m[7] = 0;
+    this.m[8] = 1;
+    return this;
+};
+
+Matrix33.prototype.transpose = function() {
+    var a01 = this.m[1], a02 = this.m[2], a12 = this.m[5];
+    this.m[1] = this.m[3];
+    this.m[2] = this.m[6];
+    this.m[3] = a01;
+    this.m[5] = this.m[7];
+    this.m[6] = a02;
+    this.m[7] = a12;
+
+    return this;
+};
+
+Matrix33.prototype.invert = function() {
+    var a00 = this.m[0], a01 = this.m[1], a02 = this.m[2],
+        a10 = this.m[3], a11 = this.m[4], a12 = this.m[5],
+        a20 = this.m[6], a21 = this.m[7], a22 = this.m[8],
+
+        b01 = a22 * a11 - a12 * a21,
+        b11 = -a22 * a10 + a12 * a20,
+        b21 = a21 * a10 - a11 * a20,
+
+        // Calculate the determinant
+        det = a00 * b01 + a01 * b11 + a02 * b21;
+
+    if (!det) { 
+        return null; 
+    }
+    det = 1.0 / det;
+
+    this.m[0] = b01 * det;
+    this.m[1] = (-a22 * a01 + a02 * a21) * det;
+    this.m[2] = (a12 * a01 - a02 * a11) * det;
+    this.m[3] = b11 * det;
+    this.m[4] = (a22 * a00 - a02 * a20) * det;
+    this.m[5] = (-a12 * a00 + a02 * a10) * det;
+    this.m[6] = b21 * det;
+    this.m[7] = (-a21 * a00 + a01 * a20) * det;
+    this.m[8] = (a11 * a00 - a01 * a10) * det;
+    return this;
+};
+
+/*
+mat3.adjoint = function(out, a) {
+    var a00 = a[0], a01 = a[1], a02 = a[2],
+        a10 = a[3], a11 = a[4], a12 = a[5],
+        a20 = a[6], a21 = a[7], a22 = a[8];
+
+    out[0] = (a11 * a22 - a12 * a21);
+    out[1] = (a02 * a21 - a01 * a22);
+    out[2] = (a01 * a12 - a02 * a11);
+    out[3] = (a12 * a20 - a10 * a22);
+    out[4] = (a00 * a22 - a02 * a20);
+    out[5] = (a02 * a10 - a00 * a12);
+    out[6] = (a10 * a21 - a11 * a20);
+    out[7] = (a01 * a20 - a00 * a21);
+    out[8] = (a00 * a11 - a01 * a10);
+    return out;
+};
+
+mat3.determinant = function (a) {
+    var a00 = a[0], a01 = a[1], a02 = a[2],
+        a10 = a[3], a11 = a[4], a12 = a[5],
+        a20 = a[6], a21 = a[7], a22 = a[8];
+
+    return a00 * (a22 * a11 - a12 * a21) + a01 * (-a22 * a10 + a12 * a20) + a02 * (a21 * a10 - a11 * a20);
+};
+
+mat3.multiply = function (out, a, b) {
+    var a00 = a[0], a01 = a[1], a02 = a[2],
+        a10 = a[3], a11 = a[4], a12 = a[5],
+        a20 = a[6], a21 = a[7], a22 = a[8],
+
+        b00 = b[0], b01 = b[1], b02 = b[2],
+        b10 = b[3], b11 = b[4], b12 = b[5],
+        b20 = b[6], b21 = b[7], b22 = b[8];
+
+    out[0] = b00 * a00 + b01 * a10 + b02 * a20;
+    out[1] = b00 * a01 + b01 * a11 + b02 * a21;
+    out[2] = b00 * a02 + b01 * a12 + b02 * a22;
+
+    out[3] = b10 * a00 + b11 * a10 + b12 * a20;
+    out[4] = b10 * a01 + b11 * a11 + b12 * a21;
+    out[5] = b10 * a02 + b11 * a12 + b12 * a22;
+
+    out[6] = b20 * a00 + b21 * a10 + b22 * a20;
+    out[7] = b20 * a01 + b21 * a11 + b22 * a21;
+    out[8] = b20 * a02 + b21 * a12 + b22 * a22;
+    return out;
+};
+
+
+mat3.translate = function(out, a, v) {
+    var a00 = a[0], a01 = a[1], a02 = a[2],
+        a10 = a[3], a11 = a[4], a12 = a[5],
+        a20 = a[6], a21 = a[7], a22 = a[8],
+        x = v[0], y = v[1];
+
+    out[0] = a00;
+    out[1] = a01;
+    out[2] = a02;
+
+    out[3] = a10;
+    out[4] = a11;
+    out[5] = a12;
+
+    out[6] = x * a00 + y * a10 + a20;
+    out[7] = x * a01 + y * a11 + a21;
+    out[8] = x * a02 + y * a12 + a22;
+    return out;
+};
+mat3.rotate = function (out, a, rad) {
+    var a00 = a[0], a01 = a[1], a02 = a[2],
+        a10 = a[3], a11 = a[4], a12 = a[5],
+        a20 = a[6], a21 = a[7], a22 = a[8],
+
+        s = Math.sin(rad),
+        c = Math.cos(rad);
+
+    out[0] = c * a00 + s * a10;
+    out[1] = c * a01 + s * a11;
+    out[2] = c * a02 + s * a12;
+
+    out[3] = c * a10 - s * a00;
+    out[4] = c * a11 - s * a01;
+    out[5] = c * a12 - s * a02;
+
+    out[6] = a20;
+    out[7] = a21;
+    out[8] = a22;
+    return out;
+};
+
+mat3.scale = function(out, a, v) {
+    var x = v[0], y = v[1];
+
+    out[0] = x * a[0];
+    out[1] = x * a[1];
+    out[2] = x * a[2];
+
+    out[3] = y * a[3];
+    out[4] = y * a[4];
+    out[5] = y * a[5];
+
+    out[6] = a[6];
+    out[7] = a[7];
+    out[8] = a[8];
+    return out;
+};
+
+mat3.fromMat2d = function(out, a) {
+    out[0] = a[0];
+    out[1] = a[1];
+    out[2] = 0;
+
+    out[3] = a[2];
+    out[4] = a[3];
+    out[5] = 0;
+
+    out[6] = a[4];
+    out[7] = a[5];
+    out[8] = 1;
+    return out;
+};
+
+mat3.fromQuat = function (out, q) {
+    var x = q[0], y = q[1], z = q[2], w = q[3],
+        x2 = x + x,
+        y2 = y + y,
+        z2 = z + z,
+
+        xx = x * x2,
+        xy = x * y2,
+        xz = x * z2,
+        yy = y * y2,
+        yz = y * z2,
+        zz = z * z2,
+        wx = w * x2,
+        wy = w * y2,
+        wz = w * z2;
+
+    out[0] = 1 - (yy + zz);
+    out[3] = xy + wz;
+    out[6] = xz - wy;
+
+    out[1] = xy - wz;
+    out[4] = 1 - (xx + zz);
+    out[7] = yz + wx;
+
+    out[2] = xz + wy;
+    out[5] = yz - wx;
+    out[8] = 1 - (xx + yy);
+
+    return out;
+};
+*/
+
+Matrix33.prototype.normalFromMatrix44 = function (p) {
+    var a = p.m;
+    var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
+        a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
+        a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
+        a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15],
+
+        b00 = a00 * a11 - a01 * a10,
+        b01 = a00 * a12 - a02 * a10,
+        b02 = a00 * a13 - a03 * a10,
+        b03 = a01 * a12 - a02 * a11,
+        b04 = a01 * a13 - a03 * a11,
+        b05 = a02 * a13 - a03 * a12,
+        b06 = a20 * a31 - a21 * a30,
+        b07 = a20 * a32 - a22 * a30,
+        b08 = a20 * a33 - a23 * a30,
+        b09 = a21 * a32 - a22 * a31,
+        b10 = a21 * a33 - a23 * a31,
+        b11 = a22 * a33 - a23 * a32,
+
+        // Calculate the determinant
+        det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+
+    if (!det) { 
+        return this; 
+    }
+    det = 1.0 / det;
+
+    this.m[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+    this.m[1] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+    this.m[2] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+
+    this.m[3] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+    this.m[4] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+    this.m[5] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+
+    this.m[6] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+    this.m[7] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+    this.m[8] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+
+    return this;
+};
