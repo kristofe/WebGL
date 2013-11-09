@@ -6,6 +6,7 @@ function Mesh(gl) {
   this.vertexBuffer = -1;
   this.indexBuffer = -1;
   this.primitiveType = gl.TRIANGLES;
+  this.stride = 16;
 
 
 }
@@ -13,7 +14,7 @@ function Mesh(gl) {
 Mesh.prototype.createSphereMesh = function(slices, stacks){
   this.vertexBuffer = this.createVertexBuffer(
                             this.createSphereMeshData(slices,stacks),
-                            16
+                            this.stride
       );
   return this.vertexBuffer;
 }
@@ -113,13 +114,6 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
       var bottomTan = bottomPos.getTangent();
       var bottomNextTan = bottomNextPos.getTangent();
       
-      var dot = Math.abs(Vector3.dot(topTan,topPos));
-      if(dot > 0.001){
-        console.error("sphere tangent is not orthogonal to normal");
-        console.error(topTan, topPos, dot);
-
-      }
-
       //First Triangle
       vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v, 0.0, topTan.x, topTan.y, 
           topTan.z, 0.0, 0.0, 0.0, 0.0);
@@ -138,6 +132,7 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
   }
   //console.log(vertices);
   //console.log(slices, stacks);
+  this.calculateTangents(vertices);
 
   return vertices;
 }
@@ -278,7 +273,99 @@ Mesh.prototype.createVertexBuffer = function (vertArray, stride){
 } 
 
 
+Mesh.prototype.calculateTangents = function(verts)
+{
+  if(this.primitiveType != this.gl.TRIANGLES){
+    console.error("Can't create tangents for mesh that isn't GL_TRIANGLES");
+    return;
+  }
+
+  var vertexCount = verts.length / this.stride; 
+  var triCount = vertexCount / 3; //Assuming gl.TRIANGLES
+
+  var tan1 = new Float32Array(vertexCount);
+  var tan2 = new Float32Array(vertexCount);
+
+  for(var triID = 0; triID < triCount; triID++){
+    var i1 = triID * this.stride * 3;
+    var i2 =  i1 + this.stride;
+    var i3 =  i2 + this.stride;
+
+    //pos(3) normal(3) UV1(3) UV2(3) COLOR(4)
+    var v1 = new Vector3(verts[i1], verts[i1+1], verts[i1 + 2]);  
+    var w1 = new Vector2(verts[i1 + 6], verts[i1+7]);
+
+    var v2 = new Vector3(verts[i2], verts[i2+1], verts[i2 + 2]);  
+    var w2 = new Vector2(verts[i2 + 6], verts[i2+7]);
+
+    var v3 = new Vector3(verts[i3], verts[i3+1], verts[i3 + 2]);  
+    var w3 = new Vector2(verts[i3 + 6], verts[i3+7]);
+
+    var x1 = v2.x - v1.x;
+    var x2 = v3.x - v1.x;
+    var y1 = v2.y - v1.y;
+    var y2 = v3.y - v1.y;
+    var z1 = v2.z - v1.z;
+    var z2 = v3.z - v1.z;
+    
+    var s1 = w2.x - w1.x;
+    var s2 = w3.x - w1.x;
+    var t1 = w2.y - w1.y;
+    var t2 = w3.y - w1.y;
+    
+    var r = 1.0 / (s1 * t2 - s2 * t1);
+    var sdir = new Vector3((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r,
+            (t2 * z1 - t1 * z2) * r);
+    var tdir = new Vector3((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r,
+            (s1 * z2 - s2 * z1) * r);
+    
+    tan1[i1/this.stride] += sdir;
+    tan1[i2/this.stride] += sdir;
+    tan1[i3/this.stride] += sdir;
+    
+    tan2[i1/this.stride] += tdir;
+    tan2[i2/this.stride] += tdir;
+    tan2[i3/this.stride] += tdir;
+
+  }
+
+   for (var i = 0; i < vertexCount; i++)
+    {
+      var a = i * this.stride;
+      var tidx = i * 3;//Stride in tan arrays is 3
+
+      //pos(3) normal(3) UV1(3) UV2(3) COLOR(4)
+      var n = new Vector3(verts[a], verts[a+1], verts[a+2]);
+
+      var t1 = new Vector3(tan1[tidx], tan1[tidx+1], tan1[tidx+2]);
+      var t2 = new Vector3(tan2[tidx], tan2[tidx+1], tan2[tidx+2]);
+        
+      // Gram-Schmidt orthogonalize
+      var tangent = new Vector4(0,0,0,0);
+      var dnt1 = Vector3.dot(n, t1);
+      var tangent = t1.subtract(n).multiply(dnt1).normalize();
+
+      //tangent[a] = (t - n * Dot(n, t)).Normalize();
+      
+      // Calculate handedness
+      tangent.w = (Vector3.dot(Vector3.cross(n, t1), t2) < 0.0) ? -1.0 : 1.0;
+
+      verts[i + 9] = tangent.x;
+      verts[i + 10] = tangent.y;
+      verts[i + 11] = tangent.z;
+
+      verts[i + 12] = tangent.x;
+      verts[i + 13] = tangent.y;
+      verts[i + 14] = tangent.z;
+      verts[i + 15] = tangent.w;
+    }
+    
+
+
+}
+
 /*
+
 void CalculateTangentArray(long vertexCount, const Point3D *vertex, const Vector3D *normal,
         const Point2D *texcoord, long triangleCount, const Triangle *triangle, Vector4D *tangent)
 {

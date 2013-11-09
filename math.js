@@ -1,3 +1,39 @@
+function Vector2(x,y){
+  this.x = x; 
+  this.y = y; 
+}
+
+Vector2.prototype.set = function(x,y){
+  this.x = x;
+  this.y = y;
+}
+
+Vector2.prototype.clone = function() {
+  var out = new Vector2(0.0, 0.0);
+  out.x = this.x;
+  out.y = this.y;
+
+  return out;
+}
+
+Vector2.dot = function(a,b) {
+  return a.x * b.x + a.y * b.y;
+}
+
+Vector2.prototype.normalize = function() {
+  var len = this.dot(this);
+  len = Math.sqrt(len);
+  if(len > 0.0) {
+    this.x /= len; 
+    this.y /= len; 
+  }
+  return this;
+}
+
+Vector2.prototype.dot = function(other) {
+  return Vector2.dot(this, other);
+}
+
 function Vector3(x,y,z){
   this.x = x; 
   this.y = y; 
@@ -33,6 +69,49 @@ Vector3.cross = function(a,b) {
 Vector3.dot = function(a,b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
+
+Vector3.prototype.add = function(a){
+  var r = Vector3.add(this,a);
+  this.set(r.x, r.y, r.z);
+  return this;
+}
+
+Vector3.prototype.subtract = function(a){
+  var r = Vector3.subtract(this,a);
+  this.set(r.x, r.y, r.z);
+  return this;
+}
+
+Vector3.prototype.multiply = function(a){
+  var r = Vector3.multiply(this,a);
+  this.set(r.x, r.y, r.z);
+  return this;
+}
+
+Vector3.add = function(a,b) {
+  var o = new Vector3(0,0,0);
+  o.x = a.x + b.x;
+  o.y = a.b + b.y;
+  o.z = a.z + b.z;
+  return o;
+}
+
+Vector3.subtract = function(a,b) {
+  var o = new Vector3(0,0,0);
+  o.x = a.x - b.x;
+  o.y = a.b - b.y;
+  o.z = a.z - b.z;
+  return o;
+}
+
+Vector3.multiply = function(a,b) {
+  var o = new Vector3(0,0,0);
+  o.x = a.x * b.x;
+  o.y = a.b * b.y;
+  o.z = a.z * b.z;
+  return o;
+}
+
 
 Vector3.prototype.getTangent = function() {
   //start with up vector
@@ -72,6 +151,12 @@ Vector3.prototype.cross = function(other) {
     return Vector3.cross(this,other);
 }
 
+function Vector4(x,y,z,w){
+  this.x = x; 
+  this.y = y; 
+  this.z = z; 
+  this.w = w; 
+}
 
 function Matrix44(){
   this.m = new Float32Array(16);
