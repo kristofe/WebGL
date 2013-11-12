@@ -62,8 +62,8 @@
     //Data from bufferData
     attribute vec3 aVertexPosition;
     attribute vec3 aVertexNormal;
-    attribute vec3 aVertexUV;
-    attribute vec3 aVertexUV2;
+    attribute vec2 aVertexUV;
+    attribute vec4 aVertexTangent;
     attribute vec4 aVertexColor;
 
     uniform mat4 uMVMatrix;
@@ -102,7 +102,7 @@
 
         mat3 normTrans = mat3(uInverseTranspose);
         vNormal = normalize(normTrans * aVertexNormal);
-        vTangent = normalize(normTrans * aVertexUV2);
+        vTangent = normalize(normTrans * aVertexTangent.xyz);
         vBitangent = normalize(cross(vNormal, vTangent));
         //mTangmat = transpose(mat3(vTangent, vBitangent, vNormal));
         mTangmat = mat3(vTangent, vBitangent, vNormal);

@@ -1,64 +1,130 @@
+function Vertex() {
+  this.data = [];
+}
+
+Vertex.prototype.addVec2Data = function(d) {
+  if(d instanceof Vector2) {
+    this.data.push(d.x, d.y);
+  }
+  if(d instanceof Vector3) {
+    this.data.push(d.x, d.y);
+  }
+  else if(d == undefined) { 
+    this.data.push(0.0, 0.0);
+  }
+}
+
+Vertex.prototype.addVec3Data = function(d) {
+  if(d instanceof Vector2) {
+    this.data.push(d.x, d.y, 0.0);
+  }
+  if(d instanceof Vector3) {
+    this.data.push(d.x, d.y, d.z);
+  }
+  if(d instanceof Vector4) {
+    this.data.push(d.x, d.y, d.z);
+  }
+  else if(d == undefined) { 
+    this.data.push(0.0, 0.0, 0.0);
+  }
+}
+
+Vertex.prototype.addVec4Data = function(d) {
+  if(d instanceof Vector2) {
+    this.data.push(d.x, d.y, 0.0, 0.0);
+  }
+  if(d instanceof Vector3) {
+    this.data.push(d.x, d.y, d.z, 0.0);
+  }
+  if(d instanceof Vector4) {
+    this.data.push(d.x, d.y, d.z, d.w);
+  }
+  else if(d == undefined) { 
+    this.data.push(0.0, 0.0, 0.0, 0.0);
+  }
+}
+
 function Mesh(gl) {
   this.gl = gl;
   this.useVertices = false;
   this.vertices = [];
   this.indices = [];
+  this.positions = [];
+  this.normals = [];
+  this.uvs = [];
+  this.uv2s = [];
+  this.tangents = [];
+  this.colors = [];
   this.vertexBuffer = -1;
   this.indexBuffer = -1;
   this.primitiveType = gl.TRIANGLES;
   this.stride = 16;
-
+  this.vertCount = 0.0;
 
 }
+
+Mesh.prototype.constructBuffers = function() {
+  //check that each array has the same length
+  this.vertCount = this.positions.length;
+  var indiceCount = this.indices.length;
+  var normalCount = this.normals.length;
+  var uvCount = this.uvs.length;
+  var tangentCount = this.tangents.length;
+  var colorCount = this.colors.length;
+
+  this.vertices = [];
+
+  for(var i = 0; i < this.vertCount; i++){
+    var vert = new Vertex();
+    vert.addVec3Data(this.positions[i]);
+
+    if(normalCount > i){
+      vert.addVec3Data(this.normals[i]);
+    }else{
+      vert.addVec3Data();
+    }
+
+    if(uvCount > i){
+      vert.addVec2Data(this.uvs[i]);
+    }else{
+      vert.addVec2Data();
+    }
+
+    if(tangentCount > i){
+      vert.addVec4Data(this.tangents[i]);
+    }else{
+      vert.addVec4Data();
+    }
+
+    if(colorCount > i){
+      vert.addVec4Data(this.colors[i]);
+    }else{
+      vert.addVec4Data();
+    }
+    
+    for(var j = 0; j < vert.data.length; j++){
+      this.vertices.push(vert.data[j]);
+    }
+  }
+
+  
+  this.vertexBuffer = this.createVertexBuffer(
+                            this.vertices,
+                            this.stride
+                      );
+  
+  if(this.indices.length > 0) {
+    this.indexBuffer = this.createIndexBuffer( this.indices );
+  }
+
+}
+
 
 Mesh.prototype.createSphereMesh = function(slices, stacks){
-  this.vertexBuffer = this.createVertexBuffer(
-                            this.createSphereMeshData(slices,stacks),
-                            this.stride
-      );
-  return this.vertexBuffer;
+  this.createSphereMeshData(slices,stacks);
 }
 
 
-Mesh.prototype.createSphereMeshDataWithIndices = function(slices, stacks){
-  vertices = [];
-  for (var stack = 0; stack < stacks; stack++) {
-    var theta = stack * Math.PI / stacks;
-    var sinTheta = Math.sin(theta);
-    var cosTheta = Math.cos(theta);
-
-    for (var slice = 0; slice < slices; slice++) {
-      var phi = slice * 2 * Math.PI / slices;
-      var sinPhi = Math.sin(phi);
-      var cosPhi = Math.cos(phi);
-
-      var x = cosPhi * sinTheta;
-      var y = cosTheta;
-      var z= sinPhi * sinTheta;
-
-      var u = 1 - (slice / slices);
-      var v = 1 - (stack / stacks);
-
-      vertices.push(x,y,z, x,y,z, u,v,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    }
-  }
-
-  indices = [];
-  for (var slice = 0; slice < slices; slice++) {
-    for (var stack = 0; stack < stacks; stack++) {
-      var first = (slice * (stacks + 1)) + stack;
-      var second = first + stacks + 1;
-      indices.push(first);
-      indices.push(second);
-      indices.push(first + 1);
-
-      indices.push(second);
-      indices.push(second + 1);
-      indices.push(first + 1);
-    }
-  }
-  return vertices;
-}
 
 Mesh.prototype.createSphereMeshData = function(slices, stacks){
   vertices = [];
@@ -104,46 +170,45 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
       var bottomPos = new Vector3(xBottom, yBottom, zBottom);
       var bottomNextPos = new Vector3(xBottomNext, yBottom, zBottomNext);
 
+      var topUV = new Vector2(u,v);
+      var topNextUV = new Vector2(uNext,v);
+      var bottomUV = new Vector2(u,vNext);
+      var bottomNextUV = new Vector2(uNext,vNext);
+
       topPos.normalize();
       topNextPos.normalize();
       bottomPos.normalize();
       bottomNextPos.normalize();
 
-      var topTan = topPos.getTangent();
-      var topNextTan = topNextPos.getTangent();
-      var bottomTan = bottomPos.getTangent();
-      var bottomNextTan = bottomNextPos.getTangent();
-      
+      var topTan = topPos.clone().subtract(bottomPos).normalize().cross(topPos).toVec4();
+      var topNextTan = topNextPos.clone().subtract(bottomNextPos).normalize().cross(topNextPos).toVec4();
+      var bottomTan = topPos.clone().subtract(bottomPos).normalize().cross(bottomPos).toVec4();
+      var bottomNextTan = topNextPos.clone().subtract(bottomNextPos).normalize().cross(bottomNextPos).toVec4();
+
       //First Triangle
-      vertices.push(xTop, yTop, zTop, xTop,yTop,zTop, u, v, 0.0, topTan.x, topTan.y, 
-          topTan.z, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, 
-          v, 0.0, topNextTan.x, topNextTan.y, topNextTan.z, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, 
-          vNext, 0.0, bottomTan.x, bottomTan.y, bottomTan.z, 0.0, 0.0, 0.0, 0.0);
+      this.positions.push(topPos,topNextPos,bottomPos);
+      this.normals.push(topPos,topNextPos,bottomPos);
+      this.uvs.push(topUV,topNextUV,bottomUV);
+      this.tangents.push(topTan,topNextTan,bottomTan);
+      
       //Second Triangle
-      vertices.push(xTopNext, yTop, zTopNext, xTopNext,yTop,zTopNext, uNext, 
-          v, 0.0, topNextTan.x, topNextTan.y, topNextTan.z, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(xBottomNext, yBottom, zBottomNext, xBottomNext,yBottom,
-          zBottomNext,uNext, vNext, 0.0, bottomNextTan.x, bottomNextTan.y, bottomNextTan.z, 0.0, 0.0, 0.0, 0.0);
-      vertices.push(xBottom, yBottom, zBottom, xBottom,yBottom,zBottom, u, 
-          vNext, 0.0, bottomTan.x, bottomTan.y, bottomTan.z, 0.0, 0.0, 0.0, 0.0);
+      this.positions.push(topNextPos,bottomNextPos,bottomPos);
+      this.normals.push(topNextPos,bottomNextPos,bottomPos);
+      this.uvs.push(topNextUV,bottomNextUV,bottomUV);
+      this.tangents.push(topNextTan,bottomNextTan,bottomTan);
+
     }
   }
-  //console.log(vertices);
-  //console.log(slices, stacks);
-  this.calculateTangents(vertices);
+  //this.calculateTangents(vertices);
 
-  return vertices;
+  this.primitiveType = gl.TRIANGLES;
+  this.constructBuffers();
 }
 
 Mesh.prototype.createGridMesh = function(n, m, tileUVs){
-  this.vertexBuffer = this.createVertexBuffer(
-                            this.createTriStripGridMeshData(n,m),
-                            16
-      );
-  return this.vertexBuffer;
+ this.createTriStripGridMeshData(n,m);
 }
+
 Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
   var numVerts = n * m;
   var vertices = [];
@@ -167,31 +232,48 @@ Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
       v2 = 0.5 + y2 - yinc;
 
       
+      var normal = new Vector3(0.0, 0.0, 1.0);
+      var p1 = new Vector3(x,y,z);
+      var p2 = new Vector3(x,y2,z);
+      var uv1 = new Vector3(u,v, 0.0);
+      var uv2 = new Vector3(u,v2, 0.0);
+      var tangent = new Vector4(1.0, 0.0, 0.0, 0.0);
+
+
 
       //Part of degenerate triangle
       if(i == 0 && j > 0){
-        vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 1.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0);
+        this.positions.push(p1);
+        this.normals.push(normal);
+        this.uvs.push(uv1);
+        this.tangents.push(tangent);
       }
-      vertices.push(x, y, z, 0.0, 0.0, 1.0, u, v, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0);
-      vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 1.0, 0.0, 0.0, 0.0, 
-          0.0, 0.0, 0.0);
+      this.positions.push(p1);
+      this.normals.push(normal);
+      this.uvs.push(uv1);
+      this.tangents.push(tangent);
+
+      this.positions.push(p2);
+      this.normals.push(normal);
+      this.uvs.push(uv2);
+      this.tangents.push(tangent);
       xpos += xinc;
     }
     //Part of degenerate triangle
+    this.positions.push(p2);
+    this.normals.push(normal);
+    this.uvs.push(uv2);
+    this.tangents.push(tangent);
     vertices.push(x, y2, z, 0.0, 0.0, 1.0, u, v2, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
         0.0, 0.0);
 
     ypos += yinc;
     xpos = 0.0;
   }
-  //console.log(vertices);
-  //console.log(n, m);
 
   this.primitiveType = gl.TRIANGLE_STRIP;
-  return vertices;
-}
+  this.constructBuffers();
+ }
 
 Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
   var numVerts = n * m;
@@ -223,26 +305,24 @@ Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
         var uvu = j;
       }
 
-      vertices.push(lx, dy, zpos, 0.0, 0.0, 1.0, uvl, uvd, 0.0, 0.0, 0.0, 0.0,
+      vertices.push(lx, dy, zpos, 0.0, 0.0, 1.0, uvl, uvd, 1.0, 0.0, 0.0, 0.0,
           0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, dy, zpos, 0.0, 0.0, 1.0, uvr, uvd, 0.0, 0.0, 0.0, 0.0,
+      vertices.push(rx, dy, zpos, 0.0, 0.0, 1.0, uvr, uvd, 1.0, 0.0, 0.0, 0.0,
           0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, uy, zpos, 0.0, 0.0, 1.0, uvr, uvu, 0.0, 0.0, 0.0, 0.0,
+      vertices.push(rx, uy, zpos, 0.0, 0.0, 1.0, uvr, uvu, 1.0, 0.0, 0.0, 0.0,
           0.0, 0.0, 0.0, 0.0);
 
-      vertices.push(lx, dy, zpos, 0.0, 0, 1.0, uvl, uvd, 0.0, 0.0, 0.0, 0.0, 
+      vertices.push(lx, dy, zpos, 0.0, 0, 1.0, uvl, uvd, 1.0, 0.0, 0.0, 0.0, 
           0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, uy, zpos, 0.0, 0, 1.0, uvr, uvu, 0.0, 0.0, 0.0, 0.0, 
+      vertices.push(rx, uy, zpos, 0.0, 0, 1.0, uvr, uvu, 1.0, 0.0, 0.0, 0.0, 
           0.0, 0.0, 0.0, 0.0);
-      vertices.push(lx, uy, zpos, 0.0, 0, 1.0, uvl, uvu, 0.0, 0.0, 0.0, 0.0, 
+      vertices.push(lx, uy, zpos, 0.0, 0, 1.0, uvl, uvu, 1.0, 0.0, 0.0, 0.0, 
           0.0, 0.0, 0.0, 0.0);
       xpos += xinc;
     }
     ypos += yinc;
     xpos = 0.0;
   }
-  console.log(vertices);
-  console.log(n, m);
 
   return vertices;
 }
@@ -261,10 +341,10 @@ Mesh.prototype.createVertexBuffer = function (vertArray, stride){
   vertexBuffer.positionOffset = 0;
   vertexBuffer.normalElementCount = 3;
   vertexBuffer.normalOffset = 3*Float32Array.BYTES_PER_ELEMENT;
-  vertexBuffer.uvElementCount = 3;
+  vertexBuffer.uvElementCount = 2;
   vertexBuffer.uvOffset = 6*Float32Array.BYTES_PER_ELEMENT;
-  vertexBuffer.uv2ElementCount = 3;
-  vertexBuffer.uv2Offset = 9*Float32Array.BYTES_PER_ELEMENT;
+  vertexBuffer.tangentElementCount = 4;
+  vertexBuffer.tangentOffset = 8*Float32Array.BYTES_PER_ELEMENT;
   vertexBuffer.colorElementCount = 4;
   vertexBuffer.colorOffset = 12*Float32Array.BYTES_PER_ELEMENT;
   vertexBuffer.numItems = vertArray.length/stride;
@@ -430,4 +510,45 @@ void CalculateTangentArray(long vertexCount, const Point3D *vertex, const Vector
     
     delete[] tan1;
 }
+
+Mesh.prototype.createSphereMeshDataWithIndices = function(slices, stacks){
+  vertices = [];
+  for (var stack = 0; stack < stacks; stack++) {
+    var theta = stack * Math.PI / stacks;
+    var sinTheta = Math.sin(theta);
+    var cosTheta = Math.cos(theta);
+
+    for (var slice = 0; slice < slices; slice++) {
+      var phi = slice * 2 * Math.PI / slices;
+      var sinPhi = Math.sin(phi);
+      var cosPhi = Math.cos(phi);
+
+      var x = cosPhi * sinTheta;
+      var y = cosTheta;
+      var z= sinPhi * sinTheta;
+
+      var u = 1 - (slice / slices);
+      var v = 1 - (stack / stacks);
+
+      vertices.push(x,y,z, x,y,z, u,v,0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    }
+  }
+
+  indices = [];
+  for (var slice = 0; slice < slices; slice++) {
+    for (var stack = 0; stack < stacks; stack++) {
+      var first = (slice * (stacks + 1)) + stack;
+      var second = first + stacks + 1;
+      indices.push(first);
+      indices.push(second);
+      indices.push(first + 1);
+
+      indices.push(second);
+      indices.push(second + 1);
+      indices.push(first + 1);
+    }
+  }
+  return vertices;
+}
+
 */

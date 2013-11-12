@@ -2,6 +2,7 @@ function ShaderProgram(gl) {
   this.gl = gl;
   this.glProgram = -1;
   this.uniforms = {};
+  this.attributes = {};
   this.fragShaderName = "";
   this.vertShaderName = "";
   this.fragShaderSource = "";
@@ -13,11 +14,31 @@ function ShaderProgram(gl) {
                           ["aVertexPosition", 0 ],
                           ["aVertexNormal", 1],
                           ["aVertexUV", 2],
-                          ["aVertexUV2", 3],
+                          ["aVertexTangent", 3],
                           ["aVertexColor", 4]
                         ];
   this.uniformSlots = [];
+  this.typeToString = {};
+  this.typeToString[gl.FLOAT] = "FLOAT";
+  this.typeToString[gl.FLOAT_VEC2] = "FLOAT_VEC2";
+  this.typeToString[gl.FLOAT_VEC3] = "FLOAT_VEC3";
+  this.typeToString[gl.FLOAT_VEC4] = "FLOAT_VEC4";
+  this.typeToString[gl.INT] = "INT";
+  this.typeToString[gl.INT_VEC2] = "INT_VEC2";
+  this.typeToString[gl.INT_VEC3] = "INT_VEC3";
+  this.typeToString[gl.INT_VEC4] = "INT_VEC4";
+  this.typeToString[gl.BOOL] = "BOOL";
+  this.typeToString[gl.BOOL_VEC2] = "BOOL_VEC2";
+  this.typeToString[gl.BOOL_VEC3] = "BOOL_VEC3";
+  this.typeToString[gl.BOOL_VEC4] = "BOOL_VEC4";
+  this.typeToString[gl.FLOAT_MAT2] = "FLOAT_MAT2";
+  this.typeToString[gl.FLOAT_MAT3] = "FLOAT_MAT3";
+  this.typeToString[gl.FLOAT_MAT4] = "FLOAT_MAT4";
+  this.typeToString[gl.SAMPLER_2D] = "SAMPLER_2D";
+  this.typeToString[gl.SAMPLER_CUBE] = "SAMPLER_CUBE";
+
 }
+
 
 /*
 ShaderProgram.prototype.getTextOfScriptElement = function(id) {
@@ -178,6 +199,44 @@ gl.SAMPLER_2D
 gl.SAMPLER_CUBE
 */
 
+ShaderProgram.prototype.cacheAttributeData = function() {
+  var gl = this.gl;
+  var total = gl.getProgramParameter(this.glProgram, gl.ACTIVE_ATTRIBUTES);
+  for( var i = 0; i < total; ++i) {
+    //WebGLActiveInfo = { GLint: size, GLenum: type, DOMString: name};
+    var activeInfo = gl.getActiveAttrib(this.glProgram, i);
+    var slot = gl.getAttribLocation(this.glProgram, activeInfo.name);
+
+    this.attributes[activeInfo.name] = {
+                                      "slot" : slot,
+                                      "size" : activeInfo.size,
+                                      "type" : this.typeToString[activeInfo.type],
+                                      "name" : activeInfo.name
+                                     };
+    console.debug(this.attributes[activeInfo.name]);
+  }
+
+}
+
+ShaderProgram.prototype.cacheUniformData = function() {
+  var gl = this.gl;
+  var total = gl.getProgramParameter(this.glProgram, gl.ACTIVE_UNIFORMS);
+  for( var i = 0; i < total; ++i) {
+    //WebGLActiveInfo = { GLint: size, GLenum: type, DOMString: name};
+    var activeInfo = gl.getActiveUniform(this.glProgram, i);
+    var slot = gl.getUniformLocation(this.glProgram, activeInfo.name);
+
+    this.uniforms[activeInfo.name] = {
+                                      "slot" : slot,
+                                      "size" : activeInfo.size,
+                                      "type" : this.typeToString[activeInfo.type],
+                                      "name" : activeInfo.name
+                                     };
+    console.debug(this.uniforms[activeInfo.name]);
+  }
+
+}
+
 ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shadername) {
   var gl = this.gl;
   this.fragShaderID = this.getShader(fragment_shadername);
@@ -196,6 +255,9 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
 
   gl.useProgram(this.glProgram);
 
+  this.cacheUniformData();
+  this.cacheAttributeData();
+
   this.vertexPositionAttribute = 
                   gl.getAttribLocation(this.glProgram, "aVertexPosition");
   gl.enableVertexAttribArray(this.vertexPositionAttribute);
@@ -208,9 +270,9 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
                         gl.getAttribLocation(this.glProgram, "aVertexUV");
   gl.enableVertexAttribArray(this.vertexUVAttribute);
 
-  this.vertexUV2Attribute = 
-                        gl.getAttribLocation(this.glProgram, "aVertexUV2");
-  gl.enableVertexAttribArray(this.vertexUV2Attribute);
+  this.vertexTangentAttribute = 
+                        gl.getAttribLocation(this.glProgram, "aVertexTangent");
+  gl.enableVertexAttribArray(this.vertexTangentAttribute);
 
   this.vertexColorAttribute = 
                         gl.getAttribLocation(this.glProgram, "aVertexColor");
@@ -266,12 +328,12 @@ ShaderProgram.prototype.bind = function(mesh){
                         mesh.vertexBuffer.uvOffset 
                         );
   gl.vertexAttribPointer(
-                        this.vertexUV2Attribute, 
-                        mesh.vertexBuffer.uv2ElementCount, 
+                        this.vertexTangentAttribute, 
+                        mesh.vertexBuffer.tangentElementCount, 
                         gl.FLOAT, 
                         false, 
                         mesh.vertexBuffer.stride, 
-                        mesh.vertexBuffer.uv2Offset 
+                        mesh.vertexBuffer.tangentOffset 
                         );
   gl.vertexAttribPointer(
                         this.vertexColorAttribute, 

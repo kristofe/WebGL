@@ -6,7 +6,6 @@ function Model(gl){
   
 }
 
-
 Model.prototype.draw = function(projMat, time){
  
   this.material.bind(this.mesh);
@@ -17,13 +16,24 @@ Model.prototype.draw = function(projMat, time){
       projMat.m, 
       time
       );
-  this.gl.drawArrays(
-                this.mesh.primitiveType,
-                0, 
-                this.mesh.vertexBuffer.numItems
-                );
+  if(this.mesh.indexBuffer == -1){
+    this.gl.drawArrays(
+                  this.mesh.primitiveType,
+                  0, 
+                  this.mesh.vertexBuffer.numItems
+                  );
+  }
+  else{
+    this.gl.bindBuffer(gl.ARRAY_BUFFER,this.mesh.vertexBuffer);
+    this.gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.mesh.indexBuffer);
+    this.gl.drawElements(
+                  this.mesh.primitiveType,
+                  this.mesh.indices.length()/3, 
+                  gl.UNSIGNED_SHORT,
+                  0 
+                  );
+  }
 }
-
 
 Model.prototype.bindMaterial = function(){
         this.material.shader.bind(this.mesh);

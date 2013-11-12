@@ -40,6 +40,11 @@ function Vector3(x,y,z){
   this.z = z; 
 }
 
+Vector3.prototype.toVec4 = function() {
+  var v = new Vector4(this.x,this.y, this.z, 0.0);
+  return v;
+}
+
 Vector3.prototype.set = function(x,y,z){
   this.x = x;
   this.y = y;
@@ -55,14 +60,15 @@ Vector3.prototype.clone = function() {
   return out;
 }
 
-Vector3.cross = function(a,b) {
+Vector3.prototype.cross = function(b) {
   var out = new Vector3(0,0,0);
-  var ax = a.x, ay = a.y, az = a.z,
+  var ax = this.x, ay = this.y, az = this.z,
       bx = b.x, by = b.y, bz = b.z;
 
   out.x = ay * bz - az * by;
   out.y = az * bx - ax * bz;
   out.z = ax * by - ay * bx;
+
   return out;
 }
 
@@ -91,7 +97,7 @@ Vector3.prototype.multiply = function(a){
 Vector3.add = function(a,b) {
   var o = new Vector3(0,0,0);
   o.x = a.x + b.x;
-  o.y = a.b + b.y;
+  o.y = a.y + b.y;
   o.z = a.z + b.z;
   return o;
 }
@@ -99,7 +105,7 @@ Vector3.add = function(a,b) {
 Vector3.subtract = function(a,b) {
   var o = new Vector3(0,0,0);
   o.x = a.x - b.x;
-  o.y = a.b - b.y;
+  o.y = a.y - b.y;
   o.z = a.z - b.z;
   return o;
 }
@@ -107,7 +113,7 @@ Vector3.subtract = function(a,b) {
 Vector3.multiply = function(a,b) {
   var o = new Vector3(0,0,0);
   o.x = a.x * b.x;
-  o.y = a.b * b.y;
+  o.y = a.y * b.y;
   o.z = a.z * b.z;
   return o;
 }
@@ -140,6 +146,9 @@ Vector3.prototype.normalize = function() {
     this.y /= len; 
     this.z /= len; 
   }
+  else{
+    console.debug("Vec3 is zero length");
+  }
   return this;
 }
 
@@ -147,9 +156,11 @@ Vector3.prototype.dot = function(other) {
   return Vector3.dot(this, other);
 }
 
+/*
 Vector3.prototype.cross = function(other) {
     return Vector3.cross(this,other);
 }
+*/
 
 function Vector4(x,y,z,w){
   this.x = x; 
