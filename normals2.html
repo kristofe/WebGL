@@ -33,6 +33,8 @@
     uniform float uTime;
     uniform mat4 uMVMatrix;
 
+    //THIS IS BASED UPON THE CODE AT:
+    //http://www.chandlerprall.com/2011/08/parallax-shader-for-webgl-threejs/
     void main(void) {
       //THIS IS TANGENT SPACE... FOR DEFERRED SHADING PUT IT INTO WORLD SPACE
       vec2 scaleBias = vec2(0.05, 0.01);
@@ -91,6 +93,8 @@
     varying vec3 tLight;
     varying vec3 tCameraPosition;
 
+    //THIS IS BASED UPON THE CODE AT:
+    //http://www.chandlerprall.com/2011/08/parallax-shader-for-webgl-threejs/
     void main(void) {
         
         mat3 normTrans = mat3(uInverseTranspose);
