@@ -180,10 +180,10 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
       bottomPos.normalize();
       bottomNextPos.normalize();
 
-      var topTan = topPos.clone().subtract(bottomPos).normalize().cross(topPos).toVec4();
-      var topNextTan = topNextPos.clone().subtract(bottomNextPos).normalize().cross(topNextPos).toVec4();
-      var bottomTan = topPos.clone().subtract(bottomPos).normalize().cross(bottomPos).toVec4();
-      var bottomNextTan = topNextPos.clone().subtract(bottomNextPos).normalize().cross(bottomNextPos).toVec4();
+      var topTan = topPos.clone().subtract(bottomPos).normalize().cross(topPos);
+      var topNextTan = topNextPos.clone().subtract(bottomNextPos).normalize().cross(topNextPos);
+      var bottomTan = topPos.clone().subtract(bottomPos).normalize().cross(bottomPos);
+      var bottomNextTan = topNextPos.clone().subtract(bottomNextPos).normalize().cross(bottomNextPos);
 
       //First Triangle
       this.positions.push(topPos,topNextPos,bottomPos);
@@ -305,6 +305,7 @@ Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
         var uvu = j;
       }
 
+      
       vertices.push(lx, dy, zpos, 0.0, 0.0, 1.0, uvl, uvd, 1.0, 0.0, 0.0, 0.0,
           0.0, 0.0, 0.0, 0.0);
       vertices.push(rx, dy, zpos, 0.0, 0.0, 1.0, uvr, uvd, 1.0, 0.0, 0.0, 0.0,
