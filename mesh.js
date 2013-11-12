@@ -1,3 +1,5 @@
+"use strict";
+
 function Vertex() {
   this.data = [];
 }
@@ -127,7 +129,6 @@ Mesh.prototype.createSphereMesh = function(slices, stacks){
 
 
 Mesh.prototype.createSphereMeshData = function(slices, stacks){
-  vertices = [];
   for (var stack = 0; stack < stacks; stack++) {
     var theta = stack * Math.PI / stacks;
     var thetaNext = (stack + 1) * Math.PI / stacks;

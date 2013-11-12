@@ -1,3 +1,5 @@
+"use strict";
+
 function identity(tx, ty, tz) {
   return [
      1,  0,  0,  0,

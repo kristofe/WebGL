@@ -1,3 +1,5 @@
+"use strict";
+
 function ShaderProgram(gl) {
   this.gl = gl;
   this.glProgram = -1;

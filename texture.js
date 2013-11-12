@@ -1,3 +1,5 @@
+"use strict";
+
 function Texture(gl) {
   this.gl = gl;
   this.glTexture = -1;

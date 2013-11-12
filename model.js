@@ -1,3 +1,5 @@
+"use strict";
+
 function Model(gl){
   this.gl = gl;
   this.material = new Material(gl);

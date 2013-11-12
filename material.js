@@ -1,3 +1,5 @@
+"use strict";
+
 function Material(gl){
   this.gl = gl;
   this.shader = new ShaderProgram(gl);

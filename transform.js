@@ -1,3 +1,5 @@
+"use strict";
+
 function Transform(){
   this.matrix = new Matrix44();
   this.inverse = new Matrix44();
