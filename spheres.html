@@ -50,13 +50,15 @@
       gl_FragColor = vec4(d*c, d*c, d*c, 1.0);
       */
 
-      float d = dot(vNormal, normalize(vec3(1,1,1)));
+     	vec3 light = normalize(vec3(0.8,  1.0,  0.2));
+        
+			float d = dot(vNormal, light);
       d = clamp(d, 0.0, 1.0);
       float c = mix(0.1, 1.0, d);
       vec4 tex = texture2D(uTexture01,vUV);
       tex.xyz *= c;
       gl_FragColor = tex;
-      //:egl_FragColor = vec4(vNormal.xyz, 1.0);
+      //gl_FragColor = vec4(vNormal.xyz, 1.0);
     }
 
 </script>
@@ -65,14 +67,15 @@
     //Data from bufferData
     attribute vec3 aVertexPosition;
     attribute vec3 aVertexNormal;
-    attribute vec3 aVertexUV;
-    attribute vec3 aVertexUV2;
+    attribute vec2 aVertexUV;
+    attribute vec4 aVertexTangent;
     attribute vec4 aVertexColor;
 
     uniform mat4 uMVMatrix;
-    uniform mat4 uMVInverseTranspose;
+    uniform mat4 uInverse;
+    uniform mat4 uInverseTranspose;
     uniform mat4 uPMatrix;
-
+    uniform float uTime;    
     uniform sampler2D uTexture01;
     uniform sampler2D uTexture02;
 
@@ -80,14 +83,20 @@
     //pixel
     varying vec2 vUV;
     varying vec3 vNormal;
+    varying vec3 vTangent;
+    varying vec4 vVertColor;
+
 
     void main(void) {
 
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         //The line below will ignore any translation of perspective matrix
         //gl_Position =  vec4(aVertexPosition, 1.0);
+        vTangent = aVertexTangent.xyz;
+        vVertColor = aVertexColor;
+        
         vUV = aVertexUV.xy;
-        vec4 norm = vec4(normalize(aVertexNormal),0.0) * uMVInverseTranspose;
+        vec3 norm = mat3(uInverseTranspose) * normalize(aVertexNormal);
         vNormal = norm.xyz;
     }
 </script>
