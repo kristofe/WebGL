@@ -34,8 +34,8 @@
         vec3 texColor = texture2D(uTexture01, vUV).rgb;
 				vec3 srcNormal = normalize(texture2D(uTexture02, vUV).xyz * 2.0 - 1.0);
 
-        //vec3 normal = mat3(uInverseTranspose)* srcNormal; 
-        vec3 normal = mTangmat * srcNormal; 
+        vec3 normal = srcNormal + vNormal; 
+        //vec3 normal = mTangmat * srcNormal; 
         /*
 				vec3 normal = srcNormal.x * vTangent + 
                       srcNormal.y * vBitangent + 
@@ -43,14 +43,14 @@
         */
 				
 				normal = normalize(normal);
-				vec3 light = normalize(vec3(0.0, 2.0, -1.0));
+				vec3 light = normalize(vec3(-0.8,  -1.0, 0.2));
         
 				float d = dot(normal, light);
         vec3 viewDirection = normalize(-vPosition.xyz);
 
-        float s=pow(max(0.0, dot(reflect(-light, normal), viewDirection)),60.0);
+        float s=pow(max(0.0, dot(reflect(-light, normal), viewDirection)),16.0);
 
-        vec3 color = texColor * (0.2 + 0.5 * d + 0.3 * s); 
+        vec3 color = texColor * (0.2 + 0.2 * d + 0.7 * s); 
 
 				gl_FragColor = vec4(color, 1.0);
 				//gl_FragColor = vec4(normal, 1.0);
@@ -112,7 +112,7 @@
 </script>
 
 <script type="text/javascript">
-
+    "use strict";
     var gl;
     function initGL(canvas) {
         try {
