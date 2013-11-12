@@ -34,8 +34,7 @@
     uniform mat4 uMVMatrix;
 
     void main(void) {
-      //// COPIED START
-      // calculate the UV offset
+      //THIS IS TANGENT SPACE... FOR DEFERRED SHADING PUT IT INTO WORLD SPACE
       vec2 scaleBias = vec2(0.05, 0.01);
       float height = texture2D(uTexture02, vUV).a;
       float v = height * scaleBias.r - scaleBias.g;
@@ -93,27 +92,24 @@
     varying vec3 tCameraPosition;
 
     void main(void) {
-        vPosition = uMVMatrix * vec4(aVertexPosition,1.0);
-        gl_Position = uPMatrix * vPosition;
         
         mat3 normTrans = mat3(uInverseTranspose);
-        vUV = aVertexUV.xy;
-        /*
-        vNormal = normalize((vec4(aVertexNormal,0.0) * uMVInverseTranspose).xyz);
-        vTangent = normalize((vec4(aVertexUV2,0.0) * uMVInverseTranspose).xyz);
-        vBitangent = normalize(cross(vNormal, vTangent));
-        */
+
+        vPosition = uMVMatrix * vec4(aVertexPosition,1.0);
         vNormal = normalize(normTrans * aVertexNormal);
+        vUV = aVertexUV.xy;
         vTangent = normalize(normTrans * aVertexTangent.xyz);
         vBitangent = normalize(cross(vNormal, vTangent));
         vVertColor = aVertexColor;
 
         mat3 tMat = mat3(vTangent, vBitangent, vNormal);
-        tPosition = aVertexPosition * tMat;
 				vec3 light = normalize(vec3(0.3, 0.1,  1.2));
-        tLight = light * tMat;
 				vec3 camPos = normalize(vec3(0.0, 0.0,  1.0));
+        tPosition = aVertexPosition * tMat;
+        tLight = light * tMat;
         tCameraPosition = camPos * tMat;
+
+        gl_Position = uPMatrix * vPosition;
     }
 </script>
 
