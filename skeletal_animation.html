@@ -13,6 +13,7 @@
 <script type="text/javascript" src="transform.js"></script>
 <script type="text/javascript" src="text_file_reader.js"></script>
 <script type="text/javascript" src="smd_loader.js"></script>
+<script type="text/javascript" src="skeletal_model.js"></script>
 
 
 <script id="shader-fs-normals" type="x-shader/x-fragment">
@@ -181,8 +182,9 @@
     var planeModel;
 
     function initScene(){
-      var smd = new SMDLoader();
-      smd.loadModel("assets/jones_reference.smd");
+      var smd = new SMDLoader(gl);
+      var skelModel = new SkeletalModel(gl);
+      smd.loadModel("assets/","jones_reference.smd", skelModel);
 
       /*
       sphereModel = new Model(gl);

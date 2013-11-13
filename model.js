@@ -1,6 +1,9 @@
 "use strict";
 
 function Model(gl){
+  if(gl == undefined)
+    return;
+
   this.gl = gl;
   this.material = new Material(gl);
   this.mesh = new Mesh(gl);

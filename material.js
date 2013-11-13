@@ -5,6 +5,7 @@ function Material(gl){
   this.shader = new ShaderProgram(gl);
   this.texture = new Texture(gl);
   this.textures = [this.texture];
+  this.name = "";
   
 }
 

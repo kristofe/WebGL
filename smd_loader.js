@@ -46,7 +46,8 @@ function HLTriangle(){
 }
 
 
-function SMDLoader() {
+function SMDLoader(gl) {
+  this.gl = gl;
   this.boneCount = 0;
   this.faceCount = 0;
   this.vertexCount = 0;
@@ -57,14 +58,19 @@ function SMDLoader() {
   this.materials = [];
 
   this.file = new TextFileReader();
+  this.basePath = "";
+  this.url = "";
 }
 
-SMDLoader.prototype.loadModel = function(url) {
+SMDLoader.prototype.loadModel = function(basepath,url, skeletalModel) {
   var smd = this;
-  this.file.load(url, function() {smd.parseSMD();});
+  this.url = url;
+  this.basePath = basepath;
+
+  this.file.load(basepath + url, function() {smd.parseSMD(skeletalModel);});
 }
 
-SMDLoader.prototype.parseSMD = function() {
+SMDLoader.prototype.parseSMD = function(skeletalModel) {
   //console.debug(this.file.allText);
 
   //Load data into intermediate format
@@ -81,6 +87,38 @@ SMDLoader.prototype.parseSMD = function() {
       this.loadTriangles();
     }
   }
+
+
+  //Convert the parsed format into the engine format
+  //Check materials
+  for (var key in this.materials) {
+    if (this.materials.hasOwnProperty(key)) {
+      var hlmat = this.materials[key];
+      var mat = new Material(this.gl);
+
+      var tex = new Texture(this.gl);
+      tex.load(this.basePath + hlmat.name, 0);
+      mat.setTexture(tex);
+      skeletalModel.materials.push(mat);
+      skeletalModel.materialsMap[mat.name] = mat;
+    }
+  }
+
+  for(var i = 0; i < this.referencePose.length; i++){
+    var hlJoint = this.referencePose[i];
+    var joint = new Joint();
+    joint.id = hlJoint.id;
+    joint.name = hlJoint.name;
+    joint.parentID = hlJoint.parent;
+    joint.refPoseTranslation = hlJoint.referenceTranslation;
+    joint.refPoseOrientation = hlJoint.referenceRotation;
+    joint.animationRotations = hlJoint.animationRotations;
+    joint.animationTranslations = hlJoint.animationTranslations;
+
+    skeletalModel.referencePose.push(joint);
+  }
+
+
 }
 
 
@@ -146,7 +184,7 @@ SMDLoader.prototype.loadTriangles = function() {
     this.triangles.push(tri);
     var material = new HLMaterial();
 
-    var name = parseInt(tokens[0]);
+    var name = tokens[0];
 
     material.name = name;
     tri.materialName = name;
@@ -191,12 +229,22 @@ SMDLoader.prototype.loadTriangles = function() {
         totalWeight += boneWeight;
       }
 
-      if(boneWeightCount == 0 || totalWeight < 0.9989){
+      //This is not necessary for now..
+      /*
+      ifboneWeightCount == 0){
+        var hlweight = new HLWeight();
+        hlweight.id = v.joint;
+        hlweight.weight = 1.0 - totalWeight;
+        v.boneWeights.push(hlweight);
+        totalWeight = 1.0;
+      }
+      if(totalWeight < 0.9989){
         var hlweight = new HLWeight();
         hlweight.id = v.joint;
         hlweight.weight = 1.0 - totalWeight;
         v.boneWeights.push(hlweight);
       }
+      */
 
       this.vertexCount++;
 
