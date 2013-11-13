@@ -17,7 +17,15 @@ function HLVertex() {
   this.t = 0;
   this.joint = 0;
   this.boneWeights = []; //HLWeight
+}
 
+HLVertex.prototype.copyToVertex = function(vert) {
+  vert.addVec3Data(this.v);
+  vert.addVec3Data(this.n);
+  var uv = new Vector2(this.s, this.t);
+  vert.addVec2Data(uv);
+  vert.addVec4Data();//Blank tangent
+  vert.addVec4Data();//Blank color
 }
 
 function HLJoint() {
@@ -91,10 +99,13 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
 
   //Convert the parsed format into the engine format
   //Check materials
+  var matID = 0;
   for (var key in this.materials) {
     if (this.materials.hasOwnProperty(key)) {
       var hlmat = this.materials[key];
       var mat = new Material(this.gl);
+      mat.name = key;
+      mat.id = matID++;
 
       var tex = new Texture(this.gl);
       tex.load(this.basePath + hlmat.name, 0);
@@ -119,9 +130,45 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
   }
 
 
+  //Now load triangles
+  var currVertex = 0;
+  var currNormal = 0;
+  var currTexCood = 0;
+
+  for(var tidx = 0; tidx < this.triangles.length; tidx++) {
+    var hlTri = this.triangles[tidx];
+    var face = new Face();
+    skeletalModel.faces.push(face);
+
+    var key = hlTri.materialName;
+    var mat = skeletalModel.materialsMap[key];
+    face.materialID = mat.id;
+
+    var hlv;
+    for(var i = 0; i < 3; i++){
+      var jwv = new JointWeightedVertex();
+      var vert = new Vertex();
+      var svert = new SkeletalVertex();
+      hlv = hlTri.referencePositions[i];
+      hlv.copyToVertex(vert);
+      svert.v = hlv.v;
+      svert.n = hlv.n;
+      svert.s = hlv.s;
+      svert.t = hlv.t;
+
+      jwv.defaultJoint = hlv.joint;
+      jwv.jointWeights = hlv.boneWeights;
+      skeletalModel.referenceVertices.push(svert);
+      skeletalModel.currentVertices.push(svert);
+      jwv.vertIndex = skeletalModel.referenceVertices.length - 1;
+      skeletalModel.jointWeightedVertices.push(jwv);
+      face.referencePositions[i] = currVertex++;
+    }
+  }
 }
 
-
+//TODO:  Still need to do
+//- ParseAnimation(), CopyAnimationData(), loadAnimationNodes(), loadAnimationSkeleton();
 SMDLoader.prototype.loadNodes = function() {
   var line = {text:""};
   while(this.file.getLine(line) != 0){

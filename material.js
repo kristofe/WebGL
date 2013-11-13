@@ -6,6 +6,7 @@ function Material(gl){
   this.texture = new Texture(gl);
   this.textures = [this.texture];
   this.name = "";
+  this.id = -1;
   
 }
 

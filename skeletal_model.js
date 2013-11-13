@@ -30,7 +30,7 @@ function JointWeight(){
 }
 
 function JointWeightedVertex(){
-  this.vertIdx = -1;
+  this.vertIndex = -1;
   this.defaultJoint = -1;
   this.jointWeights = [];//Array of JointWeights
 }
@@ -40,6 +40,13 @@ function Face(){
   this.referencePositions = [-1,-1, -1];
 }
 
+function SkeletalVertex() {
+  this.v = new Vector3(0,0,0);
+  this.n = new Vector3(0,0,0);
+  this.s = 0;
+  this.t = 0;
+
+}
 
 SkeletalModel.prototype = new Model();
 SkeletalModel.prototype.constructor = SkeletalModel;
