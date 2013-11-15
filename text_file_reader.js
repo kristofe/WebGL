@@ -45,3 +45,4 @@ TextFileReader.prototype.getLine = function(buffer) {
   buffer.text = this.lines[this.currLine++];
   return 1;
 }
+

@@ -70,6 +70,11 @@ function SMDLoader(gl) {
   this.url = "";
 }
 
+SMDLoader.prototype.splitLine = function(line) {
+  line.text = line.text.replace(/"/g,"");
+  return line.text.split(/\s+/g);//
+}
+
 SMDLoader.prototype.loadModel = function(basepath,url, skeletalModel) {
   var smd = this;
   this.url = url;
@@ -178,7 +183,6 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
 
 //TODO:  Still need to do
 //- ParseAnimation(), CopyAnimationData(), loadAnimationNodes(), loadAnimationSkeleton();
-
 SMDLoader.prototype.parseAnimation = function(skeletalModel) {
   //Load data into intermediate format
   var line = {text:""};
@@ -186,10 +190,10 @@ SMDLoader.prototype.parseAnimation = function(skeletalModel) {
     if(line.text == "time"){
       continue;
     if(line.text == "nodes"){
-      console.debug("Found nodes start");
+      console.debug("Found animation nodes start");
       this.loadAnimationNodes();
     }else if(line.text == "skeleton") {
-      console.debug("Found skeleton start");
+      console.debug("Found animation skeleton start");
       this.loadAnimationSkeleton();
     }
   }
@@ -204,8 +208,7 @@ SMDLoader.prototype.loadNodes = function() {
 
     var pJoint = new HLJoint();
     this.boneCount++;
-    line.text = line.text.replace(/"/g,"");
-    var tokens = line.text.split(/\s+/g);//Split on whitespace
+    var tokens = this.splitLine(line);
     var i = 0;
     pJoint.id = parseInt(tokens[i++]);
     pJoint.name = tokens[i++];
@@ -220,8 +223,7 @@ SMDLoader.prototype.loadSkeleton = function() {
   while(this.file.getLine(line) != 0){
     if(line.text == "end") return;
 
-    line.text = line.text.replace(/"/g,"");
-    var tokens = line.text.split(/\s+/g);//Split on whitespace
+    var tokens = this.splitLine(line);
 
     if(tokens[0] == "time") continue;
 
@@ -252,8 +254,7 @@ SMDLoader.prototype.loadTriangles = function() {
   while(this.file.getLine(line) != 0){
     if(line.text == "end") return;
 
-    line.text = line.text.replace(/"/g,"");
-    var tokens = line.text.split(/\s+/g);//Split on whitespace
+    var tokens = this.splitLine(line);
 
     var tri = new HLTriangle();
     this.triangles.push(tri);
@@ -269,8 +270,7 @@ SMDLoader.prototype.loadTriangles = function() {
     this.faceCount++;
     for(var vertIdx = 0; vertIdx < 3; vertIdx++){
       this.file.getLine(line);
-      line.text = line.text.replace(/"/g,"");
-      var tokens = line.text.split(/\s+/g);//Split on whitespace
+      var tokens = this.splitLine(line);
 
       var v = tri.referencePositions[vertIdx];
       var vn = tri.referenceNormals[vertIdx];
@@ -328,9 +328,89 @@ SMDLoader.prototype.loadTriangles = function() {
   }
 }
 
+SMDLoader.prototype.loadAnimationNodes = function(name) {
+  console.assert(name != undefined);
+
+  var animation = []; //array of joints
+
+  var line = {text:""};
+  while(this.file.getLine(line) != 0){
+    if(line.text == "end"){
+      this.animations[name] = animation; 
+      return;
+    }
+
+    var pJoint = new HLJoint();
+    //this.boneCount++; //I Don't think this is needed
+    var tokens = this.splitLine(line);
+
+    var i = 0;
+    pJoint.id = parseInt(tokens[i++]);
+    pJoint.name = tokens[i++];
+    pJoint.parent = parseInt(tokens[i++]);
+
+    animation.push(pJoint);
+  }
+
+}
+
+SMDLoader.prototype.loadAnimationSkeleton = function(name) {
+  console.assert(name != undefined);
+
+  var animation = this.animations[name];
+
+  var line = {text:""};
+  while(this.file.getLine(line) != 0){
+    if(line.text == "end") return;
+
+    var tokens = this.splitLine(line);
+
+    if(tokens[0] == "time") continue;
+
+    var i = 0;
+
+    var p = new Vector3(0,0,0);
+    var r = new Vector3(0,0,0);
+    var id = parseInt(tokens[i++]);
+
+    p.x = parseFloat(tokens[i++]);
+    p.y = parseFloat(tokens[i++]);
+    p.z = parseFloat(tokens[i++]);
+
+    r.x = parseFloat(tokens[i++]);
+    r.y = parseFloat(tokens[i++]);
+    r.z = parseFloat(tokens[i++]);
+
+    var pJoint = animation[id];
+    pJoint.animationTranslations.push(p);
+    pJoint.animationRotations.push(r);
+  }
+}
 
 
+SMDLoader.prototype.copyAnimationData = function(skeleton){
+  for (var animName in this.animations) {
+    if (this.animations.hasOwnProperty(animName) == false) continue;
 
+    var hlAnimation = this.animations[animName];
+    var animation = [];
+    for(var jointIdx = 0; jointIdx < hlAnimation.length; jointIdx++){
+      var hlJoint = hlAnimation[jointIdx];
+      var pJoint = new Joint();
+      pJoint.id = hlJoint.id;
+      pJoint.name = hlJoint.name;
+      pJoint.parentID = hlJoint.parent;
 
+      pJoint.refPoseTranslation = hlJoint.referenceTranslation;
+      pJoint.refPoseOrientation = hlJoint.referenceRotation;
 
+      pJoint.animationRotations = hlJoint.animationRotations;
+      pJoint.animationTranslations = hlJoint.animationTranslations;
 
+      animation.push(pJoint);
+    }
+    skeleton.animations[animName] = animation;
+    skeleton.currentJoints = animation;
+    skeleton.szCurrAnimName = animName;
+  }
+}
