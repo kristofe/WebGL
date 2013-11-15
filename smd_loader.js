@@ -78,6 +78,15 @@ SMDLoader.prototype.loadModel = function(basepath,url, skeletalModel) {
   this.file.load(basepath + url, function() {smd.parseSMD(skeletalModel);});
 }
 
+SMDLoader.prototype.loadAnimation = function(basepath,url, skeletalModel) {
+  var smd = this;
+  this.url = url;
+  this.basePath = basepath;
+
+  this.file.load(basepath + url, function() {smd.parseAnimation(skeletalModel);});
+}
+
+
 SMDLoader.prototype.parseSMD = function(skeletalModel) {
   //console.debug(this.file.allText);
 
@@ -169,6 +178,25 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
 
 //TODO:  Still need to do
 //- ParseAnimation(), CopyAnimationData(), loadAnimationNodes(), loadAnimationSkeleton();
+
+SMDLoader.prototype.parseAnimation = function(skeletalModel) {
+  //Load data into intermediate format
+  var line = {text:""};
+  while(this.file.getLine(line) != 0){
+    if(line.text == "time"){
+      continue;
+    if(line.text == "nodes"){
+      console.debug("Found nodes start");
+      this.loadAnimationNodes();
+    }else if(line.text == "skeleton") {
+      console.debug("Found skeleton start");
+      this.loadAnimationSkeleton();
+    }
+  }
+
+  this.copyAnimationData(skeletalModel);
+}
+
 SMDLoader.prototype.loadNodes = function() {
   var line = {text:""};
   while(this.file.getLine(line) != 0){
