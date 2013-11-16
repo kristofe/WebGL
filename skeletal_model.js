@@ -122,4 +122,33 @@ SkeletalModel.prototype.doneLoadingModel = function(){
 
 SkeletalModel.prototype.doneLoadingAnimation = function(){
   console.debug("done loading animation");
+
+  this.updateAnimationMetaData();
+  this.init();
+  this.setAnimationBones();
 }
+
+SkeletalModel.prototype.updateAnimationMetaData = function() {
+  //TODO: Implement this
+  
+}
+
+SkeletalModel.prototype.init = function() {
+ this.createMesh();//create triangles and/or indices
+
+ this.currentJoints = this.referencePose;
+ this.currentAnimationFrames = this.animationFrameCount["referencePose"];
+
+ //TODO: finish implementing this function and all of the functions that it calls
+
+}
+
+
+SkeletalModel.prototype.createMesh = function() {
+  //TODO: implement me!
+}
+
+SkeletalModel.prototype.setAnimationBones = function() {
+  //TODO: implement me!
+}
+
