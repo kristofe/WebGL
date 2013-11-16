@@ -75,20 +75,20 @@ SMDLoader.prototype.splitLine = function(line) {
   return line.text.split(/\s+/g);//
 }
 
-SMDLoader.prototype.loadModel = function(basepath,url, skeletalModel) {
+SMDLoader.prototype.loadModel = function(basepath,url, skeletalModel, doneCallback) {
   var smd = this;
   this.url = url;
   this.basePath = basepath;
 
-  this.file.load(basepath + url, function() {smd.parseSMD(skeletalModel);});
+  this.file.load(basepath + url, function() {smd.parseSMD(skeletalModel); doneCallback();});
 }
 
-SMDLoader.prototype.loadAnimation = function(basepath,url, skeletalModel) {
+SMDLoader.prototype.loadAnimation = function(basepath,url,name, skeletalModel, doneCallback) {
   var smd = this;
   this.url = url;
   this.basePath = basepath;
-
-  this.file.load(basepath + url, function() {smd.parseAnimation(skeletalModel);});
+  this.busyWait = true;
+  this.file.load(basepath + url, function() {smd.parseAnimation(name, skeletalModel); doneCallback();});
 }
 
 
@@ -181,20 +181,17 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
   }
 }
 
-//TODO:  Still need to do
-//- ParseAnimation(), CopyAnimationData(), loadAnimationNodes(), loadAnimationSkeleton();
-SMDLoader.prototype.parseAnimation = function(skeletalModel) {
+SMDLoader.prototype.parseAnimation = function(name, skeletalModel) {
   //Load data into intermediate format
   var line = {text:""};
   while(this.file.getLine(line) != 0){
-    if(line.text == "time"){
-      continue;
+    if(line.text == "time") continue;
     if(line.text == "nodes"){
       console.debug("Found animation nodes start");
-      this.loadAnimationNodes();
+      this.loadAnimationNodes(name);
     }else if(line.text == "skeleton") {
       console.debug("Found animation skeleton start");
-      this.loadAnimationSkeleton();
+      this.loadAnimationSkeleton(name);
     }
   }
 

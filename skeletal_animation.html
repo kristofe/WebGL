@@ -184,7 +184,11 @@
     function initScene(){
       var smd = new SMDLoader(gl);
       var skelModel = new SkeletalModel(gl);
+      skelModel.loadSMD("assets/","jones_reference.smd", "all_animations.smd","all");
+      /*
       smd.loadModel("assets/","jones_reference.smd", skelModel);
+      smd.loadAnimation("assets/","all_animations.smd", "all", skelModel);
+      */
 
       /*
       sphereModel = new Model(gl);

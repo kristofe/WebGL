@@ -95,4 +95,31 @@ function SkeletalModel(gl){
   this.mapAnimationConfigs = [];//Map<string, SkeletalAnimationConfig>
   this.szCurrAnimName = "";
 
+  this.smdLoader = [];
+  this.modelURL = "";
+  this.animationURL = "";
+  this.animationName = "";
+}
+
+SkeletalModel.prototype.loadSMD = function(basepath, modelURL, animURL, animationName){
+  this.smdLoader = new SMDLoader(this.gl);
+  this.basePath = basepath;
+  this.modelURL = modelURL;
+  this.animationURL = animURL;
+  this.animationName = animationName;
+
+  var sm = this;
+  var doneCB = function() {sm.doneLoadingModel();};
+  this.smdLoader.loadModel(this.basePath, this.modelURL, this, doneCB);
+}
+
+SkeletalModel.prototype.doneLoadingModel = function(){
+  console.debug("done loading model");
+  var sm = this;
+  var doneCB = function() { sm.doneLoadingAnimation();};
+  this.smdLoader.loadAnimation(this.basePath, this.animationURL, this.animationName,  this, doneCB);
+}
+
+SkeletalModel.prototype.doneLoadingAnimation = function(){
+  console.debug("done loading animation");
 }
