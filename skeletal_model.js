@@ -152,19 +152,25 @@ function SkeletalVertex() {
 }
 */
 SkeletalModel.prototype.createMesh = function() {
+  console.debug("SkeletalModel createMesh()");
   var svert;
   var vertices = [];
-  var mesh = new Mesh(this.gl);
   for(var i = 0; i < this.referenceVertices.length; i++){
     var svert = this.referenceVertices[i];
     var pos = svert.v;
     var norm = svert.n;
     var uv = new Vector2(svert.s, svert.t);
-    mesh.positions.push(pos);
-    mesh.normals.push(norm);
-    mesh.uvs.push(uv);
+    this.mesh.positions.push(pos);
+    this.mesh.normals.push(norm);
+    this.mesh.uvs.push(uv);
   }
-  mesh.constructBuffers();
+  this.mesh.constructBuffers();
+}
+
+SkeletalModel.prototype.draw = function(projMat, time){ 
+  if(this.mesh.vertexBuffer instanceof WebGLBuffer){
+    Model.prototype.draw.call(this, projMat, time);
+  }
 
 }
 
