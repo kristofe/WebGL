@@ -143,9 +143,29 @@ SkeletalModel.prototype.init = function() {
 
 }
 
-
+/*
+function SkeletalVertex() {
+  this.v = new Vector3(0,0,0);
+  this.n = new Vector3(0,0,0);
+  this.s = 0;
+  this.t = 0;
+}
+*/
 SkeletalModel.prototype.createMesh = function() {
-  //TODO: implement me!
+  var svert;
+  var vertices = [];
+  var mesh = new Mesh(this.gl);
+  for(var i = 0; i < this.referenceVertices.length; i++){
+    var svert = this.referenceVertices[i];
+    var pos = svert.v;
+    var norm = svert.n;
+    var uv = new Vector2(svert.s, svert.t);
+    mesh.positions.push(pos);
+    mesh.normals.push(norm);
+    mesh.uvs.push(uv);
+  }
+  mesh.constructBuffers();
+
 }
 
 SkeletalModel.prototype.setAnimationBones = function() {
