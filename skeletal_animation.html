@@ -149,8 +149,8 @@
 
       vec3 color = texColor * (0.4 + 0.5 * d + 0.2 * s); 
 
-      //gl_FragColor = vec4(color, 1.0);
-      gl_FragColor = vec4(vNormal.xyz, 1.0);
+      gl_FragColor = vec4(color, 1.0);
+      //gl_FragColor = vec4(vNormal.xyz, 1.0);
         
     }
 
@@ -189,7 +189,7 @@
 
         vPosition = uMVMatrix * vec4(aVertexPosition,1.0);
         vNormal = normalize(normTrans * aVertexNormal);
-        vUV = aVertexUV.xy * 1.25;
+        vUV = aVertexUV.xy;
         vTangent = normalize(normTrans * aVertexTangent.xyz);
         vBitangent = normalize(cross(vNormal, vTangent));
         vVertColor = aVertexColor;

@@ -177,6 +177,18 @@ function Matrix44(){
   this.identity();
 }
 
+Matrix44.prototype.copyInto = function(a){
+  for(var i = 0; i < 16; i++){
+    a.m[i] = this.m[i];
+  }
+}
+
+Matrix44.prototype.copyFrom = function(a){
+  for(var i = 0; i < 16; i++){
+    this.m[i] = a.m[i];
+  }
+}
+
 Matrix44.prototype.clone = function(){
   var o = new Matrix44();
   o.m[0] = this.m[0];

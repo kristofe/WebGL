@@ -20,7 +20,12 @@ Material.prototype.setTexture = function(texture){
 }
 
 Material.prototype.addTexture = function(texture){
-  this.textures[this.textures.length] = texture;
+  if(this.textures.length == 0){
+    this.setTexture(texture);
+  }
+  else{
+    this.textures.push(texture);
+  }
 
   for(var i = 0; i < this.textures.length; i++){
     console.debug(this.textures[i]);

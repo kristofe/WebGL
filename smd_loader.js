@@ -161,14 +161,15 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
     var hlv;
     for(var i = 0; i < 3; i++){
       var jwv = new JointWeightedVertex();
-      var vert = new Vertex();
+      //var vert = new Vertex();
       var svert = new SkeletalVertex();
       hlv = hlTri.referencePositions[i];
-      hlv.copyToVertex(vert);
+      //hlv.copyToVertex(vert);
       svert.v = hlv.v;
       svert.n = hlv.n;
       svert.s = hlv.s;
       svert.t = hlv.t;
+      svert.matID = mat.id;
 
       jwv.defaultJoint = hlv.joint;
       jwv.jointWeights = hlv.boneWeights;
