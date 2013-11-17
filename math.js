@@ -163,17 +163,17 @@ Vector3.prototype.transform = function(mat44) {
   var mat = mat44.m;
 //Column Major Version -- OpenGL Compatible
 	var xx, yy, zz;
-	xx =   (mat[0] * x) +
-			   (mat[4] * y) +	
-			   (mat[8] * z) +
+	xx =   (mat[0] * this.x) +
+			   (mat[4] * this.y) +	
+			   (mat[8] * this.z) +
 			    mat[12];
-	yy =   (mat[1] * x) +
-			   (mat[5] * y) +	
-			   (mat[9] * z) +
+	yy =   (mat[1] * this.x) +
+			   (mat[5] * this.y) +	
+			   (mat[9] * this.z) +
 			    mat[13];
-	zz =   (mat[2] * x) +
-			   (mat[6] * y) +	
-			   (mat[10] * z) +
+	zz =   (mat[2] * this.x) +
+			   (mat[6] * this.y) +	
+			   (mat[10] * this.z) +
 			    mat[14];
 	this.x = xx;
 	this.y = yy;

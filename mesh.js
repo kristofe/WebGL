@@ -65,7 +65,18 @@ function Mesh(gl) {
 
 }
 
-Mesh.prototype.constructBuffers = function() {
+Mesh.prototype.clear = function() {
+  this.vertices = [];
+  this.indices = [];
+  this.positions = [];
+  this.normals = [];
+  this.uvs = [];
+  this.uv2s = [];
+  this.tangents = [];
+  this.colors = [];
+}
+
+Mesh.prototype.updateVertices = function() {
   //check that each array has the same length
   this.vertCount = this.positions.length;
   var indiceCount = this.indices.length;
@@ -108,7 +119,10 @@ Mesh.prototype.constructBuffers = function() {
       this.vertices.push(vert.data[j]);
     }
   }
+}
 
+Mesh.prototype.constructBuffers = function() {
+  this.updateVertices();
   
   this.vertexBuffer = this.createVertexBuffer(
                             this.vertices,
@@ -119,6 +133,11 @@ Mesh.prototype.constructBuffers = function() {
     this.indexBuffer = this.createIndexBuffer( this.indices );
   }
 
+}
+
+Mesh.prototype.updateBuffers = function() {
+  this.updateVertices();
+  this.updateVertexBuffer(this.vertices);
 }
 
 
@@ -329,6 +348,23 @@ Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
   return vertices;
 }
 
+Mesh.prototype.updateVertexBuffer = function (vertArray){
+  var gl = this.gl;
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+  /*
+  gl.bufferData(
+               gl.ARRAY_BUFFER, 
+               new Float32Array(vertArray), 
+               gl.DYNAMIC_DRAW
+               );
+               */
+  gl.bufferSubData(
+               gl.ARRAY_BUFFER,
+               0,
+               new Float32Array(vertArray) 
+               );
+};
+
 Mesh.prototype.createVertexBuffer = function (vertArray, stride){
   var gl = this.gl;
   var vertexBuffer = gl.createBuffer();
@@ -336,7 +372,7 @@ Mesh.prototype.createVertexBuffer = function (vertArray, stride){
   gl.bufferData(
                gl.ARRAY_BUFFER, 
                new Float32Array(vertArray), 
-               gl.STATIC_DRAW
+               gl.DYNAMIC_DRAW
                );
   vertexBuffer.stride = stride*Float32Array.BYTES_PER_ELEMENT;
   vertexBuffer.positionElementCount = 3;

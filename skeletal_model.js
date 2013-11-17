@@ -103,6 +103,8 @@ function SkeletalModel(gl){
   this.modelURL = "";
   this.animationURL = "";
   this.animationName = "";
+
+  this.ready = false;
 }
 
 SkeletalModel.prototype.loadSMD = function(basepath, modelURL, animURL, animationName){
@@ -130,6 +132,7 @@ SkeletalModel.prototype.doneLoadingAnimation = function(){
   this.updateAnimationMetaData();
   this.init();
   this.setAnimationBones();
+  this.ready = true;
 }
 
 SkeletalModel.prototype.updateAnimationMetaData = function() {
@@ -285,6 +288,7 @@ SkeletalModel.prototype.initAnimations = function(){
 
 SkeletalModel.prototype.createMeshes = function() {
   console.debug("SkeletalModel createMesh()");
+  this.meshes = [];
   for(var i = 0; i < this.materials.length; i++){
     var mesh = new Mesh(this.gl);
     this.meshes.push(mesh);
@@ -292,7 +296,6 @@ SkeletalModel.prototype.createMeshes = function() {
   }
 
   
-  var vertices = [];
   for(var i = 0; i < this.referenceVertices.length; i++){
     var svert = this.referenceVertices[i];
     var pos = svert.v;
@@ -307,6 +310,33 @@ SkeletalModel.prototype.createMeshes = function() {
   for(var i = 0; i < this.meshes.length; i++){
     this.meshes[i].constructBuffers();
   }
+
+}
+
+SkeletalModel.prototype.updateMeshes = function() {
+  /*
+  
+  for(var i = 0; i < this.meshes.length; i++){
+    this.meshes[i].clear();
+  }
+
+  for(var i = 0; i < this.jointWeightedVertices.length; i++){
+    //var svert = this.jointWeightedVertices[i];
+    var svert = this.referenceVertices[i];
+    //var refvert = this.referenceVertices[i];
+    var pos = svert.v;
+    var norm = svert.n;
+    var uv = new Vector2(svert.s, svert.t);
+    var mesh = this.meshes[svert.matID];
+    mesh.positions.push(pos);
+    mesh.normals.push(norm);
+    mesh.uvs.push(uv);
+  }
+
+  for(var i = 0; i < this.meshes.length; i++){
+    this.meshes[i].updateBuffers();
+  }
+  */
 
 }
 
@@ -346,6 +376,8 @@ SkeletalModel.prototype.setAnimationBones = function(name) {
 }
 
 SkeletalModel.prototype.setTime = function(t){
+  if(this.ready == false) return;
+
 	var elapsedTimeInSeconds = t - this.lastUpdateTime;
 	if(elapsedTimeInSeconds < 0.033)//Update the mesh every 33ms or 30 times a second
 		return;
@@ -357,7 +389,7 @@ SkeletalModel.prototype.setTime = function(t){
 
 	if(this.fCurrentAnimationTime > this.fCurrentAnimEndTime){
 			this.fCurrentAnimationTime = this.fCurrentAnimStartTime + 
-              Math.mod(this.fCurrentAnimationTime , this.fCurrentAnimEndTime);
+              this.fCurrentAnimationTime % this.fCurrentAnimEndTime;
 			//Send a message to the owning object that the animation ended
 			if(this.bCurrAnimationLooped == false){
 				//this.sendAnimationEvent(this.ANIMATION_ENDED);
@@ -379,12 +411,12 @@ SkeletalModel.prototype.setTime = function(t){
 		this.sendAnimationEvent(ANIMATION_STARTED);
 	}
 
-	this.frame0	=	Math.floor(fCurrentAnimationTime);
+	this.frame0	=	Math.floor(this.fCurrentAnimationTime);
 	this.frame0Weight = 1.0 - (this.fCurrentAnimationTime - this.frame0);
 	this.frame1Weight = 1.0 - this.frame0Weight;
-	this.frame1	=	frame0 + 1;
+	this.frame1	=	this.frame0 + 1;
 	if(this.frame1 > this.fCurrentAnimEndTime ){
-			this.frame1 = Math.floor(fCurrentAnimStartTime);
+			this.frame1 = Math.floor(this.fCurrentAnimStartTime);
 
 	}
 	if(this.fTotalAnimationTime < 0.01){
@@ -403,8 +435,8 @@ SkeletalModel.prototype.updateMesh = function(){
 	var pRefVertex, pCurrVertex;
 	var pMatrix;
 
-	for(var i = 0; i < faces.length; i++){
-		pFace = faces[i];
+	for(var i = 0; i < this.faces.length; i++){
+		pFace = this.faces[i];
 		for(var j = 0; j < 3; j++){
 			pJointWeightedVert = this.jointWeightedVertices[pFace.referencePositions[j]];
 			pRefVertex = this.referenceVertices[pJointWeightedVert.vertIndex];
@@ -417,13 +449,13 @@ SkeletalModel.prototype.updateMesh = function(){
 				
 				//Frame0
 				var frame = this.frame0;
-				if(frame >= pJoint.animationCombinedBasis.length)
-					frame = pJoint.animationCombinedBasis.length- 1;
+				if(frame >= pJoint.animationCombinedBases.length)
+					frame = pJoint.animationCombinedBases.length- 1;
 
 				var currVertTemp = new Vector3(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
 				var normTemp = new Vector3(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
 
-				pMatrix = pJoint.animationCombinedBasis[frame];
+				pMatrix = pJoint.animationCombinedBases[frame];
 				currVertTemp.transform(pMatrix);
 
 				currVert.add(
@@ -436,18 +468,18 @@ SkeletalModel.prototype.updateMesh = function(){
 
 				currNorm = Vector3.add(
                     currNorm,
-                    normTemp.multiply(frame0Weight)
+                    normTemp.multiply(this.frame0Weight)
                    );
 				
 				//Frame1
 				frame = this.frame1;
-				if(frame >= pJoint.animationCombinedBasis.length)
-					frame = pJoint.animationCombinedBasis.length - 1;
+				if(frame >= pJoint.animationCombinedBases.length)
+					frame = pJoint.animationCombinedBases.length - 1;
 
 				currVertTemp.set(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
 				normTemp.set(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
 
-				pMatrix = pJoint.animationCombinedBasis[frame];
+				pMatrix = pJoint.animationCombinedBases[frame];
 				currVertTemp.transform(pMatrix);
 
 				currVert.add(
@@ -460,7 +492,7 @@ SkeletalModel.prototype.updateMesh = function(){
 				normTemp.transform(pJoint.animationNormalBases[frame]);
         currNorm = Vector3.add(
                   currNorm,
-                  normTemp.multiply(frame0Weight)
+                  normTemp.multiply(this.frame0Weight)
                  );
 			}	
 
@@ -473,6 +505,7 @@ SkeletalModel.prototype.updateMesh = function(){
       pCurrVertex.n.z = currNorm.z;
 		}
 	}
+  this.updateMeshes();
 } 
 
 
