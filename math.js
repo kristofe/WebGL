@@ -159,6 +159,27 @@ Vector3.prototype.dot = function(other) {
   return Vector3.dot(this, other);
 }
 
+Vector3.prototype.transform = function(mat44) {
+  var mat = mat44.m;
+//Column Major Version -- OpenGL Compatible
+	var xx, yy, zz;
+	xx =   (mat[0] * x) +
+			   (mat[4] * y) +	
+			   (mat[8] * z) +
+			    mat[12];
+	yy =   (mat[1] * x) +
+			   (mat[5] * y) +	
+			   (mat[9] * z) +
+			    mat[13];
+	zz =   (mat[2] * x) +
+			   (mat[6] * y) +	
+			   (mat[10] * z) +
+			    mat[14];
+	this.x = xx;
+	this.y = yy;
+	this.z = zz;
+}
+
 /*
 Vector3.prototype.cross = function(other) {
     return Vector3.cross(this,other);
@@ -295,6 +316,10 @@ Matrix44.prototype.transpose = function() {
   this.m[14] = a23;
 
   return this;
+}
+
+Matrix44.prototype.getInverse = function(){
+  return this.clone().invert();
 }
 
 //adapted from https://github.com/toji/gl-matrix

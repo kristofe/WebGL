@@ -344,3 +344,135 @@ SkeletalModel.prototype.setAnimationBones = function(name) {
     this.currentAnimationFrames = this.animationFrameCount[name];
   }
 }
+
+SkeletalModel.prototype.setTime = function(t){
+	var elapsedTimeInSeconds = t - this.lastUpdateTime;
+	if(elapsedTimeInSeconds < 0.033)//Update the mesh every 33ms or 30 times a second
+		return;
+
+	this.lastUpdateTime = t;
+
+	this.fCurrentAnimationTime += elapsedTimeInSeconds * this.fFPS 
+                                * this.fFPSModifier;
+
+	if(this.fCurrentAnimationTime > this.fCurrentAnimEndTime){
+			this.fCurrentAnimationTime = this.fCurrentAnimStartTime + 
+              Math.mod(this.fCurrentAnimationTime , this.fCurrentAnimEndTime);
+			//Send a message to the owning object that the animation ended
+			if(this.bCurrAnimationLooped == false){
+				//this.sendAnimationEvent(this.ANIMATION_ENDED);
+				this.fCurrentAnimationTime = this.fCurrentAnimEndTime;
+
+			}else if(!this.bInfiniteLooped){
+				if(this.iLoopCount > 0){
+					//this.sendAnimationEvent(ANIMATION_LOOPED);
+					this.iLoopCount--;
+				}else{
+					//this.sendAnimationEvent(ANIMATION_ENDED);
+					this.fCurrentAnimationTime = this.fCurrentAnimEndTime;
+				}
+			}else{
+				//this.sendAnimationEvent(ANIMATION_LOOPED);
+			}
+	}else if(this.fCurrentAnimationTime < this.fCurrentAnimStartTime){
+		this.fCurrentAnimationTime = this.fCurrentAnimStartTime;
+		this.sendAnimationEvent(ANIMATION_STARTED);
+	}
+
+	this.frame0	=	Math.floor(fCurrentAnimationTime);
+	this.frame0Weight = 1.0 - (this.fCurrentAnimationTime - this.frame0);
+	this.frame1Weight = 1.0 - this.frame0Weight;
+	this.frame1	=	frame0 + 1;
+	if(this.frame1 > this.fCurrentAnimEndTime ){
+			this.frame1 = Math.floor(fCurrentAnimStartTime);
+
+	}
+	if(this.fTotalAnimationTime < 0.01){
+		this.frame1 = this.frame0;
+		this.frame0Weight = 1.0;
+		this.frame1Weight = 0.0;
+	}
+	this.updateMesh();
+}
+
+
+SkeletalModel.prototype.updateMesh = function(){
+	var pJoint;
+	var pFace;
+	var pJointWeightedVert;
+	var pRefVertex, pCurrVertex;
+	var pMatrix;
+
+	for(var i = 0; i < faces.length; i++){
+		pFace = faces[i];
+		for(var j = 0; j < 3; j++){
+			pJointWeightedVert = this.jointWeightedVertices[pFace.referencePositions[j]];
+			pRefVertex = this.referenceVertices[pJointWeightedVert.vertIndex];
+			pCurrVertex = this.currentVertices[pJointWeightedVert.vertIndex];
+			var currVert = new Vector3(0,0,0);
+			var currNorm = new Vector3(0,0,0);
+
+			for(var k = 0; k < pJointWeightedVert.jointWeights.length; k++){
+				pJoint = this.currentJoints[pJointWeightedVert.jointWeights[k].id];
+				
+				//Frame0
+				var frame = this.frame0;
+				if(frame >= pJoint.animationCombinedBasis.length)
+					frame = pJoint.animationCombinedBasis.length- 1;
+
+				var currVertTemp = new Vector3(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
+				var normTemp = new Vector3(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
+
+				pMatrix = pJoint.animationCombinedBasis[frame];
+				currVertTemp.transform(pMatrix);
+
+				currVert.add(
+            currVertTemp.multiply(
+              pJointWeightedVert.jointWeights[k].weight * this.frame0Weight
+              )
+            );
+				
+				normTemp.transform(pJoint.animationNormalBases[frame]);
+
+				currNorm = Vector3.add(
+                    currNorm,
+                    normTemp.multiply(frame0Weight)
+                   );
+				
+				//Frame1
+				frame = this.frame1;
+				if(frame >= pJoint.animationCombinedBasis.length)
+					frame = pJoint.animationCombinedBasis.length - 1;
+
+				currVertTemp.set(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
+				normTemp.set(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
+
+				pMatrix = pJoint.animationCombinedBasis[frame];
+				currVertTemp.transform(pMatrix);
+
+				currVert.add(
+            currVert, 
+            currVertTemp.multiply(
+              pJointWeightedVert.jointWeights[k].weight * this.frame1Weight
+              )
+            );
+
+				normTemp.transform(pJoint.animationNormalBases[frame]);
+        currNorm = Vector3.add(
+                  currNorm,
+                  normTemp.multiply(frame0Weight)
+                 );
+			}	
+
+			pCurrVertex.v.x = currVert.x;
+      pCurrVertex.v.y = currVert.y;
+      pCurrVertex.v.z = currVert.z;
+
+			pCurrVertex.n.x = currNorm.x;
+      pCurrVertex.n.y = currNorm.y;
+      pCurrVertex.n.z = currNorm.z;
+		}
+	}
+} 
+
+
