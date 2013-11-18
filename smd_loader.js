@@ -165,8 +165,8 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
       var svert = new SkeletalVertex();
       hlv = hlTri.referencePositions[i];
       //hlv.copyToVertex(vert);
-      svert.v = hlv.v;
-      svert.n = hlv.n;
+      svert.v = hlv.v.clone();
+      svert.n = hlv.n.clone();
       svert.s = hlv.s;
       svert.t = hlv.t;
       svert.matID = mat.id;

@@ -63,6 +63,20 @@ function Mesh(gl) {
   this.stride = 16;
   this.vertCount = 0.0;
 
+  
+  this.positionElementCount = 3;
+  this.positionOffset = 0;
+  this.normalElementCount = 3;
+  this.normalOffset = 3*Float32Array.BYTES_PER_ELEMENT;
+  this.uvElementCount = 2;
+  this.uvOffset = 6*Float32Array.BYTES_PER_ELEMENT;
+  this.tangentElementCount = 4;
+  this.tangentOffset = 8*Float32Array.BYTES_PER_ELEMENT;
+  this.colorElementCount = 4;
+  this.colorOffset = 12*Float32Array.BYTES_PER_ELEMENT;
+  this.strideBytes = 16*Float32Array.BYTES_PER_ELEMENT;
+  this.numItems = 0;
+
 }
 
 Mesh.prototype.clear = function() {
@@ -123,23 +137,52 @@ Mesh.prototype.updateVertices = function() {
 
 Mesh.prototype.constructBuffers = function() {
   this.updateVertices();
-  
-  this.vertexBuffer = this.createVertexBuffer(
-                            this.vertices,
-                            this.stride
-                      );
-  
-  if(this.indices.length > 0) {
-    this.indexBuffer = this.createIndexBuffer( this.indices );
-  }
+  this.vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+  gl.bufferData(
+               gl.ARRAY_BUFFER, 
+               new Float32Array(this.vertices), 
+               gl.DYNAMIC_DRAW
+               );
+  this.numItems = this.vertices.length/this.stride;
 
 }
 
 Mesh.prototype.updateBuffers = function() {
   this.updateVertices();
-  this.updateVertexBuffer(this.vertices);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+  /*
+  gl.bufferData(
+               gl.ARRAY_BUFFER, 
+               new Float32Array(this.vertices), 
+               gl.DYNAMIC_DRAW
+               );
+               */
+  this.numItems = this.vertices.length/this.stride;
+               
+  gl.bufferSubData(
+               gl.ARRAY_BUFFER,
+               0,
+               new Float32Array(this.vertices) 
+               );
 }
 
+
+Mesh.prototype.createVertexBuffer = function (vertArray, stride){
+  var gl = this.gl;
+  this.vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(
+               gl.ARRAY_BUFFER, 
+               new Float32Array(vertArray), 
+               gl.DYNAMIC_DRAW
+               );
+
+  this.numItems = vertArray.length/stride;
+
+  //return vertexBuffer;
+} 
 
 Mesh.prototype.createSphereMesh = function(slices, stacks){
   this.createSphereMeshData(slices,stacks);
@@ -348,47 +391,6 @@ Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
   return vertices;
 }
 
-Mesh.prototype.updateVertexBuffer = function (vertArray){
-  var gl = this.gl;
-  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-  /*
-  gl.bufferData(
-               gl.ARRAY_BUFFER, 
-               new Float32Array(vertArray), 
-               gl.DYNAMIC_DRAW
-               );
-               */
-  gl.bufferSubData(
-               gl.ARRAY_BUFFER,
-               0,
-               new Float32Array(vertArray) 
-               );
-};
-
-Mesh.prototype.createVertexBuffer = function (vertArray, stride){
-  var gl = this.gl;
-  var vertexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  gl.bufferData(
-               gl.ARRAY_BUFFER, 
-               new Float32Array(vertArray), 
-               gl.DYNAMIC_DRAW
-               );
-  vertexBuffer.stride = stride*Float32Array.BYTES_PER_ELEMENT;
-  vertexBuffer.positionElementCount = 3;
-  vertexBuffer.positionOffset = 0;
-  vertexBuffer.normalElementCount = 3;
-  vertexBuffer.normalOffset = 3*Float32Array.BYTES_PER_ELEMENT;
-  vertexBuffer.uvElementCount = 2;
-  vertexBuffer.uvOffset = 6*Float32Array.BYTES_PER_ELEMENT;
-  vertexBuffer.tangentElementCount = 4;
-  vertexBuffer.tangentOffset = 8*Float32Array.BYTES_PER_ELEMENT;
-  vertexBuffer.colorElementCount = 4;
-  vertexBuffer.colorOffset = 12*Float32Array.BYTES_PER_ELEMENT;
-  vertexBuffer.numItems = vertArray.length/stride;
-
-  return vertexBuffer;
-} 
 
 
 Mesh.prototype.calculateTangents = function(verts)

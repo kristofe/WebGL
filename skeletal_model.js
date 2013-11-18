@@ -51,6 +51,16 @@ function SkeletalVertex() {
 
 }
 
+SkeletalVertex.prototype.clone = function(){
+  var r = new SkeletalVertex();
+  r.v = this.v.clone();
+  r.n = this.n.clone();
+  r.s = this.s;
+  r.t = this.t;
+  r.matID = this.matID;
+  return r;
+}
+
 SkeletalModel.prototype = new Model();
 SkeletalModel.prototype.constructor = SkeletalModel;
 
@@ -178,7 +188,6 @@ SkeletalModel.prototype.calculateRefPose = function(){
 		var joint = this.currentJoints[j];
 		var mat = joint.referencePoseLocalBasis;
 
-
 		// accumulate our current animation cumulative bone transform
 		var refPose = currentRefPoseCumulativeBoneTransforms[j];
 		if( joint.parentID != -1 ) {
@@ -194,7 +203,8 @@ SkeletalModel.prototype.calculateRefPose = function(){
 		refPose.rotateY(refRotation.y);
 		refPose.rotateX(refRotation.x);
 
-		refPose.copyFrom(mat);
+		//refPose.copyFrom(mat);
+		refPose.copyInto(mat);
 		joint.referencePoseWorldBasis = mat.clone().invert();
 	}
 }
@@ -237,8 +247,9 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
           animPose.rotateY(animationRotation.y);
           animPose.rotateX(animationRotation.x);
 
-          animPose.copyFrom(mat);
-          mat.postMultiply(this.referencePose[j].referencePoseWorldBasis);
+          //animPose.copyFrom(mat);
+          animPose.copyInto(mat);
+          mat.postMultiply(this.referencePose[j].referencePoseWorldBasis.m);
           mat.clone().invert().transpose().copyInto(normMat);
           //mat.getInverseTranspose(normMat);
         }
@@ -278,7 +289,6 @@ SkeletalModel.prototype.initAnimations = function(){
       this.currentAnimationFrames = maxFrames;
     }
 	}
-  //TODO
 	this.updateAllAnimationBones();
 	
 	this.currentFrame = 0;
@@ -314,16 +324,13 @@ SkeletalModel.prototype.createMeshes = function() {
 }
 
 SkeletalModel.prototype.updateMeshes = function() {
-  /*
-  
   for(var i = 0; i < this.meshes.length; i++){
     this.meshes[i].clear();
   }
 
-  for(var i = 0; i < this.jointWeightedVertices.length; i++){
-    //var svert = this.jointWeightedVertices[i];
-    var svert = this.referenceVertices[i];
-    //var refvert = this.referenceVertices[i];
+  for(var i = 0; i < this.currentVertices.length; i++){
+  //for(var i = 0; i < this.referenceVertices.length; i++){
+    var svert = this.currentVertices[i];
     var pos = svert.v;
     var norm = svert.n;
     var uv = new Vector2(svert.s, svert.t);
@@ -332,12 +339,10 @@ SkeletalModel.prototype.updateMeshes = function() {
     mesh.normals.push(norm);
     mesh.uvs.push(uv);
   }
-
+  
   for(var i = 0; i < this.meshes.length; i++){
     this.meshes[i].updateBuffers();
   }
-  */
-
 }
 
 SkeletalModel.prototype.draw = function(projMat, time){ 
@@ -349,6 +354,7 @@ SkeletalModel.prototype.draw = function(projMat, time){
       var mesh = this.meshes[i];
       var material = this.materials[i];
       material.bind(mesh);
+      //mesh.bind(material.shader);
       material.setUniforms(
           this.transform.matrix.m,
           this.transform.inverse.m,
@@ -359,7 +365,7 @@ SkeletalModel.prototype.draw = function(projMat, time){
         this.gl.drawArrays(
                       mesh.primitiveType,
                       0, 
-                      mesh.vertexBuffer.numItems
+                      mesh.numItems
                     );
     }
   }
@@ -439,7 +445,7 @@ SkeletalModel.prototype.updateMesh = function(){
 		pFace = this.faces[i];
 		for(var j = 0; j < 3; j++){
 			pJointWeightedVert = this.jointWeightedVertices[pFace.referencePositions[j]];
-			pRefVertex = this.referenceVertices[pJointWeightedVert.vertIndex];
+			pRefVertex = this.referenceVertices[pJointWeightedVert.vertIndex].clone();
 			pCurrVertex = this.currentVertices[pJointWeightedVert.vertIndex];
 			var currVert = new Vector3(0,0,0);
 			var currNorm = new Vector3(0,0,0);
@@ -459,7 +465,7 @@ SkeletalModel.prototype.updateMesh = function(){
 				currVertTemp.transform(pMatrix);
 
 				currVert.add(
-            currVertTemp.multiply(
+            currVertTemp.scale(
               pJointWeightedVert.jointWeights[k].weight * this.frame0Weight
               )
             );
@@ -468,7 +474,7 @@ SkeletalModel.prototype.updateMesh = function(){
 
 				currNorm = Vector3.add(
                     currNorm,
-                    normTemp.multiply(this.frame0Weight)
+                    normTemp.scale(this.frame0Weight)
                    );
 				
 				//Frame1
@@ -484,7 +490,7 @@ SkeletalModel.prototype.updateMesh = function(){
 
 				currVert.add(
             currVert, 
-            currVertTemp.multiply(
+            currVertTemp.scale(
               pJointWeightedVert.jointWeights[k].weight * this.frame1Weight
               )
             );
@@ -492,7 +498,7 @@ SkeletalModel.prototype.updateMesh = function(){
 				normTemp.transform(pJoint.animationNormalBases[frame]);
         currNorm = Vector3.add(
                   currNorm,
-                  normTemp.multiply(this.frame0Weight)
+                  normTemp.scale(this.frame0Weight)
                  );
 			}	
 

@@ -3,6 +3,7 @@
 function ShaderProgram(gl) {
   this.gl = gl;
   this.glProgram = -1;
+  this.ready = false;
   this.uniforms = {};
   this.attributes = {};
   this.fragShaderName = "";
@@ -252,6 +253,7 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
 
   if (!gl.getProgramParameter(this.glProgram, gl.LINK_STATUS)) {
       alert("Could not initialise shaders");
+      throw ("program failed to link:" + gl.getProgramInfoLog (this.glProgram));
   }
   console.debug("linked shader");
 
@@ -298,53 +300,57 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
                                                        "uTexture02");
   this.time =gl.getUniformLocation(this.glProgram, 
                                                        "uTime");
+
+  this.ready = true;
 }
 
 
 ShaderProgram.prototype.bind = function(mesh){
+  if(this.ready == false) return;
   var gl = this.gl;
   gl.useProgram(this.glProgram);
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
   gl.vertexAttribPointer(
                         this.vertexPositionAttribute,
-                        mesh.vertexBuffer.positionElementCount, 
+                        mesh.positionElementCount, 
                         gl.FLOAT, 
                         false, 
-                        mesh.vertexBuffer.stride, 
-                        mesh.vertexBuffer.positionOffset
+                        mesh.strideBytes, 
+                        mesh.positionOffset
                         );
   gl.vertexAttribPointer(
                         this.vertexNormalAttribute, 
-                        mesh.vertexBuffer.normalElementCount, 
+                        mesh.normalElementCount, 
                         gl.FLOAT, 
                         false, 
-                        mesh.vertexBuffer.stride, 
-                        mesh.vertexBuffer.normalOffset 
+                        mesh.strideBytes, 
+                        mesh.normalOffset 
                         );
   gl.vertexAttribPointer(
                         this.vertexUVAttribute, 
-                        mesh.vertexBuffer.uvElementCount, 
+                        mesh.uvElementCount, 
                         gl.FLOAT, 
                         false, 
-                        mesh.vertexBuffer.stride, 
-                        mesh.vertexBuffer.uvOffset 
+                        mesh.strideBytes, 
+                        mesh.uvOffset 
                         );
   gl.vertexAttribPointer(
                         this.vertexTangentAttribute, 
-                        mesh.vertexBuffer.tangentElementCount, 
+                        mesh.tangentElementCount, 
                         gl.FLOAT, 
                         false, 
-                        mesh.vertexBuffer.stride, 
-                        mesh.vertexBuffer.tangentOffset 
+                        mesh.strideBytes, 
+                        mesh.tangentOffset 
                         );
   gl.vertexAttribPointer(
                         this.vertexColorAttribute, 
-                        mesh.vertexBuffer.colorElementCount, 
+                        mesh.colorElementCount, 
                         gl.FLOAT, 
                         false, 
-                        mesh.vertexBuffer.stride, 
-                        mesh.vertexBuffer.colorOffset 
+                        mesh.strideBytes, 
+                        mesh.colorOffset 
                         );
+                        
 }
 
 ShaderProgram.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p, pTime) {

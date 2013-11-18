@@ -91,6 +91,13 @@ Vector3.prototype.subtract = function(a){
   return this;
 }
 
+Vector3.prototype.scale = function(a){
+  this.x *= a;
+  this.y *= a;
+  this.z *= a;
+  return this;
+}
+
 Vector3.prototype.multiply = function(a){
   var r = Vector3.multiply(this,a);
   this.set(r.x, r.y, r.z);

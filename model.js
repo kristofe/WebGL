@@ -14,6 +14,7 @@ function Model(gl){
 Model.prototype.draw = function(projMat, time){
  
   this.material.bind(this.mesh);
+  this.mesh.bind(this.material.shader);
   this.material.setUniforms(
       this.transform.matrix.m,
       this.transform.inverse.m,
