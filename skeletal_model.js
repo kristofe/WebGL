@@ -203,7 +203,6 @@ SkeletalModel.prototype.calculateRefPose = function(){
 		refPose.rotateY(refRotation.y);
 		refPose.rotateX(refRotation.x);
 
-		//refPose.copyFrom(mat);
 		refPose.copyInto(mat);
 		joint.referencePoseWorldBasis = mat.clone().invert();
 	}
@@ -228,6 +227,9 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
       for(var i = 0; i < this.currentAnimationFrames; i++){
         this.currentFrame = i;
         for(var j = 0; j < this.currentJoints.length; j++) {
+    if(j < 100){
+      mtxDebug = true;
+    }
           var joint = this.currentJoints[j];
           var mat = joint.animationCombinedBases[i];
           var normMat = joint.animationNormalBases[i];
@@ -247,11 +249,11 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
           animPose.rotateY(animationRotation.y);
           animPose.rotateX(animationRotation.x);
 
-          //animPose.copyFrom(mat);
           animPose.copyInto(mat);
           mat.postMultiply(this.referencePose[j].referencePoseWorldBasis.m);
           mat.clone().invert().transpose().copyInto(normMat);
           //mat.getInverseTranspose(normMat);
+    mtxDebug = false;
         }
 		  }
     }
@@ -272,7 +274,7 @@ SkeletalModel.prototype.initAnimations = function(){
       //Populate Joints Children Lists
       for(var i = 0; i < this.currentJoints.length; i++){
         var pJoint = this.currentJoints[i];
-        pJoint.currOrientation = pJoint.refPoseOrientation;
+        pJoint.currOrientation = pJoint.refPoseOrientation.clone();
         
         var numAnimationKeys = pJoint.animationRotations.length;
 

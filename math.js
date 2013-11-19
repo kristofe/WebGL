@@ -203,6 +203,8 @@ function Vector4(x,y,z,w){
 function Matrix44(){
   this.m = new Float32Array(16);
   this.identity();
+  this.debug = true;
+  this.debugCounter = 0;
 }
 
 Matrix44.prototype.copyInto = function(a){
@@ -211,9 +213,25 @@ Matrix44.prototype.copyInto = function(a){
   }
 }
 
-Matrix44.prototype.copyFrom = function(a){
-  for(var i = 0; i < 16; i++){
-    this.m[i] = a.m[i];
+//TODO: Get rid of these globals when done with debugging
+var mtxDebugCounter = 0;
+var mtxDebug = false;
+
+Matrix44.prototype.getMatlabString = function(){
+  var o  = "m" + mtxDebugCounter  +" = [\n";
+  o = o + this.m[0].toFixed(4) + ", " + this.m[4].toFixed(4) + ", " + this.m[8].toFixed(4) + ", " + this.m[12].toFixed(4) +"; \n";
+  o = o + this.m[1].toFixed(4) + ", " + this.m[5].toFixed(4) + ", " + this.m[9].toFixed(4) + ", " + this.m[13].toFixed(4) +"; \n";
+  o = o + this.m[2].toFixed(4) + ", " + this.m[6].toFixed(4) + ", " + this.m[10].toFixed(4) + ", " + this.m[14].toFixed(4) +"; \n";
+  o = o + this.m[3].toFixed(4) + ", " + this.m[7].toFixed(4) + ", " + this.m[11].toFixed(4) + ", " + this.m[15].toFixed(4) +"];\n";
+  
+  mtxDebugCounter++;
+  return o;
+}
+
+Matrix44.prototype.debugPrint = function(msg){
+  if(mtxDebug && mtxDebugCounter < 200){
+    console.debug(msg);
+    console.debug(this.getMatlabString());
   }
 }
 
@@ -299,7 +317,12 @@ Matrix44.prototype.translate = function(tx, ty, tz) {
      0,  0,  1,  0,
     tx, ty, tz,  1
   ];
-  this.preMultiply(m);
+
+  this.debugPrint("translate " + tx + ", " + ty + ", " + tz);
+
+  //this.preMultiply(m);
+  this.postMultiply(m);
+
   return this;
 }
 
@@ -374,6 +397,7 @@ Matrix44.prototype.invert = function() {
   this.m[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
   this.m[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
 
+  this.debugPrint("invert");
   return this;
 }
 
@@ -455,7 +479,9 @@ Matrix44.prototype.rotate = function(q) {
   m[14] = 0;
   m[15] = 1;
 
-  this.preMultiply(m);
+  this.debugPrint("rotate " + q);
+  //this.preMultiply(m);
+  this.postMultiply(m);
   return this;
 }
 
@@ -471,7 +497,9 @@ Matrix44.prototype.rotateX = function(angleInRadians) {
     0, -s, c, 0,
     0, 0, 0, 1
   ];
-  this.preMultiply(m);
+  this.debugPrint("rotateX " + angleInRadians);
+  //this.preMultiply(m);
+  this.postMultiply(m);
   return this;
 };
 
@@ -485,7 +513,9 @@ Matrix44.prototype.rotateY = function(angleInRadians) {
     s, 0, c, 0,
     0, 0, 0, 1
   ];
-  this.preMultiply(m)
+  this.debugPrint("rotateY " + angleInRadians);
+  //this.preMultiply(m);
+  this.postMultiply(m);
   return this;
 };
 
@@ -498,7 +528,10 @@ Matrix44.prototype.rotateZ = function(angleInRadians) {
      0, 0, 1, 0,
      0, 0, 0, 1,
   ];
-  this.preMultiply(m);
+
+  this.debugPrint("rotateZ " + angleInRadians);
+  //this.preMultiply(m);
+  this.postMultiply(m);
   return this;
 }
 
@@ -509,7 +542,8 @@ Matrix44.prototype.scale = function(sx, sy, sz) {
     0,  0, sz,  0,
     0,  0,  0,  1,
   ];
-  this.preMultiply(m);
+  //this.preMultiply(m);
+  this.postMultiply(m);
   return this;
 }
 
@@ -564,6 +598,9 @@ Matrix44.prototype.postMultiply = function(b) {
           a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31,
           a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32,
           a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33];
+
+  //this.debugPrint("postMultiply \n" + this.getMatlabString(b));
+  this.debugPrint("postMultiply\n"); 
   return this;
 }
 
@@ -618,6 +655,9 @@ Matrix44.prototype.preMultiply = function(a) {
           a30 * b01 + a31 * b11 + a32 * b21 + a33 * b31,
           a30 * b02 + a31 * b12 + a32 * b22 + a33 * b32,
           a30 * b03 + a31 * b13 + a32 * b23 + a33 * b33];
+
+  //this.debugPrint("preMultiply " + this.getMatlabString(b));
+  this.debugPrint("preMultiply\n"); 
   return this;
 }
 
