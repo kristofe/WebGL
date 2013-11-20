@@ -114,14 +114,27 @@ function SkeletalModel(gl){
   this.animationName = "";
 
   this.ready = false;
+  this.callback = undefined;
 }
 
-SkeletalModel.prototype.loadSMD = function(basepath, modelURL, animURL, animationName){
+SkeletalModel.prototype.getJoint = function(name, fromRefPose){
+  var jointsArr = fromRefPose? this.referencePose: this.currentJoints;
+  var joint = jointsArr[0];
+  for(var i = 0; i < jointsArr.length; i++){
+    if(jointsArr[i].name == name){
+      return jointsArr[i];
+    }
+  }
+  return null;
+}
+
+SkeletalModel.prototype.loadSMD = function(basepath, modelURL, animURL, animationName, callback){
   this.smdLoader = new SMDLoader(this.gl);
   this.basePath = basepath;
   this.modelURL = modelURL;
   this.animationURL = animURL;
   this.animationName = animationName;
+  this.callback = callback;
 
   var sm = this;
   var doneCB = function() {sm.doneLoadingModel();};
@@ -141,6 +154,9 @@ SkeletalModel.prototype.doneLoadingAnimation = function(){
   this.init();
   this.setAnimationBones("all");
   this.ready = true;
+  if(this.callback != undefined){
+    this.callback();
+  }
 };
 
 SkeletalModel.prototype.init = function() {
