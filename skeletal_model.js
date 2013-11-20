@@ -59,7 +59,7 @@ SkeletalVertex.prototype.clone = function(){
   r.t = this.t;
   r.matID = this.matID;
   return r;
-}
+};
 
 SkeletalModel.prototype = new Model();
 SkeletalModel.prototype.constructor = SkeletalModel;
@@ -73,7 +73,6 @@ function SkeletalModel(gl){
   this.materialsMap = [];//Material
   this.currentJoints = [];//Joint
   this.referencePose = [];//Joint
-  this.rootsIndices = [];//int
   this.faces = [];
   this.referenceVertices = [];//Vertex
   this.currentVertices = [];
@@ -84,9 +83,9 @@ function SkeletalModel(gl){
   this.currentAnimationFrames = 0;
   this.currentFrame = 0;
   
-  this.fCurrentAnimStartTime = 0.0;
-  this.fCurrentAnimEndTime = 0.0;
-  this.fTotalAnimationTime = 0.0;
+  this.fCurrentAnimStartTime = 40.0;
+  this.fCurrentAnimEndTime = 215.0;
+  this.fTotalAnimationTime = 215.0;
 
   this.frame0 = 0;
   this.frame1 = 0;
@@ -102,12 +101,12 @@ function SkeletalModel(gl){
   this.iLoopCount = 0;
   this.bInifinteLooped = true;
   this.bCurrAnimationLooped = true;
-  this.fFPS = 30.0;
+  this.fFPS = 15.0;
   this.fFPSModifier = 1.0;
   this.bFPSMutable = false;
 
   this.mapAnimationConfigs = [];//Map<string, SkeletalAnimationConfig>
-  this.szCurrAnimName = "";
+  this.szCurrAnimName = "all";
 
   this.smdLoader = [];
   this.modelURL = "";
@@ -127,36 +126,35 @@ SkeletalModel.prototype.loadSMD = function(basepath, modelURL, animURL, animatio
   var sm = this;
   var doneCB = function() {sm.doneLoadingModel();};
   this.smdLoader.loadModel(this.basePath, this.modelURL, this, doneCB);
-}
+};
 
 SkeletalModel.prototype.doneLoadingModel = function(){
   console.debug("done loading model");
   var sm = this;
   var doneCB = function() { sm.doneLoadingAnimation();};
   this.smdLoader.loadAnimation(this.basePath, this.animationURL, this.animationName,  this, doneCB);
-}
+};
 
 SkeletalModel.prototype.doneLoadingAnimation = function(){
   console.debug("done loading animation");
 
-  this.updateAnimationMetaData();
+  //this.updateAnimationMetaData();
   this.init();
-  this.setAnimationBones();
+  this.setAnimationBones("all");
   this.ready = true;
-}
+};
 
 SkeletalModel.prototype.updateAnimationMetaData = function() {
-  //TODO: Implement this
   
-}
+};
 
 SkeletalModel.prototype.init = function() {
  this.createMeshes();//create triangles and/or indices
 
  this.currentJoints = this.referencePose;
- this.currentAnimationFrames = this.animationFrameCount["referencePose"];
+ //this.currentAnimationFrames = this.animationFrameCount["referencePose"];
+ this.currentAnimationFrames = this.animationFrameCount.referencePose;
 
- //TODO: finish implementing this function and all of the functions that it calls
  //Populate Joints Children Lists
 	for(var i = 0; i < this.currentJoints.length; i++){
     var pJoint = this.currentJoints[i];
@@ -164,8 +162,6 @@ SkeletalModel.prototype.init = function() {
 			var pParent = this.currentJoints[pJoint.parentID];
 			pParent.children.push(pJoint);
 			pParent.childCount++;
-		}else{
-			this.rootsIndices.push(i);
 		}
 		pJoint.currOrientation = pJoint.refPoseOrientation;
 	}
@@ -174,14 +170,13 @@ SkeletalModel.prototype.init = function() {
 	this.initAnimations();
 	this.ulLastUpdateTime = 0;//currTime;
 	this.szCurrAnimName = "idle";
-}
+};
 
 
 SkeletalModel.prototype.calculateRefPose = function(){
-  //TODO: Check this function works
 	var currentRefPoseCumulativeBoneTransforms = [];
   for(var i = 0; i < this.currentJoints.length; i++) {
-	   currentRefPoseCumulativeBoneTransforms[i] = new Matrix44();
+    currentRefPoseCumulativeBoneTransforms[i] = new Matrix44();
   }
 
 	for(var j = 0; j < this.currentJoints.length; j++) {
@@ -206,17 +201,16 @@ SkeletalModel.prototype.calculateRefPose = function(){
 		refPose.copyInto(mat);
 		joint.referencePoseWorldBasis = mat.clone().invert();
 	}
-}
+};
 
 SkeletalModel.prototype.updateAllAnimationBones = function(){
 	//This routine is much faster than preProcessBones() because it takes advantage of the fact that
 	//Children bones always appear in the list after their parent
 	//That property allows us to use a loop instead of recursion.
 
-  //TODO: Check that this function works!
   var currentAnimPoseCumulativeBoneTransforms = [];
   for(var i = 0; i < this.currentJoints.length; i++) {
-	   currentAnimPoseCumulativeBoneTransforms[i] = new Matrix44();
+    currentAnimPoseCumulativeBoneTransforms[i] = new Matrix44();
   }
 
   for (var key in this.animations) {
@@ -227,9 +221,6 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
       for(var i = 0; i < this.currentAnimationFrames; i++){
         this.currentFrame = i;
         for(var j = 0; j < this.currentJoints.length; j++) {
-    if(j < 100){
-      mtxDebug = true;
-    }
           var joint = this.currentJoints[j];
           var mat = joint.animationCombinedBases[i];
           var normMat = joint.animationNormalBases[i];
@@ -250,15 +241,13 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
           animPose.rotateX(animationRotation.x);
 
           animPose.copyInto(mat);
-          mat.postMultiply(this.referencePose[j].referencePoseWorldBasis.m);
+          mat.preMultiply(this.referencePose[j].referencePoseWorldBasis.m);
           mat.clone().invert().transpose().copyInto(normMat);
-          //mat.getInverseTranspose(normMat);
-    mtxDebug = false;
         }
-		  }
+      }
     }
 	}
-}
+};
 
 SkeletalModel.prototype.initAnimations = function(){
 	//loop through all the animations and calculate all of the joints children
@@ -295,7 +284,7 @@ SkeletalModel.prototype.initAnimations = function(){
 	
 	this.currentFrame = 0;
 
-}
+};
 
 
 SkeletalModel.prototype.createMeshes = function() {
@@ -323,7 +312,7 @@ SkeletalModel.prototype.createMeshes = function() {
     this.meshes[i].constructBuffers();
   }
 
-}
+};
 
 SkeletalModel.prototype.updateMeshes = function() {
   for(var i = 0; i < this.meshes.length; i++){
@@ -345,12 +334,12 @@ SkeletalModel.prototype.updateMeshes = function() {
   for(var i = 0; i < this.meshes.length; i++){
     this.meshes[i].updateBuffers();
   }
-}
+};
 
 SkeletalModel.prototype.draw = function(projMat, time){ 
    
   //TODO: put culling into material
-  gl.disable(gl.CULL_FACE);
+  this.gl.disable(this.gl.CULL_FACE);
   for(var i = 0; i < this.meshes.length; i++){
     if(this.meshes[i].vertexBuffer != -1){
       var mesh = this.meshes[i];
@@ -364,27 +353,23 @@ SkeletalModel.prototype.draw = function(projMat, time){
           projMat.m, 
           time
           );
-        this.gl.drawArrays(
-                      mesh.primitiveType,
-                      0, 
-                      mesh.numItems
-                    );
+        this.gl.drawArrays( mesh.primitiveType, 0, mesh.numItems);
     }
   }
-  gl.enable(gl.CULL_FACE);
-}
+  this.gl.enable(this.gl.CULL_FACE);
+};
 
 SkeletalModel.prototype.setAnimationBones = function(name) {
-  //TODO: check
+  if(this.ready === false) return;
   var anim = this.animations[name];
-  if(anim != undefined){
+  if(anim !== undefined){
     this.currentJoints = anim;
     this.currentAnimationFrames = this.animationFrameCount[name];
   }
-}
+};
 
 SkeletalModel.prototype.setTime = function(t){
-  if(this.ready == false) return;
+  if(this.ready === false) return;
 
 	var elapsedTimeInSeconds = t - this.lastUpdateTime;
 	if(elapsedTimeInSeconds < 0.033)//Update the mesh every 33ms or 30 times a second
@@ -392,14 +377,14 @@ SkeletalModel.prototype.setTime = function(t){
 
 	this.lastUpdateTime = t;
 
-	this.fCurrentAnimationTime += elapsedTimeInSeconds * this.fFPS 
-                                * this.fFPSModifier;
+	this.fCurrentAnimationTime += elapsedTimeInSeconds * this.fFPS *
+                                      this.fFPSModifier;
 
 	if(this.fCurrentAnimationTime > this.fCurrentAnimEndTime){
 			this.fCurrentAnimationTime = this.fCurrentAnimStartTime + 
               this.fCurrentAnimationTime % this.fCurrentAnimEndTime;
 			//Send a message to the owning object that the animation ended
-			if(this.bCurrAnimationLooped == false){
+			if(this.bCurrAnimationLooped === false){
 				//this.sendAnimationEvent(this.ANIMATION_ENDED);
 				this.fCurrentAnimationTime = this.fCurrentAnimEndTime;
 
@@ -416,7 +401,7 @@ SkeletalModel.prototype.setTime = function(t){
 			}
 	}else if(this.fCurrentAnimationTime < this.fCurrentAnimStartTime){
 		this.fCurrentAnimationTime = this.fCurrentAnimStartTime;
-		this.sendAnimationEvent(ANIMATION_STARTED);
+		//this.sendAnimationEvent(ANIMATION_STARTED);
 	}
 
 	this.frame0	=	Math.floor(this.fCurrentAnimationTime);
@@ -433,7 +418,7 @@ SkeletalModel.prototype.setTime = function(t){
 		this.frame1Weight = 0.0;
 	}
 	this.updateMesh();
-}
+};
 
 
 SkeletalModel.prototype.updateMesh = function(){
@@ -491,7 +476,6 @@ SkeletalModel.prototype.updateMesh = function(){
 				currVertTemp.transform(pMatrix);
 
 				currVert.add(
-            currVert, 
             currVertTemp.scale(
               pJointWeightedVert.jointWeights[k].weight * this.frame1Weight
               )
@@ -514,6 +498,6 @@ SkeletalModel.prototype.updateMesh = function(){
 		}
 	}
   this.updateMeshes();
-} 
+};
 
 

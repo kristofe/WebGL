@@ -9,7 +9,7 @@ function Vector2(x,y){
 Vector2.prototype.set = function(x,y){
   this.x = x;
   this.y = y;
-}
+};
 
 Vector2.prototype.clone = function() {
   var out = new Vector2(0.0, 0.0);
@@ -17,11 +17,11 @@ Vector2.prototype.clone = function() {
   out.y = this.y;
 
   return out;
-}
+};
 
 Vector2.dot = function(a,b) {
   return a.x * b.x + a.y * b.y;
-}
+};
 
 Vector2.prototype.normalize = function() {
   var len = this.dot(this);
@@ -31,11 +31,11 @@ Vector2.prototype.normalize = function() {
     this.y /= len; 
   }
   return this;
-}
+};
 
 Vector2.prototype.dot = function(other) {
   return Vector2.dot(this, other);
-}
+};
 
 function Vector3(x,y,z){
   this.x = x; 
@@ -46,13 +46,13 @@ function Vector3(x,y,z){
 Vector3.prototype.toVec4 = function() {
   var v = new Vector4(this.x,this.y, this.z, 0.0);
   return v;
-}
+};
 
 Vector3.prototype.set = function(x,y,z){
   this.x = x;
   this.y = y;
   this.z = z;
-}
+};
 
 Vector3.prototype.clone = function() {
   var out = new Vector3(0.0, 0.0, 0.0);
@@ -61,7 +61,7 @@ Vector3.prototype.clone = function() {
   out.z = this.z;
 
   return out;
-}
+};
 
 Vector3.prototype.cross = function(b) {
   var out = new Vector3(0,0,0);
@@ -73,36 +73,36 @@ Vector3.prototype.cross = function(b) {
   out.z = ax * by - ay * bx;
 
   return out;
-}
+};
 
 Vector3.dot = function(a,b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
-}
+};
 
 Vector3.prototype.add = function(a){
   var r = Vector3.add(this,a);
   this.set(r.x, r.y, r.z);
   return this;
-}
+};
 
 Vector3.prototype.subtract = function(a){
   var r = Vector3.subtract(this,a);
   this.set(r.x, r.y, r.z);
   return this;
-}
+};
 
 Vector3.prototype.scale = function(a){
   this.x *= a;
   this.y *= a;
   this.z *= a;
   return this;
-}
+};
 
 Vector3.prototype.multiply = function(a){
   var r = Vector3.multiply(this,a);
   this.set(r.x, r.y, r.z);
   return this;
-}
+};
 
 Vector3.add = function(a,b) {
   var o = new Vector3(0,0,0);
@@ -110,7 +110,7 @@ Vector3.add = function(a,b) {
   o.y = a.y + b.y;
   o.z = a.z + b.z;
   return o;
-}
+};
 
 Vector3.subtract = function(a,b) {
   var o = new Vector3(0,0,0);
@@ -118,7 +118,7 @@ Vector3.subtract = function(a,b) {
   o.y = a.y - b.y;
   o.z = a.z - b.z;
   return o;
-}
+};
 
 Vector3.multiply = function(a,b) {
   var o = new Vector3(0,0,0);
@@ -126,7 +126,7 @@ Vector3.multiply = function(a,b) {
   o.y = a.y * b.y;
   o.z = a.z * b.z;
   return o;
-}
+};
 
 
 Vector3.prototype.getTangent = function() {
@@ -146,7 +146,7 @@ Vector3.prototype.getTangent = function() {
 
   return other;
 
-}
+};
 
 Vector3.prototype.normalize = function() {
   var len = this.dot(this);
@@ -160,32 +160,32 @@ Vector3.prototype.normalize = function() {
     console.debug("Vec3 is zero length");
   }
   return this;
-}
+};
 
 Vector3.prototype.dot = function(other) {
   return Vector3.dot(this, other);
-}
+};
 
 Vector3.prototype.transform = function(mat44) {
   var mat = mat44.m;
 //Column Major Version -- OpenGL Compatible
 	var xx, yy, zz;
-	xx =   (mat[0] * this.x) +
-			   (mat[4] * this.y) +	
-			   (mat[8] * this.z) +
-			    mat[12];
-	yy =   (mat[1] * this.x) +
-			   (mat[5] * this.y) +	
-			   (mat[9] * this.z) +
-			    mat[13];
-	zz =   (mat[2] * this.x) +
-			   (mat[6] * this.y) +	
-			   (mat[10] * this.z) +
-			    mat[14];
+	xx =  (mat[0] * this.x) +
+        (mat[4] * this.y) +	
+        (mat[8] * this.z) +
+         mat[12];
+	yy =  (mat[1] * this.x) +
+        (mat[5] * this.y) +	
+        (mat[9] * this.z) +
+         mat[13];
+	zz =  (mat[2] * this.x) +
+        (mat[6] * this.y) +	
+        (mat[10] * this.z) +
+         mat[14];
 	this.x = xx;
 	this.y = yy;
 	this.z = zz;
-}
+};
 
 /*
 Vector3.prototype.cross = function(other) {
@@ -211,7 +211,7 @@ Matrix44.prototype.copyInto = function(a){
   for(var i = 0; i < 16; i++){
     a.m[i] = this.m[i];
   }
-}
+};
 
 //TODO: Get rid of these globals when done with debugging
 var mtxDebugCounter = 0;
@@ -226,14 +226,14 @@ Matrix44.prototype.getMatlabString = function(){
   
   mtxDebugCounter++;
   return o;
-}
+};
 
 Matrix44.prototype.debugPrint = function(msg){
   if(mtxDebug && mtxDebugCounter < 200){
     console.debug(msg);
     console.debug(this.getMatlabString());
   }
-}
+};
 
 Matrix44.prototype.clone = function(){
   var o = new Matrix44();
@@ -255,7 +255,7 @@ Matrix44.prototype.clone = function(){
   o.m[15] = this.m[15];
 
   return o;
-}
+};
    
 
 Matrix44.prototype.identity = function(){
@@ -268,7 +268,7 @@ Matrix44.prototype.identity = function(){
   ];
 
   return this;
-}
+};
 
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.ortho = function(left, right, bottom, top, near, far) {
@@ -295,7 +295,7 @@ Matrix44.prototype.ortho = function(left, right, bottom, top, near, far) {
   this.m = dest;
 
   return this;
-}
+};
 
 Matrix44.prototype.perspective = function(fieldOfViewInRadians, aspect, near, far) {
   var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewInRadians);
@@ -310,6 +310,33 @@ Matrix44.prototype.perspective = function(fieldOfViewInRadians, aspect, near, fa
   return this;
 };
 
+
+/*
+Matrix44.prototype.translate = function(tx, ty, tz) {
+  var m = [
+     1,  0,  0,  tx,
+     0,  1,  0,  ty,
+     0,  0,  1,  tz,
+     0,  0,  0,  1
+  ];
+
+  this.debugPrint("translate " + tx + ", " + ty + ", " + tz);
+
+  this.preMultiply(m);
+  //this.postMultiply(m);
+
+  return this;
+};
+Matrix44.prototype.translate = function(x,y,z){
+   var m = this.m;
+   m[12] = m[0] * x + m[4] * y + m[8]  * z + m[12];
+   m[13] = m[1] * x + m[5] * y + m[9]  * z + m[13];
+   m[14] = m[2] * x + m[6] * y + m[10] * z + m[14];
+   m[15] = m[3] * x + m[7] * y + m[11] * z + m[15];
+
+  this.debugPrint("translate " + x + ", " + y + ", " + z);
+}
+*/
 Matrix44.prototype.translate = function(tx, ty, tz) {
   var m = [
      1,  0,  0,  0,
@@ -320,12 +347,119 @@ Matrix44.prototype.translate = function(tx, ty, tz) {
 
   this.debugPrint("translate " + tx + ", " + ty + ", " + tz);
 
-  //this.preMultiply(m);
-  this.postMultiply(m);
+  this.preMultiply(m);
+  //this.postMultiply(m);
 
   return this;
-}
+};
+/*
+//This was taken from the MESA source
+Matrix44.prototype.rotate = function(angle, x, y, z){
+	var xx, yy, zz, xy, yz, zx, xs, ys, zs, one_c, s, c, angle;
+	var optimized;
+	var m = this.m;
+	
+	s =  sin( angle );
+	c =  cos( angle );
 
+	optimized = false;
+
+  var M = function(col, row)
+#define M(row,col)  m[col*4+row]
+
+   if (x == 0.0F) {
+      if (y == 0.0F) {
+         if (z != 0.0F) {
+            optimized = true;
+            // rotate only around z-axis 
+            M(0,0) = c;
+            M(1,1) = c;
+            if (z < 0.0F) {
+               M(0,1) = s;
+               M(1,0) = -s;
+            }
+            else {
+               M(0,1) = -s;
+               M(1,0) = s;
+            }
+         }
+      }
+      else if (z == 0.0F) {
+         optimized = true;
+         // rotate only around y-axis 
+         M(0,0) = c;
+         M(2,2) = c;
+         if (y < 0.0F) {
+            M(0,2) = -s;
+            M(2,0) = s;
+         }
+         else {
+            M(0,2) = s;
+            M(2,0) = -s;
+         }
+      }
+   }
+   else if (y == 0.0F) {
+      if (z == 0.0F) {
+         optimized = true;
+         // rotate only around x-axis
+         M(1,1) = c;
+         M(2,2) = c;
+         if (x < 0.0F) {
+            M(1,2) = s;
+            M(2,1) = -s;
+         }
+         else {
+            M(1,2) = -s;
+            M(2,1) = s;
+         }
+      }
+   }
+
+   if (!optimized) {
+      const float mag = sqrt(x * x + y * y + z * z);
+
+      if (mag <= 1.0e-4) {
+         // no rotation, leave mat as-is 
+         return;
+      }
+
+      x /= mag;
+      y /= mag;
+      z /= mag;
+
+      xx = x * x;
+      yy = y * y;
+      zz = z * z;
+      xy = x * y;
+      yz = y * z;
+      zx = z * x;
+      xs = x * s;
+      ys = y * s;
+      zs = z * s;
+      one_c = 1.0F - c;
+
+      // We already hold the identity-matrix so we can skip some statements
+      M(0,0) = (one_c * xx) + c;
+      M(0,1) = (one_c * xy) - zs;
+      M(0,2) = (one_c * zx) + ys;
+
+
+      M(1,0) = (one_c * xy) + zs;
+      M(1,1) = (one_c * yy) + c;
+      M(1,2) = (one_c * yz) - xs;
+
+
+      M(2,0) = (one_c * zx) - ys;
+      M(2,1) = (one_c * yz) + xs;
+      M(2,2) = (one_c * zz) + c;
+		
+	  
+   }
+#undef M
+   multiply(m);
+}
+*/
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.transpose = function() {
   var a01 = this.m[1], a02 = this.m[2], a03 = this.m[3],
@@ -346,11 +480,11 @@ Matrix44.prototype.transpose = function() {
   this.m[14] = a23;
 
   return this;
-}
+};
 
 Matrix44.prototype.getInverse = function(){
   return this.clone().invert();
-}
+};
 
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.invert = function() {
@@ -399,7 +533,7 @@ Matrix44.prototype.invert = function() {
 
   this.debugPrint("invert");
   return this;
-}
+};
 
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.fromQuat = function (q) {
@@ -439,7 +573,7 @@ Matrix44.prototype.fromQuat = function (q) {
   this.m[15] = 1;
   return this;
 
-}
+};
 
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.rotate = function(q) {
@@ -480,10 +614,10 @@ Matrix44.prototype.rotate = function(q) {
   m[15] = 1;
 
   this.debugPrint("rotate " + q);
-  //this.preMultiply(m);
-  this.postMultiply(m);
+  this.preMultiply(m);
+  //this.postMultiply(m);
   return this;
-}
+};
 
 
 
@@ -498,8 +632,8 @@ Matrix44.prototype.rotateX = function(angleInRadians) {
     0, 0, 0, 1
   ];
   this.debugPrint("rotateX " + angleInRadians);
-  //this.preMultiply(m);
-  this.postMultiply(m);
+  this.preMultiply(m);
+  //this.postMultiply(m);
   return this;
 };
 
@@ -514,8 +648,8 @@ Matrix44.prototype.rotateY = function(angleInRadians) {
     0, 0, 0, 1
   ];
   this.debugPrint("rotateY " + angleInRadians);
-  //this.preMultiply(m);
-  this.postMultiply(m);
+  this.preMultiply(m);
+  //this.postMultiply(m);
   return this;
 };
 
@@ -530,10 +664,10 @@ Matrix44.prototype.rotateZ = function(angleInRadians) {
   ];
 
   this.debugPrint("rotateZ " + angleInRadians);
-  //this.preMultiply(m);
-  this.postMultiply(m);
+  this.preMultiply(m);
+  //this.postMultiply(m);
   return this;
-}
+};
 
 Matrix44.prototype.scale = function(sx, sy, sz) {
   var m = [
@@ -542,10 +676,10 @@ Matrix44.prototype.scale = function(sx, sy, sz) {
     0,  0, sz,  0,
     0,  0,  0,  1,
   ];
-  //this.preMultiply(m);
-  this.postMultiply(m);
+  this.preMultiply(m);
+  //this.postMultiply(m);
   return this;
-}
+};
 
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.postMultiply = function(b) {
@@ -602,7 +736,7 @@ Matrix44.prototype.postMultiply = function(b) {
   //this.debugPrint("postMultiply \n" + this.getMatlabString(b));
   this.debugPrint("postMultiply\n"); 
   return this;
-}
+};
 
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.preMultiply = function(a) {
@@ -659,7 +793,7 @@ Matrix44.prototype.preMultiply = function(a) {
   //this.debugPrint("preMultiply " + this.getMatlabString(b));
   this.debugPrint("preMultiply\n"); 
   return this;
-}
+};
 
 
 //Entire quaternion class is adapted from 
@@ -678,7 +812,7 @@ Quaternion.prototype.clone = function() {
   q.z = this.z;
   q.w = this.w;
   return q;
-}
+};
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.identity = function() {
@@ -687,7 +821,7 @@ Quaternion.prototype.identity = function() {
   this.z = 0.0;
   this.w = 1.0;
   return this;
-}
+};
 
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
@@ -844,7 +978,7 @@ function Matrix33() {
   this.m[6] = 0;
   this.m[7] = 0;
   this.m[8] = 1;
-};
+}
 
 Matrix33.prototype.fromMatrix44 = function(p) {
   var a = p.m;

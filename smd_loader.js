@@ -173,8 +173,8 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
 
       jwv.defaultJoint = hlv.joint;
       jwv.jointWeights = hlv.boneWeights;
-      skeletalModel.referenceVertices.push(svert);
-      skeletalModel.currentVertices.push(svert);
+      skeletalModel.referenceVertices.push(svert.clone());
+      skeletalModel.currentVertices.push(svert.clone());
       jwv.vertIndex = skeletalModel.referenceVertices.length - 1;
       skeletalModel.jointWeightedVertices.push(jwv);
       face.referencePositions[i] = currVertex++;
@@ -303,8 +303,7 @@ SMDLoader.prototype.loadTriangles = function() {
       }
 
       //This is not necessary for now..
-      /*
-      ifboneWeightCount == 0){
+      if(boneWeightCount == 0){
         var hlweight = new HLWeight();
         hlweight.id = v.joint;
         hlweight.weight = 1.0 - totalWeight;
@@ -317,7 +316,6 @@ SMDLoader.prototype.loadTriangles = function() {
         hlweight.weight = 1.0 - totalWeight;
         v.boneWeights.push(hlweight);
       }
-      */
 
       this.vertexCount++;
 
