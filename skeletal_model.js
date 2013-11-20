@@ -83,7 +83,7 @@ function SkeletalModel(gl){
   this.currentAnimationFrames = 0;
   this.currentFrame = 0;
   
-  this.fCurrentAnimStartTime = 40.0;
+  this.fCurrentAnimStartTime = 0.0;
   this.fCurrentAnimEndTime = 215.0;
   this.fTotalAnimationTime = 215.0;
 
@@ -99,7 +99,7 @@ function SkeletalModel(gl){
 
   //Config data
   this.iLoopCount = 0;
-  this.bInifinteLooped = true;
+  this.bInfiniteLooped = true;
   this.bCurrAnimationLooped = true;
   this.fFPS = 15.0;
   this.fFPSModifier = 1.0;
