@@ -161,10 +161,8 @@ SMDLoader.prototype.parseSMD = function(skeletalModel) {
     var hlv;
     for(var i = 0; i < 3; i++){
       var jwv = new JointWeightedVertex();
-      //var vert = new Vertex();
       var svert = new SkeletalVertex();
       hlv = hlTri.referencePositions[i];
-      //hlv.copyToVertex(vert);
       svert.v = hlv.v.clone();
       svert.n = hlv.n.clone();
       svert.s = hlv.s;
@@ -337,7 +335,6 @@ SMDLoader.prototype.loadAnimationNodes = function(name) {
     }
 
     var pJoint = new HLJoint();
-    //this.boneCount++; //I Don't think this is needed
     var tokens = this.splitLine(line);
 
     var i = 0;

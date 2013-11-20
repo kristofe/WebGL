@@ -3,6 +3,8 @@
 <head>
 <title>WebGL</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<link rel="stylesheet" href="/resources/qunit.css">
+
 <script type="text/javascript" src="matrix.js"></script>
 <script type="text/javascript" src="math.js"></script>
 <script type="text/javascript" src="mesh.js"></script>
@@ -99,8 +101,11 @@
     var gl;
     function initGL(canvas) {
         try {
-            gl = canvas.getContext("webgl") ||
-                 canvas.getContext("experimental-webgl");
+            gl = canvas.getContext("webgl", {antialias: true}) ||
+                 canvas.getContext("experimental-webgl", {antialias: true});
+            var attr = gl.getContextAttributes();
+            console.log(attr);
+
             gl.viewportWidth = canvas.width;
             gl.viewportHeight = canvas.height;
             var extTFL = gl.getExtension("OES_texture_float_linear");
@@ -203,7 +208,7 @@
         initEventHandlers(canvas, mouse, currentAngle);
         initScene();
 
-
+        
         gl.clearColor(1.0, 1.0, 1.0, 1.0);
         //gl.disable(gl.DEPTH_TEST);
         gl.enable(gl.DEPTH_TEST);
@@ -287,7 +292,7 @@
 <body onload="webGLStart();">
   <canvas id="webgl-canvas" style="border: none;" width="500" height="500">
   </canvas>
-  <iframe src="tests.html" align="right" width="500" height="500" frameborder="0"></iframe>
+  <!--<iframe src="tests.html" align="right" width="500" height="500" frameborder="0"></iframe>-->
   <br>
   <hr>
   Linked Javascript Files:
@@ -300,6 +305,15 @@
   <a href="model.js" target="_blank"> model.js</a><br>
   <a href="material.js" target="_blank"> material.js</a><br>
   <a href="transform.js" target="_blank"> transform.js</a><br>
+  <a href="smd_loader.js" target="_blank">smd_loader.js</a><br>
+  <a href="skeletal_model.js" target="_blank">skeletal_model.js</a><br>
+
+  <!--
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="/resources/qunit.js"></script>
+  <script src="/resources/tests.js"></script>
+  -->
 
 
 </body>

@@ -1,3 +1,4 @@
-test( "hello test", function() {
-  ok( 1 == "1", "Passed!" );
+test("Antialiasing support", function() {
+   var attr = gl.getContextAttributes();
+   ok(true == attr.antialias, "Antialiasing Support");
 });

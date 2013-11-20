@@ -138,21 +138,15 @@ SkeletalModel.prototype.doneLoadingModel = function(){
 SkeletalModel.prototype.doneLoadingAnimation = function(){
   console.debug("done loading animation");
 
-  //this.updateAnimationMetaData();
   this.init();
   this.setAnimationBones("all");
   this.ready = true;
-};
-
-SkeletalModel.prototype.updateAnimationMetaData = function() {
-  
 };
 
 SkeletalModel.prototype.init = function() {
  this.createMeshes();//create triangles and/or indices
 
  this.currentJoints = this.referencePose;
- //this.currentAnimationFrames = this.animationFrameCount["referencePose"];
  this.currentAnimationFrames = this.animationFrameCount.referencePose;
 
  //Populate Joints Children Lists
@@ -204,7 +198,7 @@ SkeletalModel.prototype.calculateRefPose = function(){
 };
 
 SkeletalModel.prototype.updateAllAnimationBones = function(){
-	//This routine is much faster than preProcessBones() because it takes advantage of the fact that
+	//This routine takes advantage of the fact that
 	//Children bones always appear in the list after their parent
 	//That property allows us to use a loop instead of recursion.
 
@@ -320,7 +314,6 @@ SkeletalModel.prototype.updateMeshes = function() {
   }
 
   for(var i = 0; i < this.currentVertices.length; i++){
-  //for(var i = 0; i < this.referenceVertices.length; i++){
     var svert = this.currentVertices[i];
     var pos = svert.v;
     var norm = svert.n;
@@ -383,25 +376,25 @@ SkeletalModel.prototype.setTime = function(t){
 	if(this.fCurrentAnimationTime > this.fCurrentAnimEndTime){
 			this.fCurrentAnimationTime = this.fCurrentAnimStartTime + 
               this.fCurrentAnimationTime % this.fCurrentAnimEndTime;
-			//Send a message to the owning object that the animation ended
+
 			if(this.bCurrAnimationLooped === false){
-				//this.sendAnimationEvent(this.ANIMATION_ENDED);
+        //Animation Ended
 				this.fCurrentAnimationTime = this.fCurrentAnimEndTime;
 
 			}else if(!this.bInfiniteLooped){
 				if(this.iLoopCount > 0){
-					//this.sendAnimationEvent(ANIMATION_LOOPED);
+          //Animation looped
 					this.iLoopCount--;
 				}else{
-					//this.sendAnimationEvent(ANIMATION_ENDED);
+          //Animation Ended
 					this.fCurrentAnimationTime = this.fCurrentAnimEndTime;
 				}
 			}else{
-				//this.sendAnimationEvent(ANIMATION_LOOPED);
+        //Animation Looped
 			}
 	}else if(this.fCurrentAnimationTime < this.fCurrentAnimStartTime){
+    //Animation Started
 		this.fCurrentAnimationTime = this.fCurrentAnimStartTime;
-		//this.sendAnimationEvent(ANIMATION_STARTED);
 	}
 
 	this.frame0	=	Math.floor(this.fCurrentAnimationTime);
