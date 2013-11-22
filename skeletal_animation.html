@@ -99,6 +99,7 @@
 <script type="text/javascript">
 
     var gl;
+    var glExtensions = {};
     function initGL(canvas) {
         try {
             gl = canvas.getContext("webgl", {antialias: true}) ||
@@ -108,9 +109,28 @@
 
             gl.viewportWidth = canvas.width;
             gl.viewportHeight = canvas.height;
+
             var extTFL = gl.getExtension("OES_texture_float_linear");
+            if(undefined != extTFL) {
+              glExtensions["OES_texture_foat_linear"] = extTFL;
+            }
+
             var extTF = gl.getExtension("OES_texture_float");
+            if(undefined != extTF){
+              glExtensions["OES_texture_foat"] = extTF;
+            }
+
             var extDT = gl.getExtension("WEBKIT_WEBGL_depth_texture");
+            if(undefined != extDT){
+              glExtensions["WEBKIT_WEBGL_depth_texture"] = extDT;
+            }
+
+            var extIA = gl.getExtension("ANGLE_instanced_arrays");
+            if(undefined != extIA){
+              glExtensions["ANGLE_instanced_arrays"] = extIA;
+            }
+
+            console.debug(glExtensions);
 
         } catch (e) {
         }
