@@ -17,8 +17,8 @@ function Joint(){
 	this.referencePoseWorldBasis = new Matrix44();
   this.animationRotations = [];
   this.animationTranslations = [];
-  this.animationLocalBases = [];//array of Matrix44
-  this.animationWorldBases = [];//array of Matrix44
+  //this.animationLocalBases = [];//array of Matrix44
+  //this.animationWorldBases = [];//array of Matrix44
   this.animationNormalBases = [];//array of Matrix44
   this.animationCombinedBases = [];//array of Matrix44
 
