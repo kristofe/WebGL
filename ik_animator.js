@@ -39,62 +39,6 @@ IKAnimator.prototype.animate = function(time){
 
   //Fix by adding an extra set of matrices to each bone that if is filled in
   //replaces/or blends with the current animation
-	var pJoint;
-	var pFace;
-	var pJointWeightedVert;
-	var pRefVertex, pCurrVertex;
-	var pMatrix;
-
-	for(var i = 0; i < this.skeletalModel.faces.length; i++){
-		pFace = this.skeletalModel.faces[i];
-		for(var j = 0; j < 3; j++){
-			pJointWeightedVert = this.skeletalModel.jointWeightedVertices[pFace.referencePositions[j]];
-			pRefVertex = this.skeletalModel.referenceVertices[pJointWeightedVert.vertIndex].clone();
-			pCurrVertex = this.skeletalModel.currentVertices[pJointWeightedVert.vertIndex];
-			var currVert = new Vector3(0,0,0);
-			var currNorm = new Vector3(0,0,0);
-
-			for(var k = 0; k < pJointWeightedVert.jointWeights.length; k++){
-				pJoint = this.skeletalModel.currentJoints[pJointWeightedVert.jointWeights[k].id];
-				
-				//Only using the first frame
-				var frame = this.skeletalModel.frame0;
-				if(frame >= pJoint.animationCombinedBases.length)
-					frame = pJoint.animationCombinedBases.length- 1;
-
-				var currVertTemp = new Vector3(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
-				var normTemp = new Vector3(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
-
-				pMatrix = pJoint.animationCombinedBases[frame];
-				currVertTemp.transform(pMatrix);
-
-				currVert.add(
-            currVertTemp.scale(
-              pJointWeightedVert.jointWeights[k].weight * this.skeletalModel.frame0Weight
-              )
-            );
-
-				normTemp.transform(pJoint.animationNormalBases[frame]);
-
-				currNorm = Vector3.add(
-                    currNorm,
-                    normTemp.scale(this.skeletalModel.frame0Weight)
-                   );
-				
-
-			}	
-
-			pCurrVertex.v.x = currVert.x;
-      pCurrVertex.v.y = currVert.y;
-      pCurrVertex.v.z = currVert.z;
-
-			pCurrVertex.n.x = currNorm.x;
-      pCurrVertex.n.y = currNorm.y;
-      pCurrVertex.n.z = currNorm.z;
-		}
-	}
-  this.skeletalModel.updateMeshes();
-};
 
   
 }

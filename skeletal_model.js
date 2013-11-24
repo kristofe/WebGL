@@ -10,17 +10,20 @@ function Joint(){
   this.parentID = -1;
   this.children = [];
   this.childCount = 0;
+  this.hasIK = false;
 
   this.refPoseTranslation = new Vector3(0,0,0);
   this.refPoseOrientation = new Vector3(0,0,0);
   this.referencePoseLocalBasis = new Matrix44();
-	this.referencePoseWorldBasis = new Matrix44();
+	this.referencePoseWorldToLocal = new Matrix44();
   this.animationRotations = [];
   this.animationTranslations = [];
   //this.animationLocalBases = [];//array of Matrix44
   //this.animationWorldBases = [];//array of Matrix44
   this.animationNormalBases = [];//array of Matrix44
   this.animationCombinedBases = [];//array of Matrix44
+  this.ikSolutionNormalBases = new Matrix44();
+  this.ikSolutionCombinedBases = new Matrix44();
 
   this.modelCoordPosition = new Vector3(0,0,0);
   this.currOrientation = new Vector3(0,0,0);
@@ -209,7 +212,7 @@ SkeletalModel.prototype.calculateRefPose = function(){
 		refPose.rotateX(refRotation.x);
 
 		refPose.copyInto(mat);
-		joint.referencePoseWorldBasis = mat.clone().invert();
+		joint.referencePoseWorldToLocal = mat.clone().invert();
 	}
 };
 
@@ -251,7 +254,7 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
           animPose.rotateX(animationRotation.x);
 
           animPose.copyInto(mat);
-          mat.preMultiply(this.referencePose[j].referencePoseWorldBasis.m);
+          mat.preMultiply(this.referencePose[j].referencePoseWorldToLocal.m);
           mat.clone().invert().transpose().copyInto(normMat);
         }
       }
@@ -457,7 +460,8 @@ SkeletalModel.prototype.updateMesh = function(){
 				var currVertTemp = new Vector3(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
 				var normTemp = new Vector3(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
 
-				pMatrix = pJoint.animationCombinedBases[frame];
+				pMatrix = pJoint.animationCombinedBases[frame].preMultiply(
+                                                pJoint.ikSolutionCombinedBases.m);
 				currVertTemp.transform(pMatrix);
 
 				currVert.add(
@@ -481,7 +485,9 @@ SkeletalModel.prototype.updateMesh = function(){
 				currVertTemp.set(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
 				normTemp.set(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
 
-				pMatrix = pJoint.animationCombinedBases[frame];
+				//pMatrix = pJoint.animationCombinedBases[frame];
+				pMatrix = pJoint.animationCombinedBases[frame].preMultiply(
+                                                pJoint.ikSolutionCombinedBases.m);
 				currVertTemp.transform(pMatrix);
 
 				currVert.add(
