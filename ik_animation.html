@@ -150,8 +150,8 @@
         skelModel.transform.setPosition(new Vector3(0.0, -2.0,-5.0));
         skelModel.setAnimationBones("all");
 
-        ikAnim.animate(currTime);
         skelModel.setTime(currTime);
+        ikAnim.animate(currTime);
         skelModel.draw(pMatrix, currTime);
         /*
         var q = new Quaternion();
@@ -198,7 +198,8 @@
         skelModel.setAnimationBones("all");
         skelModel.setTime(0.0);
         ikAnim.setRootJoint("rt_clavicle|rt_shoulder", false);
-        ikAnim.setEndJoint("rt_clavicle|rt_shoulder|rt_elbow|rt_wrist", false);
+        //ikAnim.setEndJoint("rt_clavicle|rt_shoulder|rt_elbow|rt_wrist", false);
+        ikAnim.setEndJoint("rt_hand_finger", false);
         ikAnim.calculateJointArray();
       };
       skelModel.loadSMD("assets/","jones_reference.smd", "all_animations.smd","all", ikCallback);

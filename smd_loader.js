@@ -393,6 +393,9 @@ SMDLoader.prototype.copyAnimationData = function(skeleton){
       pJoint.id = hlJoint.id;
       pJoint.name = hlJoint.name;
       pJoint.parentID = hlJoint.parent;
+      if(pJoint.parentID > -1){
+        animation[pJoint.parentID].children.push(pJoint);
+      }
 
       pJoint.refPoseTranslation = hlJoint.referenceTranslation;
       pJoint.refPoseOrientation = hlJoint.referenceRotation;
