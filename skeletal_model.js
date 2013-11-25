@@ -86,9 +86,9 @@ function SkeletalModel(gl){
   this.currentAnimationFrames = 0;
   this.currentFrame = 0;
   
-  this.fCurrentAnimStartTime = 0.0;
-  this.fCurrentAnimEndTime = 215.0;
-  this.fTotalAnimationTime = 215.0;
+  this.fCurrentAnimStartTime = 0;
+  this.fCurrentAnimEndTime = 217;//215.0;
+  this.fTotalAnimationTime = 217;//215.0;
 
   this.frame0 = 0;
   this.frame1 = 0;
@@ -104,7 +104,7 @@ function SkeletalModel(gl){
   this.iLoopCount = 0;
   this.bInfiniteLooped = true;
   this.bCurrAnimationLooped = true;
-  this.fFPS = 15.0;
+  this.fFPS = 18.0;
   this.fFPSModifier = 1.0;
   this.bFPSMutable = false;
 
@@ -117,6 +117,7 @@ function SkeletalModel(gl){
   this.animationName = "";
 
   this.ready = false;
+  this.hasIK = false;
   this.callback = undefined;
 }
 
@@ -423,8 +424,8 @@ SkeletalModel.prototype.setTime = function(t){
   if(this.ready === false) return;
 
 	var elapsedTimeInSeconds = t - this.lastUpdateTime;
-	if(elapsedTimeInSeconds < 0.033)//Update the mesh every 33ms or 30 times a second
-		return;
+	//if(elapsedTimeInSeconds < 0.033)//Update the mesh every 33ms or 30 times a second
+	//	return;
 
 	this.lastUpdateTime = t;
 
@@ -468,7 +469,9 @@ SkeletalModel.prototype.setTime = function(t){
 		this.frame0Weight = 1.0;
 		this.frame1Weight = 0.0;
 	}
-	this.updateMesh();
+  if(this.hasIK == false){
+	  this.updateMesh();
+  }
 };
 
 SkeletalModel.prototype.updateMesh = function(){

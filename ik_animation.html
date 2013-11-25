@@ -150,7 +150,7 @@
         skelModel.transform.setPosition(new Vector3(0.0, -2.0,-5.0));
         skelModel.setAnimationBones("all");
 
-        skelModel.setTime(currTime);
+        skelModel.setTime(1.0 * currTime);
         ikAnim.animate(currTime);
         skelModel.draw(pMatrix, currTime);
         /*
@@ -203,6 +203,10 @@
         ikAnim.calculateJointArray();
       };
       skelModel.loadSMD("assets/","jones_reference.smd", "all_animations.smd","all", ikCallback);
+      skelModel.fCurrentAnimStartTime = 1;
+      skelModel.fCurrentAnimEndTime = 46;//215.0;
+      skelModel.fTotalAnimationTime = 46;//215.0;
+
     }
 
     function webGLStart() {

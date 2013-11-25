@@ -9,6 +9,7 @@ function IKAnimator(gl){
 
 IKAnimator.prototype.setSkeletalModel = function(sm) {
   this.skeletalModel = sm;
+  sm.hasIK = true;
 };
 
 IKAnimator.prototype.setRootJoint = function(name, useRefPose) {
@@ -52,22 +53,23 @@ IKAnimator.prototype.animate = function(time){
   if(this.skeletalModel.ready == false){
     return;
   }
-  var angle = Math.sin(time* 0.1);
+  var angle = (Math.sin(time) * 0.5) + 0.125*Math.PI;
 
   for( var i = 0; i < this.joints.length; i++ ) {
     var a = angle;
     if(this.joints[i].hasIK == false){
       a = 0.0;
     }else{
-      angle *= 0.5;
+      angle *= 0.9;
     }
     this.modifyJoint(this.skeletalModel.frame0, this.joints[i], a);
     this.modifyJoint(this.skeletalModel.frame1, this.joints[i], a);
   }
-  //this.skeletalModel.updateMesh();
+  this.skeletalModel.updateMesh();
 
   
 }
+
 IKAnimator.prototype.walkJoints = function(currJoint) {
   this.joints.push(currJoint);
   for(var i = 0; i < currJoint.children.length; i++){
