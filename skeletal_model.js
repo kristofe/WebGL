@@ -19,11 +19,11 @@ function Joint(){
   this.animationRotations = [];
   this.animationTranslations = [];
   //this.animationLocalBases = [];//array of Matrix44
-  //this.animationWorldBases = [];//array of Matrix44
+  this.animationWorldBases = [];//array of Matrix44
   this.animationNormalBases = [];//array of Matrix44
   this.animationCombinedBases = [];//array of Matrix44
-  this.ikSolutionNormalBases = new Matrix44();
-  this.ikSolutionCombinedBases = new Matrix44();
+  this.currentMatrices = []; //array of Matrix44();
+  this.currentNormalMatrices = [];//array of Matrix44();
 
   this.modelCoordPosition = new Vector3(0,0,0);
   this.currOrientation = new Vector3(0,0,0);
@@ -131,6 +131,15 @@ SkeletalModel.prototype.getJoint = function(name, fromRefPose){
   return null;
 }
 
+SkeletalModel.prototype.getJointByID = function(id, fromRefPose){
+  var jointsArr = fromRefPose? this.referencePose: this.currentJoints;
+  if(id >= jointsArr.length) {
+    return null;
+  }
+  return jointsArr[id];
+}
+
+
 SkeletalModel.prototype.loadSMD = function(basepath, modelURL, animURL, animationName, callback){
   this.smdLoader = new SMDLoader(this.gl);
   this.basePath = basepath;
@@ -221,9 +230,18 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
 	//Children bones always appear in the list after their parent
 	//That property allows us to use a loop instead of recursion.
 
+  /*
   var currentAnimPoseCumulativeBoneTransforms = [];
   for(var i = 0; i < this.currentJoints.length; i++) {
     currentAnimPoseCumulativeBoneTransforms[i] = new Matrix44();
+  }
+  */
+
+  for(var jointID = 0; jointID < this.currentJoints.length; jointID++){
+    var joint = this.currentJoints[jointID];
+    for(var frame = 0; frame < this.currentAnimationFrames.length; frame++) {
+      joint.animationWorldBases[frame] = new Matrix44();
+    }
   }
 
   for (var key in this.animations) {
@@ -231,31 +249,49 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
   
       this.currentJoints = this.animations[key];
       this.currentAnimationFrames = this.animationFrameCount[key];
+
+
       for(var i = 0; i < this.currentAnimationFrames; i++){
         this.currentFrame = i;
         for(var j = 0; j < this.currentJoints.length; j++) {
-          var joint = this.currentJoints[j];
-          var mat = joint.animationCombinedBases[i];
-          var normMat = joint.animationNormalBases[i];
+          var jointID = j;
+          var joint = this.currentJoints[jointID];
 
+
+          var mat = joint.animationCombinedBases[this.currentFrame];
+          var normMat = joint.animationNormalBases[this.currentFrame];
+
+          /*
           // accumulate our current animation cumulative bone transform
-          var animPose = currentAnimPoseCumulativeBoneTransforms[j];
+          var animPose = currentAnimPoseCumulativeBoneTransforms[jointID];
           if( joint.parentID != -1 ) {
             currentAnimPoseCumulativeBoneTransforms[joint.parentID].copyInto( animPose);
           } else {
             animPose.identity();
           }
+          */
+          //
+          var animPose = joint.animationWorldBases[this.currentFrame];
+          if( joint.parentID != -1 ) {
+            this.currentJoints[joint.parentID].animationWorldBases[this.currentFrame].copyInto(animPose);
+          } else {
+            animPose.identity();
+          }
 
-          var animationTranslation = joint.animationTranslations[i];
-          var animationRotation = joint.animationRotations[i];
+          var animationTranslation = joint.animationTranslations[this.currentFrame];
+          var animationRotation = joint.animationRotations[this.currentFrame];
           animPose.translate(animationTranslation.x, animationTranslation.y, animationTranslation.z);
           animPose.rotateZ(animationRotation.z);
           animPose.rotateY(animationRotation.y);
           animPose.rotateX(animationRotation.x);
 
           animPose.copyInto(mat);
-          mat.preMultiply(this.referencePose[j].referencePoseWorldToLocal.m);
+          //animPose.copyInto(joint.animationWorldBases[this.currentFrame]);
+          mat.preMultiply(this.referencePose[jointID].referencePoseWorldToLocal.m);
           mat.clone().invert().transpose().copyInto(normMat);
+
+          joint.currentMatrices[this.currentFrame] = mat.clone();
+          joint.currentNormalMatrices[this.currentFrame] = normMat.clone();
         }
       }
     }
@@ -283,6 +319,9 @@ SkeletalModel.prototype.initAnimations = function(){
         for(var j = 0; j < numAnimationKeys; j++){
           pJoint.animationNormalBases.push(new Matrix44());
           pJoint.animationCombinedBases.push(new Matrix44());
+          pJoint.animationWorldBases.push(new Matrix44());
+          pJoint.currentNormalMatrices.push(new Matrix44());
+          pJoint.currentMatrices.push(new Matrix44());
         }
         if(pJoint.animationRotations.length > maxFrames){
           maxFrames = pJoint.animationRotations.length;
@@ -432,7 +471,6 @@ SkeletalModel.prototype.setTime = function(t){
 	this.updateMesh();
 };
 
-
 SkeletalModel.prototype.updateMesh = function(){
 	var pJoint;
 	var pFace;
@@ -460,8 +498,9 @@ SkeletalModel.prototype.updateMesh = function(){
 				var currVertTemp = new Vector3(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
 				var normTemp = new Vector3(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
 
-				pMatrix = pJoint.animationCombinedBases[frame].preMultiply(
-                                                pJoint.ikSolutionCombinedBases.m);
+				//pMatrix = pJoint.animationCombinedBases[frame];
+				pMatrix = pJoint.currentMatrices[frame];
+
 				currVertTemp.transform(pMatrix);
 
 				currVert.add(
@@ -470,7 +509,8 @@ SkeletalModel.prototype.updateMesh = function(){
               )
             );
 				
-				normTemp.transform(pJoint.animationNormalBases[frame]);
+				//normTemp.transform(pJoint.animationNormalBases[frame]);
+				normTemp.transform(pJoint.currentNormalMatrices[frame]);
 
 				currNorm = Vector3.add(
                     currNorm,
@@ -479,15 +519,14 @@ SkeletalModel.prototype.updateMesh = function(){
 				
 				//Frame1
 				frame = this.frame1;
-				if(frame >= pJoint.animationCombinedBases.length)
-					frame = pJoint.animationCombinedBases.length - 1;
+				if(frame >= pJoint.currentMatrices.length)
+					frame = pJoint.currentMatrices.length - 1;
 
 				currVertTemp.set(pRefVertex.v.x,pRefVertex.v.y,pRefVertex.v.z);
 				normTemp.set(pRefVertex.n.x,pRefVertex.n.y,pRefVertex.n.z);
 
 				//pMatrix = pJoint.animationCombinedBases[frame];
-				pMatrix = pJoint.animationCombinedBases[frame].preMultiply(
-                                                pJoint.ikSolutionCombinedBases.m);
+				pMatrix = pJoint.currentMatrices[frame];
 				currVertTemp.transform(pMatrix);
 
 				currVert.add(
@@ -496,7 +535,8 @@ SkeletalModel.prototype.updateMesh = function(){
               )
             );
 
-				normTemp.transform(pJoint.animationNormalBases[frame]);
+				//normTemp.transform(pJoint.animationNormalBases[frame]);
+				normTemp.transform(pJoint.currentNormalMatrices[frame]);
         currNorm = Vector3.add(
                   currNorm,
                   normTemp.scale(this.frame0Weight)

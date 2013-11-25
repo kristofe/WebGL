@@ -108,6 +108,7 @@
             console.log(attr);
 
             gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
             var extTFL = gl.getExtension("OES_texture_float_linear");
             if(undefined != extTFL) {
               glExtensions["OES_texture_foat_linear"] = extTFL;
@@ -147,10 +148,10 @@
         skelModel.transform.setRotation(q);
         skelModel.transform.setScale(new Vector3(0.08, 0.08, 0.08));
         skelModel.transform.setPosition(new Vector3(0.0, -2.0,-5.0));
-        //skelModel.setAnimationBones("all");
-        //skelModel.setTime(currTime);
+        skelModel.setAnimationBones("all");
 
         ikAnim.animate(currTime);
+        skelModel.setTime(currTime);
         skelModel.draw(pMatrix, currTime);
         /*
         var q = new Quaternion();
