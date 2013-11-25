@@ -258,19 +258,21 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
           var jointID = j;
           var joint = this.currentJoints[jointID];
 
+          var trans = joint.animationTranslations[this.currentFrame];
+          var rot = joint.animationRotations[this.currentFrame];
 
+          this.calculateJoint(this.currentFrame, joint, trans, rot);
+          /*
           var mat = joint.animationCombinedBases[this.currentFrame];
           var normMat = joint.animationNormalBases[this.currentFrame];
 
-          /*
           // accumulate our current animation cumulative bone transform
-          var animPose = currentAnimPoseCumulativeBoneTransforms[jointID];
-          if( joint.parentID != -1 ) {
-            currentAnimPoseCumulativeBoneTransforms[joint.parentID].copyInto( animPose);
-          } else {
-            animPose.identity();
-          }
-          */
+          //var animPose = currentAnimPoseCumulativeBoneTransforms[jointID];
+          //if( joint.parentID != -1 ) {
+          //  currentAnimPoseCumulativeBoneTransforms[joint.parentID].copyInto( animPose);
+          //} else {
+          //  animPose.identity();
+          //}
           //
           var animPose = joint.animationWorldBases[this.currentFrame];
           if( joint.parentID != -1 ) {
@@ -293,11 +295,37 @@ SkeletalModel.prototype.updateAllAnimationBones = function(){
 
           joint.currentMatrices[this.currentFrame] = mat.clone();
           joint.currentNormalMatrices[this.currentFrame] = normMat.clone();
+          */
         }
       }
     }
 	}
 };
+
+SkeletalModel.prototype.calculateJoint = function(frame, joint, translation, rotation){
+  var jointID = joint.id;
+  var mat = joint.animationCombinedBases[frame];
+  var normMat = joint.animationNormalBases[frame];
+
+  var animPose = joint.animationWorldBases[frame];
+  if( joint.parentID != -1 ) {
+    this.currentJoints[joint.parentID].animationWorldBases[frame].copyInto(animPose);
+  } else {
+    animPose.identity();
+  }
+
+  animPose.translate(translation.x, translation.y, translation.z);
+  animPose.rotateZ(rotation.z);
+  animPose.rotateY(rotation.y);
+  animPose.rotateX(rotation.x);
+
+  animPose.copyInto(mat);
+  mat.preMultiply(this.referencePose[jointID].referencePoseWorldToLocal.m);
+  mat.clone().invert().transpose().copyInto(normMat);
+
+  joint.currentMatrices[frame] = mat.clone();
+  joint.currentNormalMatrices[frame] = normMat.clone();
+}
 
 SkeletalModel.prototype.initAnimations = function(){
 	//loop through all the animations and calculate all of the joints children

@@ -202,7 +202,8 @@
         ikAnim.setEndJoint("rt_hand_finger", false);
         ikAnim.calculateJointArray();
       };
-      skelModel.loadSMD("assets/","jones_reference.smd", "all_animations.smd","all", ikCallback);
+      skelModel.loadSMD("assets/","jones_reference.smd", "all_animations.smd",
+                        "all", ikCallback);
       skelModel.fCurrentAnimStartTime = 1;
       skelModel.fCurrentAnimEndTime = 46;//215.0;
       skelModel.fTotalAnimationTime = 46;//215.0;

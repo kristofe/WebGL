@@ -5,6 +5,7 @@ function IKAnimator(gl){
   this.rootJoint = null;
   this.endJoint = null;
   this.joints = [];
+  this.ikOnlyJoints = [];
 }
 
 IKAnimator.prototype.setSkeletalModel = function(sm) {
@@ -20,6 +21,8 @@ IKAnimator.prototype.setEndJoint = function(name, useRefPose) {
   this.endJoint = this.skeletalModel.getJoint(name, useRefPose);
 };
 
+/*
+   //THIS CAPABILITY IS NOW IN SKELETAL MODEL
 IKAnimator.prototype.modifyJoint = function( frame, joint, angle){
 
     var jointID = joint.id;
@@ -48,6 +51,7 @@ IKAnimator.prototype.modifyJoint = function( frame, joint, angle){
     joint.currentMatrices[frame] = mat.clone();
     joint.currentNormalMatrices[frame] = normMat.clone();
 }
+*/
 
 IKAnimator.prototype.animate = function(time){
   if(this.skeletalModel.ready == false){
@@ -62,8 +66,28 @@ IKAnimator.prototype.animate = function(time){
     }else{
       angle *= 0.9;
     }
-    this.modifyJoint(this.skeletalModel.frame0, this.joints[i], a);
-    this.modifyJoint(this.skeletalModel.frame1, this.joints[i], a);
+    var joint = this.joints[i];
+    var trans = joint.animationTranslations[this.skeletalModel.frame0].clone();
+    var rot = joint.animationRotations[this.skeletalModel.frame0].clone();
+    rot.x += a;
+
+    this.skeletalModel.calculateJoint(
+                                      this.skeletalModel.frame0,
+                                      joint,
+                                      trans,
+                                      rot
+                                      );
+
+    trans = joint.animationTranslations[this.skeletalModel.frame1].clone();
+    rot = joint.animationRotations[this.skeletalModel.frame1].clone();
+    rot.x += a;
+
+    this.skeletalModel.calculateJoint(
+                                      this.skeletalModel.frame1,
+                                      joint,
+                                      trans,
+                                      rot
+                                      );
   }
   this.skeletalModel.updateMesh();
 
@@ -79,41 +103,18 @@ IKAnimator.prototype.walkJoints = function(currJoint) {
 
 IKAnimator.prototype.calculateJointArray = function() {
   this.walkJoints(this.rootJoint);
-  /*
-  if(this.endJoint == null){
-    this.joints.push(this.rootJoint);
-    var currJoint = this.rootJoint;
-    console.debug(currJoint.name);
-
-    while(currJoint.children.length > 0) {
-      currJoint = currJoint.children[0];//Only taking first child
-      console.debug(currJoint.name);
-      this.joints.push(currJoint);
-    }
-
-  }else{
-    this.joints.push(this.endJoint);
-    var currJoint = this.endJoint;
-    console.debug(currJoint.name);
-
-    while(currJoint.parentID > -1 && currJoint != this.rootJoint) {
-      currJoint = this.skeletalModel.getJointByID(currJoint.parentID, false);
-      console.debug(currJoint.name);
-      this.joints.unshift(currJoint);
-    }
-  }
-  */
   this.tagControlledJoints();
-
 };
 
 IKAnimator.prototype.tagControlledJoints = function() {
   var currJoint = this.endJoint;
   currJoint.hasIK = true;
+  this.ikOnlyJoints.push(currJoint);
 
   while(currJoint.parentID > -1 && currJoint != this.rootJoint) {
     currJoint = this.skeletalModel.getJointByID(currJoint.parentID, false);
     currJoint.hasIK = true;
+    this.ikOnlyJoints.push(currJoint);
   }
 
 };
