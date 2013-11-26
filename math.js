@@ -162,6 +162,16 @@ Vector3.prototype.normalize = function() {
   return this;
 };
 
+Vector3.prototype.getRotationToAlign = function(other){
+  var dir1 = this.clone().normalize();
+  var dir2 = other.clone().normalize();
+  var axis = dir1.cross(dir2);
+  var d = dir1.dot(dir2);
+  var angle = Math.acos(d);
+
+  return new Vector4(axis.x, axis.y, axis.z, angle);
+}
+
 Vector3.prototype.dot = function(other) {
   return Vector3.dot(this, other);
 };
