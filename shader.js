@@ -88,6 +88,22 @@ ShaderProgram.prototype.loadShaderFromDocument = function (id) {
   return shader;
 }
 */
+ShaderProgram.prototype.compileShaderType = function(str, type) {
+  var gl = this.gl;
+  var shader = gl.createShader(type);
+
+  gl.shaderSource(shader, str);
+  gl.compileShader(shader);
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      var err = gl.getShaderInfoLog(shader);
+      console.error(err);
+      alert(err);
+      return null;
+  }
+
+  return shader;
+}
  
 ShaderProgram.prototype.getShader = function(id) {
   var gl = this.gl;
@@ -239,6 +255,25 @@ ShaderProgram.prototype.cacheUniformData = function() {
   }
 
 }
+ShaderProgram.prototype.initShaderWithSource = function(fsSource, vsSource) {
+  var gl = this.gl;
+  this.fragShaderID = this.compileShaderType(fsSource, gl.FRAGMENT_SHADER);
+  this.vertShaderID = this.compileShaderType(vsSource, gl.VERTEX_SHADER);
+
+  //var shaderProgram = gl.createProgram();
+  this.glProgram = gl.createProgram();
+  gl.attachShader(this.glProgram, this.vertShaderID);
+  gl.attachShader(this.glProgram, this.fragShaderID);
+  gl.linkProgram(this.glProgram);
+
+  if (!gl.getProgramParameter(this.glProgram, gl.LINK_STATUS)) {
+      alert("Could not initialise shaders");
+      throw ("program failed to link:" + gl.getProgramInfoLog (this.glProgram));
+  }
+  console.debug("linked shader");
+  this.setupAttributesAndUniforms();
+  this.ready = true;
+};
 
 ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shadername) {
   var gl = this.gl;
@@ -256,7 +291,11 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
       throw ("program failed to link:" + gl.getProgramInfoLog (this.glProgram));
   }
   console.debug("linked shader");
+  this.setupAttributesAndUniforms();
+  this.ready = true;
+};
 
+ShaderProgram.prototype.setupAttributesAndUniforms = function(){
   gl.useProgram(this.glProgram);
 
   this.cacheUniformData();
@@ -301,7 +340,6 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
   this.time =gl.getUniformLocation(this.glProgram, 
                                                        "uTime");
 
-  this.ready = true;
 }
 
 

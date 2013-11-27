@@ -6,11 +6,15 @@ function IKAnimator(gl){
   this.endJoint = null;
   this.joints = [];
   this.ikOnlyJoints = [];
+  this.mesh = new Mesh(gl);
+  this.material = new Material(gl);
+  this.setupMaterial();
 }
 
 IKAnimator.prototype.setSkeletalModel = function(sm) {
   this.skeletalModel = sm;
-  sm.hasIK = true;
+  this.transform = sm.transform;//sharing transform with skeletal model.
+  this.skeletalModel.hasIK = true;
 };
 
 IKAnimator.prototype.setRootJoint = function(name, useRefPose) {
@@ -118,5 +122,72 @@ IKAnimator.prototype.tagControlledJoints = function() {
   }
 
 };
+
+IKAnimator.prototype.drawDebug = function(projMat, time){
+ 
+  this.material.bind(this.mesh);
+  //this.mesh.bind(this.material.shader);
+  this.material.setUniforms(
+      this.transform.matrix.m,
+      this.transform.inverse.m,
+      this.transform.inverseTranspose.m,
+      projMat.m, 
+      time
+      );
+  this.gl.drawArrays(
+      this.mesh.primitiveType,
+      0, 
+      this.mesh.vertexBuffer.numItems
+      );
+}
+
+
+IKAnimator.prototype.setupMaterial = function(gl){
+  var fsSource="  precision mediump float;\n";
+  fsSource +="\n";
+  fsSource +="    varying vec4 vPosition;\n";
+  fsSource +="    varying vec2 vUV;\n";
+  fsSource +="    varying vec3 vNormal;\n";
+  fsSource +="    varying vec3 vTangent;\n";
+  fsSource +="    varying vec3 vBitangent;\n";
+  fsSource +="    varying vec4 vVertColor;\n";
+  fsSource +="\n";
+  fsSource +="    uniform float uTime;\n";
+  fsSource +="    uniform mat4 uMVMatrix;\n";
+  fsSource +="\n";
+  fsSource +="    void main(void) {\n";
+  fsSource +="      gl_FragColor = vVertColor;\n";
+  fsSource +="    }\n";
+
+  var vsSource="  precision mediump float;\n";
+  vsSource +="    attribute vec3 aVertexPosition;\n";
+  vsSource +="    attribute vec3 aVertexNormal;\n";
+  vsSource +="    attribute vec2 aVertexUV;\n";
+  vsSource +="    attribute vec4 aVertexTangent;\n";
+  vsSource +="    attribute vec4 aVertexColor;\n";
+  vsSource +="\n";
+  vsSource +="    uniform mat4 uMVMatrix;\n";
+  vsSource +="    uniform mat4 uInverse;\n";
+  vsSource +="    uniform mat4 uInverseTranspose;\n";
+  vsSource +="    uniform mat4 uPMatrix;\n";
+  vsSource +="    uniform float uTime;\n";
+  vsSource +="\n";
+  vsSource +="    varying vec4 vPosition;\n";
+  vsSource +="    varying vec2 vUV;\n";
+  vsSource +="    varying vec3 vNormal;\n";
+  vsSource +="    varying vec3 vTangent;\n";
+  vsSource +="    varying vec3 vBitangent;\n";
+  vsSource +="    varying vec4 vVertColor;\n";
+  vsSource +="\n";
+  vsSource +="    void main(void) {\n";
+  vsSource +="        vPosition = uMVMatrix * vec4(aVertexPosition,1.0);\n";
+  vsSource +="        vVertColor = aVertexColor;\n";
+  vsSource +="        gl_Position = uPMatrix * vPosition;\n";
+  vsSource +="    }\n";
+
+  this.material.shader.initShaderWithSource(fsSource,vsSource);
+
+};
+
 
 
