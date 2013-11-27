@@ -115,7 +115,7 @@ IKAnimator.prototype.animate = function(time){
   if(this.skeletalModel.ready == false){
     return;
   }
-  var angle = (Math.sin(time) * 0.5) + 0.125*Math.PI;
+  var angle = (Math.sin(time) * 0.25) + 0.25*Math.PI;
 
   for( var i = 0; i < this.joints.length; i++ ) {
     var a = angle;

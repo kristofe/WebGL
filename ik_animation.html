@@ -198,9 +198,9 @@
       var ikCallback = function(){
         skelModel.setAnimationBones("all");
         skelModel.setTime(0.0);
-        ikAnim.setRootJoint("rt_clavicle|rt_shoulder", false);
+        ikAnim.setRootJoint("lft_clavicle", false);
         //ikAnim.setEndJoint("rt_clavicle|rt_shoulder|rt_elbow|rt_wrist", false);
-        ikAnim.setEndJoint("rt_hand_finger", false);
+        ikAnim.setEndJoint("lft_hand_finger", false);
         ikAnim.calculateJointArray();
       };
       skelModel.loadSMD("assets/","jones_reference.smd", "all_animations.smd",
