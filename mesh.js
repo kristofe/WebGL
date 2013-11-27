@@ -151,6 +151,8 @@ Mesh.prototype.constructBuffers = function() {
 Mesh.prototype.updateBuffers = function() {
   this.updateVertices();
 
+  var gl = this.gl;
+
   gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
   /*
   gl.bufferData(

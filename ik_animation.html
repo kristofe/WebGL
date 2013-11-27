@@ -153,6 +153,7 @@
         skelModel.setTime(1.0 * currTime);
         ikAnim.animate(currTime);
         skelModel.draw(pMatrix, currTime);
+        ikAnim.drawDebug(pMatrix, currTime);
         /*
         var q = new Quaternion();
         q.rotateZ(currTime*0.2);

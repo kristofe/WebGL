@@ -375,6 +375,7 @@ SkeletalModel.prototype.createMeshes = function() {
     var mesh = new Mesh(this.gl);
     this.meshes.push(mesh);
     this.materials[i].shader = this.material.shader;
+    this.materials[i].culling = false;
   }
 
   
@@ -418,14 +419,11 @@ SkeletalModel.prototype.updateMeshes = function() {
 
 SkeletalModel.prototype.draw = function(projMat, time){ 
    
-  //TODO: put culling into material
-  this.gl.disable(this.gl.CULL_FACE);
   for(var i = 0; i < this.meshes.length; i++){
     if(this.meshes[i].vertexBuffer != -1){
       var mesh = this.meshes[i];
       var material = this.materials[i];
       material.bind(mesh);
-      //mesh.bind(material.shader);
       material.setUniforms(
           this.transform.matrix.m,
           this.transform.inverse.m,
@@ -436,7 +434,6 @@ SkeletalModel.prototype.draw = function(projMat, time){
         this.gl.drawArrays( mesh.primitiveType, 0, mesh.numItems);
     }
   }
-  this.gl.enable(this.gl.CULL_FACE);
 };
 
 SkeletalModel.prototype.setAnimationBones = function(name) {

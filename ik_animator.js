@@ -1,6 +1,7 @@
 "use strict";
 
 function IKAnimator(gl){
+  this.gl = gl;
   this.skeletalModel;
   this.rootJoint = null;
   this.endJoint = null;
@@ -25,6 +26,69 @@ IKAnimator.prototype.setEndJoint = function(name, useRefPose) {
   this.endJoint = this.skeletalModel.getJoint(name, useRefPose);
 };
 
+IKAnimator.prototype.calculateMesh = function() {
+  var positions = [];
+  this.mesh.clear();
+
+  //calculate positions
+  for(var i = 0; i < this.ikOnlyJoints.length; i++){
+    var joint = this.ikOnlyJoints[i];
+
+    var mat0 = joint.animationCombinedBases[this.skeletalModel.frame0];
+    var pos0 = new Vector3(mat0.m[12], mat0.m[13], mat0.m[14]);
+    var mat1 = joint.animationCombinedBases[this.skeletalModel.frame1];
+    var pos1 = new Vector3(mat1.m[12], mat1.m[13], mat1.m[14]);
+
+    var pos = Vector3.add(
+                          pos0.scale(this.skeletalModel.frame0Weight),
+                          pos1.scale(this.skeletalModel.frame1Weight)
+                         );
+
+    positions.push(pos);
+
+    /*
+    vertices.push(x, y2, z,           //Pos
+                  0.0, 0.0, 1.0,      //normal 
+                  u, v2, 0.0,         //uv 
+                  1.0, 0.0, 0.0,      //tangent  
+                  0.0, 0.0, 0.0, 0.0  //color
+                 );
+    */
+
+  }
+
+  
+  for(var i = 0; i < positions.length-1; i++) {
+    var p0 = positions[i];
+    var p1 = positions[i+1];
+    this.mesh.positions.push(p0);
+    this.mesh.positions.push(p1);
+
+    var rb = i/this.joints.length;
+    var c = new Vector4(rb * 0.5, 0.0, rb, 1.0);
+
+    this.mesh.colors.push(c);
+    this.mesh.colors.push(c);
+  }
+  /*
+    this.mesh.positions.push(new Vector3(-1.0, 0.0,-0.1));
+    this.mesh.positions.push(new Vector3(1.0, 0.0, -0.1));
+
+    var c = new Vector4(0.5, 0.0, 0.0, 1.0);
+
+    this.mesh.colors.push(c);
+    this.mesh.colors.push(c);
+  */
+  this.mesh.primitiveType = this.gl.LINES;
+
+
+  if(this.mesh.vertexBuffer instanceof WebGLBuffer){
+    this.mesh.updateBuffers();
+  } else {
+    this.mesh.constructBuffers();
+  }
+
+};
 /*
    //THIS CAPABILITY IS NOW IN SKELETAL MODEL
 IKAnimator.prototype.modifyJoint = function( frame, joint, angle){
@@ -94,6 +158,7 @@ IKAnimator.prototype.animate = function(time){
                                       );
   }
   this.skeletalModel.updateMesh();
+  this.calculateMesh();
 
   
 }
@@ -121,24 +186,29 @@ IKAnimator.prototype.tagControlledJoints = function() {
     this.ikOnlyJoints.push(currJoint);
   }
 
+  this.calculateMesh();
+
 };
 
 IKAnimator.prototype.drawDebug = function(projMat, time){
  
-  this.material.bind(this.mesh);
-  //this.mesh.bind(this.material.shader);
-  this.material.setUniforms(
-      this.transform.matrix.m,
-      this.transform.inverse.m,
-      this.transform.inverseTranspose.m,
-      projMat.m, 
-      time
-      );
-  this.gl.drawArrays(
-      this.mesh.primitiveType,
-      0, 
-      this.mesh.vertexBuffer.numItems
-      );
+  if(this.mesh.vertexBuffer instanceof WebGLBuffer){
+    
+    this.material.bind(this.mesh);
+    //this.mesh.bind(this.material.shader);
+    this.material.setUniforms(
+        this.transform.matrix.m,
+        this.transform.inverse.m,
+        this.transform.inverseTranspose.m,
+        projMat.m, 
+        time
+        );
+    this.gl.drawArrays(
+        this.mesh.primitiveType,
+        0, 
+        this.mesh.numItems
+        );
+  }
 }
 
 
@@ -181,11 +251,18 @@ IKAnimator.prototype.setupMaterial = function(gl){
   vsSource +="\n";
   vsSource +="    void main(void) {\n";
   vsSource +="        vPosition = uMVMatrix * vec4(aVertexPosition,1.0);\n";
+  //vsSource +="        vPosition = vec4(aVertexPosition,1.0);\n";
   vsSource +="        vVertColor = aVertexColor;\n";
+  vsSource +="        vUV = aVertexUV.xy;\n";
+  vsSource +="        vNormal = aVertexNormal.xyz;\n";
+  vsSource +="        vTangent = aVertexTangent.xyz;\n";
   vsSource +="        gl_Position = uPMatrix * vPosition;\n";
   vsSource +="    }\n";
 
   this.material.shader.initShaderWithSource(fsSource,vsSource);
+  this.material.zTest = false;
+  this.material.zWrite = false;
+  this.material.lineWidth = 3.0;
 
 };
 

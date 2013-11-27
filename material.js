@@ -7,6 +7,10 @@ function Material(gl){
   this.textures = [this.texture];
   this.name = "";
   this.id = -1;
+  this.zTest = true;
+  this.zWrite = true;
+  this.culling = true;
+  this.lineWidth = 1.0;
   
 }
 
@@ -37,6 +41,27 @@ Material.prototype.bind = function(mesh){
     this.textures[i].activate();
   }
   this.shader.bind(mesh);
+  if(this.culling){
+    this.gl.enable(this.gl.CULL_FACE);
+  }else{
+    this.gl.disable(this.gl.CULL_FACE);
+  }
+  if(this.zTest){
+    this.gl.enable(this.gl.DEPTH_TEST);
+  }else{
+    this.gl.disable(this.gl.DEPTH_TEST);
+  }
+  /*
+  if(this.zWrite){
+    this.gl.depthMask(this.gl.TRUE);
+  }else{
+    this.gl.depthMask(this.gl.FALSE);
+  }
+  */
+  this.gl.depthMask(this.zWrite);
+  this.gl.lineWidth(this.lineWidth);
+
+
 }
 
 Material.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p, time){
