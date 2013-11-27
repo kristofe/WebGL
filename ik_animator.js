@@ -34,9 +34,9 @@ IKAnimator.prototype.calculateMesh = function() {
   for(var i = 0; i < this.ikOnlyJoints.length; i++){
     var joint = this.ikOnlyJoints[i];
 
-    var mat0 = joint.animationCombinedBases[this.skeletalModel.frame0];
+    var mat0 = joint.animationWorldBases[this.skeletalModel.frame0];
     var pos0 = new Vector3(mat0.m[12], mat0.m[13], mat0.m[14]);
-    var mat1 = joint.animationCombinedBases[this.skeletalModel.frame1];
+    var mat1 = joint.animationWorldBases[this.skeletalModel.frame1];
     var pos1 = new Vector3(mat1.m[12], mat1.m[13], mat1.m[14]);
 
     var pos = Vector3.add(
@@ -45,16 +45,6 @@ IKAnimator.prototype.calculateMesh = function() {
                          );
 
     positions.push(pos);
-
-    /*
-    vertices.push(x, y2, z,           //Pos
-                  0.0, 0.0, 1.0,      //normal 
-                  u, v2, 0.0,         //uv 
-                  1.0, 0.0, 0.0,      //tangent  
-                  0.0, 0.0, 0.0, 0.0  //color
-                 );
-    */
-
   }
 
   
