@@ -15,7 +15,7 @@ function Joint(){
   this.refPoseTranslation = new Vector3(0,0,0);
   this.refPoseOrientation = new Vector3(0,0,0);
   this.referencePoseLocalBasis = new Matrix44();
-	this.referencePoseWorldToLocal = new Matrix44();
+	this.referencePoseWorldBasis = new Matrix44();
   this.animationRotations = [];
   this.animationTranslations = [];
   //this.animationLocalBases = [];//array of Matrix44

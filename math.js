@@ -195,6 +195,8 @@ Vector3.prototype.transform = function(mat44) {
 	this.x = xx;
 	this.y = yy;
 	this.z = zz;
+
+  return this;
 };
 
 /*
@@ -973,6 +975,40 @@ Quaternion.prototype.conjugate = function () {
   return this;
 };
 
+
+Quaternion.prototype.toEulerAngles = function(){
+  var euler = new Vector3(0,0,0);
+  var sqw = this.w*this.w;
+  var sqx = this.x*this.x;
+  var sqy = this.y*this.y;
+  var sqz = this.z*this.z;
+  
+  /*
+	var unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
+	var test = this.x*this.y + this.z*this.w;
+	if (test > 0.499*unit) { // singularity at north pole
+		euler.y = 2 * Math.atan2(this.x,this.w);
+		euler.z = Math.PI/2;
+		euler.x = 0;
+		return euler;
+	}
+	if (test < -0.499*unit) { // singularity at south pole
+		euler.y = -2 * Math.atan2(this.x,this.w);
+		euler.z = -Math.PI/2;
+		euler.x = 0;
+		return euler;
+	}
+  euler.y = Math.atan2(2*this.y*this.w-2*this.x*this.z , sqx - sqy - sqz + sqw);
+	euler.z = Math.asin(2*test/unit);
+	euler.x = Math.atan2(2*this.x*this.w-2*this.y*this.z , -sqx + sqy - sqz + sqw)
+  */
+    
+  var x = this.x; var y = this.y; var z = this.z; var w = this.w;
+  euler.z = Math.atan2(2.0 * (x*y + z*w),(sqx - sqy - sqz + sqw));
+  euler.x = Math.atan2(2.0 * (y*z + x*w),(-sqx - sqy + sqz + sqw));
+  euler.y = Math.asin(-2.0 * (x*z - y*w));
+	return euler;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////

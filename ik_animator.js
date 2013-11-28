@@ -10,6 +10,8 @@ function IKAnimator(gl){
   this.mesh = new Mesh(gl);
   this.material = new Material(gl);
   this.setupMaterial();
+
+  this.effectorPosition = new Vector3(0,33,30);
 }
 
 IKAnimator.prototype.setSkeletalModel = function(sm) {
@@ -54,12 +56,23 @@ IKAnimator.prototype.calculateMesh = function() {
     this.mesh.positions.push(p0);
     this.mesh.positions.push(p1);
 
-    var rb = i/this.joints.length;
-    var c = new Vector4(rb * 0.5, 0.0, rb, 1.0);
+    var rb = i/this.ikOnlyJoints.length;
+    //var c = new Vector4(rb * 0.5, 0.0, rb, 1.0);
+    var c = new Vector4(rb*0, rb, rb*0, 1.0);
 
     this.mesh.colors.push(c);
     this.mesh.colors.push(c);
   }
+
+  //add effector!
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,-1,0)));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,1,0)));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,0,-1)));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,0,1)));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
   /*
     this.mesh.positions.push(new Vector3(-1.0, 0.0,-0.1));
     this.mesh.positions.push(new Vector3(1.0, 0.0, -0.1));
@@ -79,42 +92,23 @@ IKAnimator.prototype.calculateMesh = function() {
   }
 
 };
-/*
-   //THIS CAPABILITY IS NOW IN SKELETAL MODEL
-IKAnimator.prototype.modifyJoint = function( frame, joint, angle){
 
-    var jointID = joint.id;
-    var mat = joint.animationCombinedBases[frame];
-    var normMat = joint.animationNormalBases[frame];
-
-    var animPose = joint.animationWorldBases[frame];
-    if( joint.parentID != -1 ) {
-      this.skeletalModel.currentJoints[joint.parentID].animationWorldBases[frame].copyInto(animPose);
-    } else {
-      animPose.identity();
-    }
-
-    
-    var animationTranslation = joint.animationTranslations[frame];
-    var animationRotation = joint.animationRotations[frame];
-    animPose.translate(animationTranslation.x, animationTranslation.y, animationTranslation.z);
-    animPose.rotateZ(animationRotation.z);
-    animPose.rotateY(animationRotation.y);
-    animPose.rotateX(animationRotation.x + angle);
-
-    animPose.copyInto(mat);
-    mat.preMultiply(this.skeletalModel.referencePose[jointID].referencePoseWorldToLocal.m);
-    mat.clone().invert().transpose().copyInto(normMat);
-
-    joint.currentMatrices[frame] = mat.clone();
-    joint.currentNormalMatrices[frame] = normMat.clone();
+IKAnimator.prototype.animateEffector = function(time){
+  this.effectorPosition = new Vector3(0,33,20);
+  var radius = 10.0;
+  var horizOffset =  0;//Math.sin(time);
+  var vertOffset = Math.cos(time);
+  this.effectorPosition.z += horizOffset * radius;
+  this.effectorPosition.y += vertOffset * radius;
 }
-*/
 
 IKAnimator.prototype.animate = function(time){
   if(this.skeletalModel.ready == false){
     return;
   }
+
+  this.animateEffector(time);
+
   var angle = (Math.sin(time) * 0.25) + 0.25*Math.PI;
 
   for( var i = 0; i < this.joints.length; i++ ) {
@@ -125,9 +119,34 @@ IKAnimator.prototype.animate = function(time){
       angle *= 0.9;
     }
     var joint = this.joints[i];
+    var parentJoint = this.skeletalModel.currentJoints[joint.parentID];
     var trans = joint.animationTranslations[this.skeletalModel.frame0].clone();
     var rot = joint.animationRotations[this.skeletalModel.frame0].clone();
-    rot.x += a;
+    //rot.x += a;
+
+    //if(true || this.joints[i].hasIK){
+    if(this.joints[i].hasIK){
+      if(i == 0){
+        var mat0 = parentJoint.animationWorldBases[this.skeletalModel.frame0];
+        var pos0 = new Vector3(mat0.m[12], mat0.m[13], mat0.m[14]);
+        var dir = new Vector3(mat0.m[8], mat0.m[9], mat0.m[10]).normalize();
+        //var dir = new Vector3(0,0,1);
+
+        var localEffPos = this.effectorPosition.clone();//.transform(mat0.clone().invert());
+        var dirToEffector = localEffPos.clone().subtract(pos0).normalize();
+        var axisAngle = dir.getRotationToAlign(dirToEffector);
+        var q = new Quaternion();
+        q.setAxisAngle(new Vector3(axisAngle.x, axisAngle.y, axisAngle.z), axisAngle.w);
+        var eulerAngles = q.toEulerAngles();
+        
+        trans.set(0,0,10);
+        rot.set(eulerAngles.x,eulerAngles.y,eulerAngles.z);
+        //rot.add(eulerAngles);
+      } else{
+        trans.set(0,0,10);
+        rot.set(0,0,0);
+      }
+    }
 
     this.skeletalModel.calculateJoint(
                                       this.skeletalModel.frame0,
@@ -138,7 +157,32 @@ IKAnimator.prototype.animate = function(time){
 
     trans = joint.animationTranslations[this.skeletalModel.frame1].clone();
     rot = joint.animationRotations[this.skeletalModel.frame1].clone();
-    rot.x += a;
+    //rot.x += a;
+
+    //if(true || this.joints[i].hasIK){
+    if(this.joints[i].hasIK){
+      if(i == 0){
+        var mat1 = parentJoint.animationWorldBases[this.skeletalModel.frame1];
+        var pos1 = new Vector3(mat1.m[12], mat1.m[13], mat1.m[14]);
+        var dir = new Vector3(mat1.m[8], mat1.m[9], mat1.m[10]).normalize();
+        //var dir = new Vector3(0,0,1);
+
+        var localEffPos = this.effectorPosition.clone();//.transform(mat1.clone().invert());
+        var dirToEffector = localEffPos.clone().subtract(pos1).normalize();
+        var axisAngle = dir.getRotationToAlign(dirToEffector);
+        var q = new Quaternion();
+        q.setAxisAngle(new Vector3(axisAngle.x, axisAngle.y, axisAngle.z), axisAngle.w);
+        var eulerAngles = q.toEulerAngles();
+        
+        trans.set(0,0,10);
+        rot.set(eulerAngles.x,eulerAngles.y,eulerAngles.z);
+        //rot.add(eulerAngles);
+
+      } else{
+        trans.set(0,0,10);
+        rot.set(0,0,0);
+      }
+    }
 
     this.skeletalModel.calculateJoint(
                                       this.skeletalModel.frame1,

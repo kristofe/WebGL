@@ -17,6 +17,7 @@
 <script type="text/javascript" src="smd_loader.js"></script>
 <script type="text/javascript" src="skeletal_model.js"></script>
 <script type="text/javascript" src="ik_animator.js"></script>
+<script type="text/javascript" src="ccd.js"></script>
 
 
 <script id="shader-fs" type="x-shader/x-fragment">
@@ -144,6 +145,16 @@
 
         var q = new Quaternion();
         //q.rotateY(currTime*0.2 + Math.PI*0.5);
+        //q.rotateY(Math.PI*0.5);
+        ccd.transform.setRotation(q);
+        ccd.transform.setScale(new Vector3(0.1, 0.1, 0.1));
+        ccd.transform.setPosition(new Vector3(0.0, -2.0,-5.0));
+
+        ccd.animate(currTime);
+        ccd.drawDebug(pMatrix, currTime);
+        /*
+        var q = new Quaternion();
+        //q.rotateY(currTime*0.2 + Math.PI*0.5);
         q.rotateY(Math.PI*0.5);
         skelModel.transform.setRotation(q);
         skelModel.transform.setScale(new Vector3(0.08, 0.08, 0.08));
@@ -154,6 +165,7 @@
         ikAnim.animate(currTime);
         skelModel.draw(pMatrix, currTime);
         ikAnim.drawDebug(pMatrix, currTime);
+        */
         /*
         var q = new Quaternion();
         q.rotateZ(currTime*0.2);
@@ -187,13 +199,17 @@
     var pMatrix;
     var skelModel;
     var ikAnim;
+    var ccd;
 
     function initScene(){
+      ccd = new CCD(gl);
+      /*
       var smd = new SMDLoader(gl);
       skelModel = new SkeletalModel(gl);
       skelModel.material.shader.initShader("shader-fs","shader-vs");
       ikAnim = new IKAnimator(gl);
       ikAnim.setSkeletalModel(skelModel);
+
 
       var ikCallback = function(){
         skelModel.setAnimationBones("all");
@@ -208,6 +224,7 @@
       skelModel.fCurrentAnimStartTime = 1;
       skelModel.fCurrentAnimEndTime = 46;//215.0;
       skelModel.fTotalAnimationTime = 46;//215.0;
+      */
 
     }
 
