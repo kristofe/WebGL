@@ -860,6 +860,63 @@ Quaternion.prototype.multiply = function( b) {
   return this;
 };
 
+Quaternion.prototype.rotationTo = function(a, b) {
+  var tmpvec3 = new Vector3(0,0,0);
+  var xUnitVec3 = new Vector3(1,0,0);
+  var yUnitVec3 = new Vector3(0,1,0);
+
+  var dot = a.dot(b);
+  if (dot < -0.999999) {
+      tmpvec3 =  xUnitVec3.cross(a);
+      if (tmpvec3.length() < 0.000001)
+          tmpvec3 = yUnitVec3.cross(a);
+      tmpvec3.normalize();
+      this.setAxisAngle(tmpvec3, Math.PI);
+      return this;
+  } else if (dot > 0.999999) {
+      this.x = 0;
+      this.y = 0;
+      this.z = 0;
+      this.w = 1;
+      return this;
+  } else {
+      tmpvec3 =  a.cross(b);
+      this.x = tmpvec3.x;
+      this.y = tmpvec3.y;
+      this.z = tmpvec3.z;
+      this.w = 1 + dot;
+      this.normalize();
+      return this;
+  }
+};
+
+Quaternion.prototype.normalize = function() {
+    var x = this.x,
+        y = this.y,
+        z = this.z,
+        w = this.w;
+    var len = x*x + y*y + z*z + w*w;
+    if (len > 0) {
+        len = 1 / Math.sqrt(len);
+        this.x *= len;
+        this.y *= len;
+        this.z *= len;
+        this.w *= len;
+    }
+    return this;
+};
+
+Quaternion.prototype.fromEulerAngles = function(v){
+  var rx = new Quaternion();
+  var ry = new Quaternion();
+  var rz = new Quaternion();
+  rx.rotateX(v.x);
+  ry.rotateY(v.y);
+  rz.rotateZ(v.z);
+  this.identity();
+  this.multiply(rz).multiply(ry).multiply(rx);
+}
+
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 Quaternion.prototype.rotateX = function (rad) {
     rad *= 0.5; 
@@ -976,6 +1033,7 @@ Quaternion.prototype.conjugate = function () {
 };
 
 
+
 Quaternion.prototype.toEulerAngles = function(){
   var euler = new Vector3(0,0,0);
   var sqw = this.w*this.w;
@@ -983,7 +1041,6 @@ Quaternion.prototype.toEulerAngles = function(){
   var sqy = this.y*this.y;
   var sqz = this.z*this.z;
   
-  /*
 	var unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
 	var test = this.x*this.y + this.z*this.w;
 	if (test > 0.499*unit) { // singularity at north pole
@@ -1001,12 +1058,14 @@ Quaternion.prototype.toEulerAngles = function(){
   euler.y = Math.atan2(2*this.y*this.w-2*this.x*this.z , sqx - sqy - sqz + sqw);
 	euler.z = Math.asin(2*test/unit);
 	euler.x = Math.atan2(2*this.x*this.w-2*this.y*this.z , -sqx + sqy - sqz + sqw)
-  */
     
+
+  /*
   var x = this.x; var y = this.y; var z = this.z; var w = this.w;
   euler.z = Math.atan2(2.0 * (x*y + z*w),(sqx - sqy - sqz + sqw));
   euler.x = Math.atan2(2.0 * (y*z + x*w),(-sqx - sqy + sqz + sqw));
   euler.y = Math.asin(-2.0 * (x*z - y*w));
+  */
 	return euler;
 }
 

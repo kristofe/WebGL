@@ -53,11 +53,13 @@ CCD.prototype.setupJoints = function() {
 
   for(var i = 0; i < this.joints.length; i++){
     var joint = this.joints[i];
+    var rot = new Quaternion();
+    rot.fromEulerAngles(joint.animationRotations[0]);
     this.calculateJoint(
                         0,
                         joint, 
                         joint.animationTranslations[0], 
-                        joint.animationRotations[0]
+                        rot
                         );
 
   }
@@ -140,7 +142,9 @@ CCD.prototype.animate = function(time){
   for( var i = 0; i < this.joints.length; i++ ) {
     var joint = this.joints[i];
     var trans = joint.animationTranslations[0].clone();
-    var rot = joint.animationRotations[0].clone();
+    var rotEuler = joint.animationRotations[0].clone();
+    var rot = new Quaternion();
+    rot.fromEulerAngles(rotEuler);
 
     //rot.x += a;
 
@@ -157,12 +161,8 @@ CCD.prototype.animate = function(time){
 
       var localEffPos = this.effectorPosition.clone();//.transform(pm.clone().invert());
       var dirToEffector = localEffPos.clone().subtract(pos0).normalize();
-      var axisAngle = dir.getRotationToAlign(dirToEffector);
-      var q = new Quaternion();
-      q.setAxisAngle(new Vector3(axisAngle.x, axisAngle.y, axisAngle.z), axisAngle.w);
-      var eulerAngles = q.toEulerAngles();
-      
-      rot.set(eulerAngles.x,eulerAngles.y,eulerAngles.z);
+      //var axisAngle = dir.getRotationToAlign(dirToEffector);
+      rot.rotationTo(dir,dirToEffector);
     } 
     this.calculateJoint(0, joint, trans, rot);
 
@@ -182,9 +182,7 @@ CCD.prototype.calculateJoint = function(frame, joint, translation, rotation){
   }
 
   animPose.translate(translation.x, translation.y, translation.z);
-  animPose.rotateZ(rotation.z);
-  animPose.rotateY(rotation.y);
-  animPose.rotateX(rotation.x);
+  animPose.rotate(rotation);
 
   /*
   animPose.copyInto(mat);
