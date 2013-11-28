@@ -140,7 +140,6 @@ CCD.prototype.animateEffector = function(time){
 CCD.prototype.animate = function(time){
   this.animateEffector(time);
 
-  var angle = (Math.sin(time) * 0.25) + 0.25*Math.PI;
 
   for( var i = 0; i < this.joints.length; i++ ) {
     var joint = this.joints[i];
@@ -149,7 +148,6 @@ CCD.prototype.animate = function(time){
     var rot = new Quaternion();
     rot.fromEulerAngles(rotEuler);
 
-    //rot.x += a;
 
     if(i == 0){
       var pos0 = new Vector3(0,0,0);
@@ -173,6 +171,7 @@ CCD.prototype.animate = function(time){
       var dirToEffector = localEffPos.subtract(pos0).normalize();
       //var axisAngle = dir.getRotationToAlign(dirToEffector);
       rot.rotationTo(dir,dirToEffector);
+      //console.debug(rot);
     } 
     this.calculateJoint(0, joint, trans, rot);
 
