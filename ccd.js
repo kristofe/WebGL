@@ -24,7 +24,7 @@ CCD.prototype.setupJoints = function() {
   j1.id = 0;
   j1.children.push(j2);
   j1.childCount = 1;
-  j1.refPoseTranslation.set(0,0,8);
+  j1.refPoseTranslation.set(0.0,0.0,0.0);
   
   j2.id = 1;
   j2.parentID = 0;
@@ -73,14 +73,17 @@ CCD.prototype.calculateMesh = function() {
   this.mesh.clear();
 
   //calculate positions
+  //positions.push(new Vector3(0,0,0));
   for(var i = 0; i < this.joints.length; i++){
     var joint = this.joints[i];
 
     var mat0 = joint.animationWorldBases[0];
-    var pos0 = new Vector3(mat0.m[12], mat0.m[13], mat0.m[14]);
+    //var p = new Vector3(0,0,0);
+    //p.transform(mat0);
+    var p = new Vector3(mat0.m[12], mat0.m[13], mat0.m[14]);
 
 
-    positions.push(pos0);
+    positions.push(p);
   }
 
   
@@ -124,14 +127,14 @@ CCD.prototype.calculateMesh = function() {
 };
 
 CCD.prototype.animateEffector = function(time){
-  this.effectorPosition = new Vector3(0,15,0);
-  var radius = 10.0;
+  this.effectorPosition = new Vector3(0,15,8);
+  var radius = 20.0;
   var horizOffset =  Math.sin(time);
   var vertOffset = Math.cos(time);
   var depthOffset = Math.cos(time);
   this.effectorPosition.x += horizOffset * radius;
-  this.effectorPosition.y += vertOffset * radius;
-  this.effectorPosition.z += depthOffset * radius;
+  //this.effectorPosition.y += vertOffset * radius;
+  //this.effectorPosition.z += depthOffset * radius;
 }
 
 CCD.prototype.animate = function(time){
@@ -150,6 +153,7 @@ CCD.prototype.animate = function(time){
 
     if(i == 0){
       var pos0 = new Vector3(0,0,0);
+      /*
       var pm = new Matrix44();
       if(joint.parentID > -1){
         pm = this.joints[joint.parentID].animationWorldBases[0];
@@ -158,9 +162,15 @@ CCD.prototype.animate = function(time){
       var mtx = joint.animationWorldBases[0];
       var pos1 = new Vector3(mtx.m[12], mtx.m[13], mtx.m[14]);
       var dir = pos1.subtract(pos0).normalize();
+      */
+      var mtx = joint.animationWorldBases[0];
+      //var translation = new Vector3(mtx.m[12], mtx.m[13], mtx.m[14]);
+      var dir = new Vector3(0,0,1);
+      dir.transformDirection(mtx).normalize();
+      pos0.transform(mtx);
 
       var localEffPos = this.effectorPosition.clone();//.transform(pm.clone().invert());
-      var dirToEffector = localEffPos.clone().subtract(pos0).normalize();
+      var dirToEffector = localEffPos.subtract(pos0).normalize();
       //var axisAngle = dir.getRotationToAlign(dirToEffector);
       rot.rotationTo(dir,dirToEffector);
     } 

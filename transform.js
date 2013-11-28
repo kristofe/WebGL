@@ -38,9 +38,10 @@ Transform.prototype.setRotation = function(r){
 
 Transform.prototype.rotateEulerAngles = function(r){
 
-  this.rotation.rotateX(r.x);
-  this.rotation.rotateY(r.y);
-  this.rotation.rotateZ(r.z);
+  this.rotation.fromEulerAngles(r);
+  //this.rotation.rotateX(r.x);
+  //this.rotation.rotateY(r.y);
+  //this.rotation.rotateZ(r.z);
   this.update();
 }
 

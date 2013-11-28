@@ -150,11 +150,11 @@ Vector3.prototype.getTangent = function() {
 
 Vector3.prototype.normalize = function() {
   var len = this.dot(this);
-  len = Math.sqrt(len);
   if(len > 0.0) {
-    this.x /= len; 
-    this.y /= len; 
-    this.z /= len; 
+    len = 1/ Math.sqrt(len);
+    this.x *= len; 
+    this.y *= len; 
+    this.z *= len; 
   }
   else{
     console.debug("Vec3 is zero length");
@@ -174,6 +174,26 @@ Vector3.prototype.getRotationToAlign = function(other){
 
 Vector3.prototype.dot = function(other) {
   return Vector3.dot(this, other);
+};
+
+Vector3.prototype.transformDirection = function(mat44) {
+  var mat = mat44.m;
+//Column Major Version -- OpenGL Compatible
+	var xx, yy, zz;
+	xx =  (mat[0] * this.x) +
+        (mat[4] * this.y) +	
+        (mat[8] * this.z) ;
+	yy =  (mat[1] * this.x) +
+        (mat[5] * this.y) +	
+        (mat[9] * this.z) ;
+	zz =  (mat[2] * this.x) +
+        (mat[6] * this.y) +	
+        (mat[10] * this.z);
+	this.x = xx;
+	this.y = yy;
+	this.z = zz;
+
+  return this;
 };
 
 Vector3.prototype.transform = function(mat44) {
@@ -907,14 +927,10 @@ Quaternion.prototype.normalize = function() {
 };
 
 Quaternion.prototype.fromEulerAngles = function(v){
-  var rx = new Quaternion();
-  var ry = new Quaternion();
-  var rz = new Quaternion();
-  rx.rotateX(v.x);
-  ry.rotateY(v.y);
-  rz.rotateZ(v.z);
-  this.identity();
-  this.multiply(rz).multiply(ry).multiply(rx);
+  this.rotateX(v.x);
+  this.rotateY(v.y);
+  this.rotateZ(v.z);
+  return this;
 }
 
 //adapted from github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
