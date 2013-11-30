@@ -173,6 +173,7 @@ CCD.prototype.animate = function(time){
       //var axisAngle = dir.getRotationToAlign(dirToEffector);
       rot.rotationTo(dir,dirToEffector);
 
+      //TODO: FIND INSTABILITY
       //THis is stable so the above code has an instability!
       rot.identity();
       rot.rotateX(Math.PI*0.5);
