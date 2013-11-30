@@ -147,6 +147,7 @@ CCD.prototype.animate = function(time){
     var rotEuler = joint.animationRotations[0].clone();
     var rot = new Quaternion();
     rot.fromEulerAngles(rotEuler);
+    rot.normalize();
 
 
     if(i == 0){
@@ -171,6 +172,11 @@ CCD.prototype.animate = function(time){
       var dirToEffector = localEffPos.subtract(pos0).normalize();
       //var axisAngle = dir.getRotationToAlign(dirToEffector);
       rot.rotationTo(dir,dirToEffector);
+
+      //THis is stable so the above code has an instability!
+      rot.identity();
+      rot.rotateX(Math.PI*0.5);
+      rot.rotateY(Math.sin(-time) + 1*Math.PI);
       //console.debug(rot);
     } 
     this.calculateJoint(0, joint, trans, rot);
@@ -183,6 +189,7 @@ CCD.prototype.calculateJoint = function(frame, joint, translation, rotation){
   var jointID = joint.id;
   //var mat = joint.animationCombinedBases[frame];
 
+  var targetMatrix = joint.currentMatrices[frame];
   var animPose = joint.animationWorldBases[frame];
   if( joint.parentID != -1 ) {
     this.joints[joint.parentID].animationWorldBases[frame].copyInto(animPose);
