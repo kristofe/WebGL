@@ -9,6 +9,7 @@ function CCD(gl){
   this.setupMaterial();
 
   this.effectorPosition = new Vector3(0,0,0);
+  this.effectorAngle = 0.0;
   this.setupJoints();
   this.calculateMesh();
 }
@@ -127,7 +128,8 @@ CCD.prototype.calculateMesh = function() {
 };
 
 CCD.prototype.animateEffector = function(time){
-  this.effectorPosition = new Vector3(0,15,8);
+  //this.effectorPosition = new Vector3(0,15,8);
+  this.effectorPosition = new Vector3(0,10,10);
   var radius = 20.0;
   var horizOffset =  Math.sin(time);
   var vertOffset = Math.cos(time);
@@ -141,6 +143,7 @@ CCD.prototype.animate = function(time){
   this.animateEffector(time);
 
 
+  var currMatrix = new Matrix44();
   for( var i = 0; i < this.joints.length; i++ ) {
     var joint = this.joints[i];
     var trans = joint.animationTranslations[0].clone();
@@ -150,10 +153,11 @@ CCD.prototype.animate = function(time){
     rot.normalize();
 
 
-    if(i == 0){
+    if(true || i == 0){
       var pos0 = new Vector3(0,0,0);
+     
       /*
-      var pm = new Matrix44();
+         var pm = new Matrix44();
       if(joint.parentID > -1){
         pm = this.joints[joint.parentID].animationWorldBases[0];
         pos0 = new Vector3(pm.m[12], pm.m[13], pm.m[14]);
@@ -162,25 +166,53 @@ CCD.prototype.animate = function(time){
       var pos1 = new Vector3(mtx.m[12], mtx.m[13], mtx.m[14]);
       var dir = pos1.subtract(pos0).normalize();
       */
-      var mtx = joint.animationWorldBases[0];
+      
+      //var mtx = joint.animationWorldBases[0];
+      
       //var translation = new Vector3(mtx.m[12], mtx.m[13], mtx.m[14]);
       var dir = new Vector3(0,0,1);
-      dir.transformDirection(mtx).normalize();
-      pos0.transform(mtx);
+
+
+      //mtx.identity();
+      //THIS IS THE LINE THAT CAUSES ALL THE INSTABILITY!!!
+      //dir.transformDirection(mtx).normalize();
+      //pos0.transform(mtx);
+
+      dir.transformDirection(currMatrix).normalize();
+      pos0.transform(currMatrix);
 
       var localEffPos = this.effectorPosition.clone();//.transform(pm.clone().invert());
       var dirToEffector = localEffPos.subtract(pos0).normalize();
-      //var axisAngle = dir.getRotationToAlign(dirToEffector);
-      rot.rotationTo(dir,dirToEffector);
+      var axisAngle = dir.getRotationToAlign(dirToEffector);
+      
+      //if(Math.abs(this.effectorAngle - axisAngle.w) > 0.1) {
+      //  console.debug(Math.abs(this.effectorAngle - axisAngle.w));
+      //}
+      if(dir.dot(dirToEffector) < 0.999){
+        rot.rotationTo(dir, dirToEffector);
+      }
 
-      //TODO: FIND INSTABILITY
-      //THis is stable so the above code has an instability!
+
+      /*
+      var q = new Quaternion();
+      q.rotateZ(time);
+      //q.rotateX(-Math.PI*0.5);
+      //q.rotateY(Math.sin(-time) - 1*Math.PI);
+      var mTemp = new Matrix44();
+      mTemp.rotate(q);
+      var testDir =  new Vector3(0,1,0);
+      var effectorDir = this.effectorPosition.clone().normalize();
+      testDir.transformDirection(mTemp).normalize();
+
       rot.identity();
-      rot.rotateX(Math.PI*0.5);
-      rot.rotateY(Math.sin(-time) + 1*Math.PI);
+      if(dir.dot(testDir) < 0.999){
+        rot.rotationTo(dir, testDir);
+      }
+      */
       //console.debug(rot);
     } 
-    this.calculateJoint(0, joint, trans, rot);
+    var m = this.calculateJoint(0, joint, trans, rot);
+    currMatrix.postMultiply(m.m);
 
   }
   this.calculateMesh();
@@ -192,10 +224,9 @@ CCD.prototype.calculateJoint = function(frame, joint, translation, rotation){
 
   var targetMatrix = joint.currentMatrices[frame];
   var animPose = joint.animationWorldBases[frame];
+  animPose.identity();
   if( joint.parentID != -1 ) {
     this.joints[joint.parentID].animationWorldBases[frame].copyInto(animPose);
-  } else {
-    animPose.identity();
   }
 
   animPose.translate(translation.x, translation.y, translation.z);
@@ -207,6 +238,7 @@ CCD.prototype.calculateJoint = function(frame, joint, translation, rotation){
 
   joint.currentMatrices[frame] = mat.clone();
   */
+  return animPose;
 };
 
 CCD.prototype.drawDebug = function(projMat, time){

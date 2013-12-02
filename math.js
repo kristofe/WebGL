@@ -148,6 +148,14 @@ Vector3.prototype.getTangent = function() {
 
 };
 
+Vector3.prototype.length = function() {
+  var len = this.dot(this);
+  if(len > 0.0) {
+    len = 1/ Math.sqrt(len);
+  }
+  return len;
+};
+
 Vector3.prototype.normalize = function() {
   var len = this.dot(this);
   if(len > 0.0) {
@@ -180,15 +188,9 @@ Vector3.prototype.transformDirection = function(mat44) {
   var mat = mat44.m;
 //Column Major Version -- OpenGL Compatible
 	var xx, yy, zz;
-	xx =  (mat[0] * this.x) +
-        (mat[4] * this.y) +	
-        (mat[8] * this.z) ;
-	yy =  (mat[1] * this.x) +
-        (mat[5] * this.y) +	
-        (mat[9] * this.z) ;
-	zz =  (mat[2] * this.x) +
-        (mat[6] * this.y) +	
-        (mat[10] * this.z);
+	xx =  (mat[0] * this.x) + (mat[4] * this.y) +	(mat[8] * this.z) ;
+	yy =  (mat[1] * this.x) + (mat[5] * this.y) +	(mat[9] * this.z) ;
+	zz =  (mat[2] * this.x) + (mat[6] * this.y) +	(mat[10] * this.z);
 	this.x = xx;
 	this.y = yy;
 	this.z = zz;
@@ -609,44 +611,82 @@ Matrix44.prototype.fromQuat = function (q) {
 
 //adapted from https://github.com/toji/gl-matrix
 Matrix44.prototype.rotate = function(q) {
+  q.normalize();
   var x = q.x, y = q.y, z = q.z, w = q.w,
-      x2 = x + x,
-      y2 = y + y,
-      z2 = z + z,
+    x2 = x + x,
+    y2 = y + y,
+    z2 = z + z,
 
-      xx = x * x2,
-      xy = x * y2,
-      xz = x * z2,
-      yy = y * y2,
-      yz = y * z2,
-      zz = z * z2,
-      wx = w * x2,
-      wy = w * y2,
-      wz = w * z2;
+    xx = x * x2,
+    yx = y * x2,
+    yy = y * y2,
+    zx = z * x2,
+    zy = z * y2,
+    zz = z * z2,
+    wx = w * x2,
+    wy = w * y2,
+    wz = w * z2;
+  
+  var out =  new Float32Array(16);
+        x2 = x + x,
+        y2 = y + y,
+        z2 = z + z,
 
-  var m =  new Float32Array(16);
-  m[0] = 1 - (yy + zz);
-  m[1] = xy + wz;
-  m[2] = xz - wy;
-  m[3] = 0;
+        xx = x * x2,
+        yx = y * x2,
+        yy = y * y2,
+        zx = z * x2,
+        zy = z * y2,
+        zz = z * z2,
+        wx = w * x2,
+        wy = w * y2,
+        wz = w * z2;
 
-  m[4] = xy - wz;
-  m[5] = 1 - (xx + zz);
-  m[6] = yz + wx;
-  m[7] = 0;
+    out[0] = 1 - yy - zz;
+    out[1] = yx + wz;
+    out[2] = zx - wy;
+    out[3] = 0;
 
-  m[8] = xz + wy;
-  m[9] = yz - wx;
-  m[10] = 1 - (xx + yy);
-  m[11] = 0;
+    out[4] = yx - wz;
+    out[5] = 1 - xx - zz;
+    out[6] = zy + wx;
+    out[7] = 0;
 
-  m[12] = 0;
-  m[13] = 0;
-  m[14] = 0;
-  m[15] = 1;
+    out[8] = zx + wy;
+    out[9] = zy - wx;
+    out[10] = 1 - xx - yy;
+    out[11] = 0;
+
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
 
   this.debugPrint("rotate " + q);
-  this.preMultiply(m);
+
+  /*
+  var o =  new Float32Array(16);
+  o[0]  = 1.0 - 2.0*q.y*q.y + 2.0*q.z*q.z;
+  o[1]  = 2.0*q.x*q.y + 2.0*q.z*q.w;
+  o[2]  = 2.0*q.x*q.z - 2.0*q.y*q.w;
+  o[3]  = 0.0;
+  o[4]  = 2.0*q.x*q.y - 2.0*q.z*q.w;
+  o[5]  = 1.0 - 2.0*q.x*q.x + 2.0*q.z*q.z;
+  o[6]  = 2.0*q.y*q.z + 2.0*q.x*q.w;
+  o[7]  = 0.0;
+  o[8]  = 2.0*q.x*q.z + 2.0*q.y*q.w;
+  o[9]  = 2.0*q.y*q.z - 2.0*q.x*q.w;
+  o[10] = 1.0 - 2.0*q.x*q.x + 2.0*q.y*q.y;
+  o[11] = 0.0;
+  o[12] = 0.0;
+  o[13] = 0.0;
+  o[14] = 0.0;
+  o[15] = 1.0;
+  */
+
+
+
+  this.preMultiply(out);
   //this.postMultiply(m);
   return this;
 };
