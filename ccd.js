@@ -9,7 +9,8 @@ function CCD(gl){
   this.setupMaterial();
 
   this.effectorPosition = new Vector3(0,0,0);
-  this.effectorAngle = 0.0;
+  this.targetPosition = new Vector3(0,0,0);
+  this.targetAngle = 0.0;
   this.setupJoints();
   this.calculateMesh();
 }
@@ -43,27 +44,29 @@ CCD.prototype.setupJoints = function() {
   j4.parentID = 2;
   j4.refPoseTranslation.set(0,0,8);
 
-  for(var i = 0; i < this.joints.length; i++){
-    var joint = this.joints[i];
-    joint.animationWorldBases.push(new Matrix44());
-    joint.animationTranslations.push(joint.refPoseTranslation.clone());
-    joint.animationRotations.push(new Vector3(0,0,0));
-    joint.currentMatrices = joint.animationWorldBases;
-  }
+//  for(var i = 0; i < this.joints.length; i++){
+//    var joint = this.joints[i];
+//    joint.animationWorldBases.push(new Matrix44());
+//    joint.animationTranslations.push(joint.refPoseTranslation.clone());
+//    joint.animationRotations.push(new Vector3(0,0,0));
+//    joint.currentMatrices = joint.animationWorldBases;
+//  }
+//
+//
+//  for(var i = 0; i < this.joints.length; i++){
+//    var joint = this.joints[i];
+//    var rot = new Quaternion();
+//    rot.fromEulerAngles(joint.animationRotations[0]);
+//    this.calculateJoint(
+//                        0,
+//                        joint, 
+//                        joint.animationTranslations[0], 
+//                        rot
+//                        );
+//
+//  }
 
-
-  for(var i = 0; i < this.joints.length; i++){
-    var joint = this.joints[i];
-    var rot = new Quaternion();
-    rot.fromEulerAngles(joint.animationRotations[0]);
-    this.calculateJoint(
-                        0,
-                        joint, 
-                        joint.animationTranslations[0], 
-                        rot
-                        );
-
-  }
+  this.calculateJointsState(true);
 
 };
 
@@ -77,13 +80,9 @@ CCD.prototype.calculateMesh = function() {
   //positions.push(new Vector3(0,0,0));
   for(var i = 0; i < this.joints.length; i++){
     var joint = this.joints[i];
-
-    var mat0 = joint.animationWorldBases[0];
-    //var p = new Vector3(0,0,0);
-    //p.transform(mat0);
-    var p = new Vector3(mat0.m[12], mat0.m[13], mat0.m[14]);
-
-
+//    var mat0 = joint.animationWorldBases[0];
+//    var p = new Vector3(mat0.m[12], mat0.m[13], mat0.m[14]);
+    var p = joint.ikWorldPosition;
     positions.push(p);
   }
 
@@ -102,19 +101,33 @@ CCD.prototype.calculateMesh = function() {
     this.mesh.colors.push(c);
   }
 
+  //add target!
+  this.mesh.positions.push(this.targetPosition.clone().add(new Vector3(0,-1,0)));
+  this.mesh.positions.push(this.targetPosition.clone().add(new Vector3(0,1,0)));
+  this.mesh.positions.push(this.targetPosition.clone().add(new Vector3(0,0,-1)));
+  this.mesh.positions.push(this.targetPosition.clone().add(new Vector3(0,0,1)));
+  this.mesh.positions.push(this.targetPosition.clone().add(new Vector3(-1,0,0)));
+  this.mesh.positions.push(this.targetPosition.clone().add(new Vector3(1,0,0)));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+
   //add effector!
-  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,-1,0)));
-  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,1,0)));
-  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,0,-1)));
-  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,0,1)));
-  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(-1,0,0)));
-  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(1,0,0)));
-  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
-  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
-  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
-  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
-  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
-  this.mesh.colors.push(new Vector4(1.0, 0.0, 0.0, 1.0));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,-0.5,0)));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,0.5,0)));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,0,-0.5)));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0,0,0.5)));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(-0.5,0,0)));
+  this.mesh.positions.push(this.effectorPosition.clone().add(new Vector3(0.5,0,0)));
+  this.mesh.colors.push(new Vector4(0.0, 0.0, 1.0, 1.0));
+  this.mesh.colors.push(new Vector4(0.0, 0.0, 1.0, 1.0));
+  this.mesh.colors.push(new Vector4(0.0, 0.0, 1.0, 1.0));
+  this.mesh.colors.push(new Vector4(0.0, 0.0, 1.0, 1.0));
+  this.mesh.colors.push(new Vector4(0.0, 0.0, 1.0, 1.0));
+  this.mesh.colors.push(new Vector4(0.0, 0.0, 1.0, 1.0));
 
   this.mesh.primitiveType = this.gl.LINES;
 
@@ -127,119 +140,134 @@ CCD.prototype.calculateMesh = function() {
 
 };
 
-CCD.prototype.animateEffector = function(time){
-  //this.effectorPosition = new Vector3(0,15,8);
-  this.effectorPosition = new Vector3(0,10,10);
+CCD.prototype.animateTarget = function(time){
+  //this.targetPosition = new Vector3(0,15,8);
+  this.targetPosition = new Vector3(0,10,0);
   var radius = 20.0;
   var horizOffset =  Math.sin(time);
   var vertOffset = Math.cos(time);
   var depthOffset = Math.cos(time);
-  this.effectorPosition.x += horizOffset * radius;
-  //this.effectorPosition.y += vertOffset * radius;
-  //this.effectorPosition.z += depthOffset * radius;
+  this.targetPosition.x += horizOffset * radius;
+  //this.targetPosition.y += vertOffset * radius;
+  //this.targetPosition.z += depthOffset * radius;
+}
+
+CCD.prototype.calculateJointsState = function(init){
+
+  for( var i = 0; i < this.joints.length; i++ ) {
+    var joint = this.joints[i];
+    if(true == init){
+      joint.ikRotation.identity();
+      joint.ikTranslation = joint.refPoseTranslation;
+    }
+
+    
+    var targetMatrix = joint.ikWorldTransform;
+    targetMatrix.identity();
+    if( joint.parentID != -1 ) {
+      //This should use this.skeletalModel.joints when ported to ik_animator
+      //this.joints[joint.parentID].animationWorldBases[0].copyInto(targetMatrix);
+      this.joints[joint.parentID].ikWorldTransform.copyInto(targetMatrix);
+    }
+
+    //This will store the parent's position;
+    joint.ikWorldOrigin.set(
+                            targetMatrix.m[12], 
+                            targetMatrix.m[13], 
+                            targetMatrix.m[14]
+                           );
+
+    targetMatrix.translate(
+                            joint.ikTranslation.x, 
+                            joint.ikTranslation.y, 
+                            joint.ikTranslation.z
+                          );
+    targetMatrix.rotate(joint.ikRotation);
+
+    joint.ikInverseWorldTransform = targetMatrix.clone().invert();
+
+    joint.ikWorldPosition.set(
+                              targetMatrix.m[12], 
+                              targetMatrix.m[13], 
+                              targetMatrix.m[14]
+                             );
+    var dir = new Vector3(0,0,1);
+    joint.ikWorldDir = joint.ikWorldPosition.clone().subtract(joint.ikWorldOrigin);
+    if(joint.ikWorldDir.length() > 0.001){
+      joint.ikWorldDir.normalize();
+    }
+    else{
+      joint.ikWorldDir = dir.transformDirection(targetMatrix).normalize();
+    }
+    this.effectorPosition = joint.ikWorldPosition;
+  }
 }
 
 CCD.prototype.animate = function(time){
-  this.animateEffector(time);
-
+  this.animateTarget(time);
+  var iterationCount = 0;
 
   var currMatrix = new Matrix44();
-  for( var i = 0; i < this.joints.length; i++ ) {
-    var joint = this.joints[i];
-    var trans = joint.animationTranslations[0].clone();
-    var rotEuler = joint.animationRotations[0].clone();
-    var rot = new Quaternion();
-    rot.fromEulerAngles(rotEuler);
-    rot.normalize();
+  while(iterationCount < 20){
+    for( var i = this.joints.length -1; i >= 0; i-- ) {
+      var joint = this.joints[i];
 
-
-    if(true || i == 0){
-      var pos0 = new Vector3(0,0,0);
-     
-      /*
-         var pm = new Matrix44();
-      if(joint.parentID > -1){
-        pm = this.joints[joint.parentID].animationWorldBases[0];
-        pos0 = new Vector3(pm.m[12], pm.m[13], pm.m[14]);
+      var localEffectorPos = this.effectorPosition.clone().transform(
+                                                  joint.ikInverseWorldTransform
+                                                  );
+      if(localEffectorPos.length() < 0.001){
+        break;
       }
-      var mtx = joint.animationWorldBases[0];
-      var pos1 = new Vector3(mtx.m[12], mtx.m[13], mtx.m[14]);
-      var dir = pos1.subtract(pos0).normalize();
-      */
-      
-      //var mtx = joint.animationWorldBases[0];
-      
-      //var translation = new Vector3(mtx.m[12], mtx.m[13], mtx.m[14]);
-      var dir = new Vector3(0,0,1);
+      var localDirToEffector = localEffectorPos.clone().normalize();
+      var localTargetPos = this.targetPosition.clone().transform(
+                                                  joint.ikInverseWorldTransform
+                                                  );
 
-
-      //mtx.identity();
-      //THIS IS THE LINE THAT CAUSES ALL THE INSTABILITY!!!
-      //dir.transformDirection(mtx).normalize();
-      //pos0.transform(mtx);
-
-      dir.transformDirection(currMatrix).normalize();
-      pos0.transform(currMatrix);
-
-      var localEffPos = this.effectorPosition.clone();//.transform(pm.clone().invert());
-      var dirToEffector = localEffPos.subtract(pos0).normalize();
-      var axisAngle = dir.getRotationToAlign(dirToEffector);
-      
-      //if(Math.abs(this.effectorAngle - axisAngle.w) > 0.1) {
-      //  console.debug(Math.abs(this.effectorAngle - axisAngle.w));
-      //}
-      if(dir.dot(dirToEffector) < 0.999){
-        rot.rotationTo(dir, dirToEffector);
+      if(localTargetPos.length() < 0.001){
+        continue;
       }
+      var localTargetDir = localTargetPos.clone().normalize();
+                                                  
 
-
-      /*
-      var q = new Quaternion();
-      q.rotateZ(time);
-      //q.rotateX(-Math.PI*0.5);
-      //q.rotateY(Math.sin(-time) - 1*Math.PI);
-      var mTemp = new Matrix44();
-      mTemp.rotate(q);
-      var testDir =  new Vector3(0,1,0);
-      var effectorDir = this.effectorPosition.clone().normalize();
-      testDir.transformDirection(mTemp).normalize();
-
-      rot.identity();
-      if(dir.dot(testDir) < 0.999){
-        rot.rotationTo(dir, testDir);
-      }
-      */
-      //console.debug(rot);
-    } 
-    var m = this.calculateJoint(0, joint, trans, rot);
-    currMatrix.postMultiply(m.m);
-
+//      var posDiff = this.targetPosition.clone().subtract(this.effectorPosition);
+//      if(posDiff.length() < 0.001){
+//        break;
+//      }
+//      var dir = this.effectorPosition.clone().subtract(joint.ikWorldOrigin);
+//      if(dir.length() < 0.001){
+//        continue;
+//      }
+//      dir.normalize();
+//
+//      var diff = this.targetPosition.clone().subtract(joint.ikWorldOrigin); 
+//      if(diff.length() < 0.001){
+//        continue;
+//      }
+      
+      joint.ikRotation.identity().rotationTo(localTargetDir, localDirToEffector);
+      this.calculateJointsState(false);
+    }
+    iterationCount++;
   }
   this.calculateMesh();
 };
 
-CCD.prototype.calculateJoint = function(frame, joint, translation, rotation){
-  var jointID = joint.id;
-  //var mat = joint.animationCombinedBases[frame];
-
-  var targetMatrix = joint.currentMatrices[frame];
-  var animPose = joint.animationWorldBases[frame];
-  animPose.identity();
-  if( joint.parentID != -1 ) {
-    this.joints[joint.parentID].animationWorldBases[frame].copyInto(animPose);
-  }
-
-  animPose.translate(translation.x, translation.y, translation.z);
-  animPose.rotate(rotation);
-
-  /*
-  animPose.copyInto(mat);
-  mat.preMultiply(this.referencePose[jointID].referencePoseWorldToLocal.m);
-
-  joint.currentMatrices[frame] = mat.clone();
-  */
-  return animPose;
-};
+//CCD.prototype.calculateJoint = function(frame, joint, translation, rotation){
+//  var jointID = joint.id;
+//  //var mat = joint.animationCombinedBases[frame];
+//
+//  var targetMatrix = joint.currentMatrices[frame];
+//  var animPose = joint.animationWorldBases[frame];
+//  animPose.identity();
+//  if( joint.parentID != -1 ) {
+//    this.joints[joint.parentID].animationWorldBases[frame].copyInto(animPose);
+//  }
+//
+//  animPose.translate(translation.x, translation.y, translation.z);
+//  animPose.rotate(rotation);
+//
+//  return animPose;
+//};
 
 CCD.prototype.drawDebug = function(projMat, time){
  

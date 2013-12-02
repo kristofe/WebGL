@@ -27,6 +27,14 @@ function Joint(){
 
   this.modelCoordPosition = new Vector3(0,0,0);
   this.currOrientation = new Vector3(0,0,0);
+
+  this.ikRotation = new Quaternion();
+  this.ikTranslation;
+  this.ikWorldOrigin = new Vector3(0,0,0);
+  this.ikWorldDir = new Vector3(0,0,0);
+  this.ikWorldPosition = new Vector3(0,0,0);
+  this.ikWorldTransform = new Matrix44();
+  this.ikInverseWorldTransform = new Matrix44();
 }
 
 function JointWeight(){
