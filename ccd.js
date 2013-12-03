@@ -21,12 +21,13 @@ CCD.prototype.setupJoints = function() {
   var j3 = new Joint();
   var j4 = new Joint();
 
-  this.joints.push(j1,j2,j3,j4);
+  //this.joints.push(j1,j2,j3,j4);
+  this.joints.push(j1);
 
   j1.id = 0;
   j1.children.push(j2);
   j1.childCount = 1;
-  j1.refPoseTranslation.set(0.0,0.0,0.0);
+  j1.refPoseTranslation.set(0,0,8);
   
   j2.id = 1;
   j2.parentID = 0;
@@ -34,6 +35,7 @@ CCD.prototype.setupJoints = function() {
   j2.childCount = 1;
   j2.refPoseTranslation.set(0,0,8);
 
+  /*
   j3.id = 2;
   j3.parentID = 1;
   j3.children.push(j4);
@@ -43,6 +45,7 @@ CCD.prototype.setupJoints = function() {
   j4.id = 3;
   j4.parentID = 2;
   j4.refPoseTranslation.set(0,0,8);
+  */
 
 //  for(var i = 0; i < this.joints.length; i++){
 //    var joint = this.joints[i];
@@ -142,7 +145,8 @@ CCD.prototype.calculateMesh = function() {
 
 CCD.prototype.animateTarget = function(time){
   //this.targetPosition = new Vector3(0,15,8);
-  this.targetPosition = new Vector3(0,10,0);
+  this.targetPosition = new Vector3(10,10,0);
+  return;
   var radius = 20.0;
   var horizOffset =  Math.sin(time);
   var vertOffset = Math.cos(time);
@@ -205,10 +209,11 @@ CCD.prototype.calculateJointsState = function(init){
 
 CCD.prototype.animate = function(time){
   this.animateTarget(time);
+  this.calculateJointsState(true);
   var iterationCount = 0;
 
   var currMatrix = new Matrix44();
-  while(iterationCount < 20){
+  while(iterationCount < 1){
     for( var i = this.joints.length -1; i >= 0; i-- ) {
       var joint = this.joints[i];
 
@@ -216,7 +221,7 @@ CCD.prototype.animate = function(time){
                                                   joint.ikInverseWorldTransform
                                                   );
       if(localEffectorPos.length() < 0.001){
-        break;
+        continue;//localEffectorPos = joint.ikTranslation.clone();
       }
       var localDirToEffector = localEffectorPos.clone().normalize();
       var localTargetPos = this.targetPosition.clone().transform(
@@ -224,7 +229,7 @@ CCD.prototype.animate = function(time){
                                                   );
 
       if(localTargetPos.length() < 0.001){
-        continue;
+        break;
       }
       var localTargetDir = localTargetPos.clone().normalize();
                                                   
@@ -249,6 +254,11 @@ CCD.prototype.animate = function(time){
     }
     iterationCount++;
   }
+
+  //if(iterationCount == 20){
+  //  console.debug("Hit max iteration count");
+  //}
+
   this.calculateMesh();
 };
 
