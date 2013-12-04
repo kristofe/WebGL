@@ -1,5 +1,9 @@
 "use strict";
 
+function clamp(val, min, max){
+  return Math.max( Math.min(val, max), min);
+}
+
 function Vector2(x,y){
   this.x = x; 
   this.y = y; 
@@ -173,8 +177,12 @@ Vector3.prototype.normalize = function() {
 Vector3.prototype.getRotationToAlign = function(other){
   var dir1 = this.clone().normalize();
   var dir2 = other.clone().normalize();
-  var axis = dir1.cross(dir2);
+  var axis = dir1.cross(dir2).normalize();
   var d = dir1.dot(dir2);
+  d = clamp(d, 0, 1);
+  if(d < -1 || d > 1){
+    console.error("What the hell?");
+  }
   var angle = Math.acos(d);
 
   return new Vector4(axis.x, axis.y, axis.z, angle);
@@ -233,6 +241,10 @@ function Vector4(x,y,z,w){
   this.z = z; 
   this.w = w; 
 }
+
+Vector4.prototype.toVector3 = function() {
+  return new Vector3(this.x, this.y, this.z);
+};
 
 function Matrix44(){
   this.m = new Float32Array(16);

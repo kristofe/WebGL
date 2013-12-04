@@ -21,31 +21,32 @@ CCD.prototype.setupJoints = function() {
   var j3 = new Joint();
   var j4 = new Joint();
 
-  //this.joints.push(j1,j2,j3,j4);
-  this.joints.push(j1);
+  this.joints.push(j1,j2,j3,j4);
+  //this.joints.push(j1,j2,j3);
 
   j1.id = 0;
   j1.children.push(j2);
   j1.childCount = 1;
-  j1.refPoseTranslation.set(0,0,8);
+  j1.refPoseTranslation.set(0,0,0);
+  
   
   j2.id = 1;
   j2.parentID = 0;
   j2.children.push(j3);
   j2.childCount = 1;
-  j2.refPoseTranslation.set(0,0,8);
+  j2.refPoseTranslation.set(8,0,0);
 
-  /*
+  
   j3.id = 2;
   j3.parentID = 1;
   j3.children.push(j4);
   j3.childCount = 1;
-  j3.refPoseTranslation.set(0,0,8);
+  j3.refPoseTranslation.set(8,0,0);
 
   j4.id = 3;
   j4.parentID = 2;
-  j4.refPoseTranslation.set(0,0,8);
-  */
+  j4.refPoseTranslation.set(8,0,0);
+  
 
 //  for(var i = 0; i < this.joints.length; i++){
 //    var joint = this.joints[i];
@@ -85,8 +86,8 @@ CCD.prototype.calculateMesh = function() {
     var joint = this.joints[i];
 //    var mat0 = joint.animationWorldBases[0];
 //    var p = new Vector3(mat0.m[12], mat0.m[13], mat0.m[14]);
-    var p = joint.ikWorldPosition;
-    positions.push(p);
+    positions.push(joint.ikWorldOrigin);
+    positions.push(joint.ikWorldPosition);
   }
 
   
@@ -146,7 +147,7 @@ CCD.prototype.calculateMesh = function() {
 CCD.prototype.animateTarget = function(time){
   //this.targetPosition = new Vector3(0,15,8);
   this.targetPosition = new Vector3(10,10,0);
-  return;
+  //return;
   var radius = 20.0;
   var horizOffset =  Math.sin(time);
   var vertOffset = Math.cos(time);
@@ -181,20 +182,23 @@ CCD.prototype.calculateJointsState = function(init){
                             targetMatrix.m[14]
                            );
 
+
     targetMatrix.translate(
                             joint.ikTranslation.x, 
                             joint.ikTranslation.y, 
                             joint.ikTranslation.z
                           );
     targetMatrix.rotate(joint.ikRotation);
-
+    
     joint.ikInverseWorldTransform = targetMatrix.clone().invert();
 
+    
     joint.ikWorldPosition.set(
                               targetMatrix.m[12], 
                               targetMatrix.m[13], 
                               targetMatrix.m[14]
                              );
+   
     var dir = new Vector3(0,0,1);
     joint.ikWorldDir = joint.ikWorldPosition.clone().subtract(joint.ikWorldOrigin);
     if(joint.ikWorldDir.length() > 0.001){
@@ -248,8 +252,10 @@ CCD.prototype.animate = function(time){
 //      if(diff.length() < 0.001){
 //        continue;
 //      }
+      var axisAngle = localDirToEffector.getRotationToAlign(localTargetDir);
+      joint.ikRotation.setAxisAngle(axisAngle.toVector3(), axisAngle.w);
       
-      joint.ikRotation.identity().rotationTo(localTargetDir, localDirToEffector);
+      //joint.ikRotation.identity().rotationTo(localDirToEffector,localTargetDir);
       this.calculateJointsState(false);
     }
     iterationCount++;
