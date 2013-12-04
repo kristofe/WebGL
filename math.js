@@ -154,7 +154,7 @@ Vector3.prototype.getTangent = function() {
 
 Vector3.prototype.length = function() {
   var len = this.dot(this);
-  if(len > 0.0) {
+  if(len > 0.00001) {
     len = 1/ Math.sqrt(len);
   }
   return len;

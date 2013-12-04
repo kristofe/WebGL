@@ -146,15 +146,14 @@ CCD.prototype.calculateMesh = function() {
 
 CCD.prototype.animateTarget = function(time){
   //this.targetPosition = new Vector3(0,15,8);
-  this.targetPosition = new Vector3(10,10,0);
-  //return;
+  this.targetPosition = new Vector3(0,10,0);
   var radius = 20.0;
-  var horizOffset =  Math.sin(time);
-  var vertOffset = Math.cos(time);
-  var depthOffset = Math.cos(time);
+  var horizOffset =  Math.sin(time - 0.5*Math.PI);
+  var vertOffset = Math.cos(time*1.66);
+  var depthOffset = Math.cos(time*0.5);
   this.targetPosition.x += horizOffset * radius;
-  //this.targetPosition.y += vertOffset * radius;
-  //this.targetPosition.z += depthOffset * radius;
+  this.targetPosition.y += vertOffset * radius;
+  this.targetPosition.z += depthOffset * radius;
 }
 
 CCD.prototype.calculateJointsState = function(init){
@@ -217,7 +216,7 @@ CCD.prototype.animate = function(time){
   var iterationCount = 0;
 
   var currMatrix = new Matrix44();
-  while(iterationCount < 1){
+  while(iterationCount < 20){
     for( var i = this.joints.length -1; i >= 0; i-- ) {
       var joint = this.joints[i];
 
@@ -238,22 +237,11 @@ CCD.prototype.animate = function(time){
       var localTargetDir = localTargetPos.clone().normalize();
                                                   
 
-//      var posDiff = this.targetPosition.clone().subtract(this.effectorPosition);
-//      if(posDiff.length() < 0.001){
-//        break;
-//      }
-//      var dir = this.effectorPosition.clone().subtract(joint.ikWorldOrigin);
-//      if(dir.length() < 0.001){
-//        continue;
-//      }
-//      dir.normalize();
-//
-//      var diff = this.targetPosition.clone().subtract(joint.ikWorldOrigin); 
-//      if(diff.length() < 0.001){
-//        continue;
-//      }
       var axisAngle = localDirToEffector.getRotationToAlign(localTargetDir);
-      joint.ikRotation.setAxisAngle(axisAngle.toVector3(), axisAngle.w);
+      var q = new Quaternion();
+
+      q.setAxisAngle(axisAngle.toVector3(), axisAngle.w);
+      joint.ikRotation.multiply(q);
       
       //joint.ikRotation.identity().rotationTo(localDirToEffector,localTargetDir);
       this.calculateJointsState(false);
