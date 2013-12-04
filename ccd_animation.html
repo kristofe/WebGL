@@ -1,0 +1,350 @@
+<html>
+
+<head>
+<title>WebGL</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<link rel="stylesheet" href="/resources/qunit.css">
+
+<script type="text/javascript" src="matrix.js"></script>
+<script type="text/javascript" src="math.js"></script>
+<script type="text/javascript" src="mesh.js"></script>
+<script type="text/javascript" src="shader.js"></script>
+<script type="text/javascript" src="texture.js"></script>
+<script type="text/javascript" src="model.js"></script>
+<script type="text/javascript" src="material.js"></script>
+<script type="text/javascript" src="transform.js"></script>
+<script type="text/javascript" src="text_file_reader.js"></script>
+<script type="text/javascript" src="smd_loader.js"></script>
+<script type="text/javascript" src="skeletal_model.js"></script>
+<script type="text/javascript" src="ik_animator.js"></script>
+<script type="text/javascript" src="ccd.js"></script>
+
+
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec4 vPosition;
+    varying vec2 vUV;
+    varying vec3 vNormal;
+    varying vec3 vTangent;
+    varying vec3 vBitangent;
+    varying vec4 vVertColor;
+
+
+    uniform sampler2D uTexture01;
+    uniform sampler2D uTexture02;
+    uniform float uTime;
+    uniform mat4 uMVMatrix;
+
+    void main(void) {
+      vec3 texColor = texture2D(uTexture01, vUV).rgb;
+     
+      vec3 light = normalize(vec3(0.3, 0.1,  1.2));
+
+      float d = dot(vNormal, light);
+      vec3 viewDirection = normalize(vPosition.xyz);
+
+      float s=pow(max(0.0, dot(reflect(-light, vNormal), viewDirection)),30.0);
+
+      vec3 color = texColor * (0.4 + 0.5 * d + 0.2 * s); 
+
+      gl_FragColor = vec4(color, 1.0);
+      //gl_FragColor = vec4(vNormal.xyz, 1.0);
+        
+    }
+
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    precision mediump float;
+    //Data from bufferData
+    attribute vec3 aVertexPosition;
+    attribute vec3 aVertexNormal;
+    attribute vec2 aVertexUV;
+    attribute vec4 aVertexTangent;
+    attribute vec4 aVertexColor;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uInverse;
+    uniform mat4 uInverseTranspose;
+    uniform mat4 uPMatrix;
+    uniform float uTime;
+
+    uniform sampler2D uTexture01;
+    uniform sampler2D uTexture02;
+
+    //These will be passed to the fragment shader and will be interpreted per
+    //pixel
+    varying vec4 vPosition;
+    varying vec2 vUV;
+    varying vec3 vNormal;
+    varying vec3 vTangent;
+    varying vec3 vBitangent;
+    varying vec4 vVertColor;
+
+
+    void main(void) {
+        
+        mat3 normTrans = mat3(uInverseTranspose);
+
+        vPosition = uMVMatrix * vec4(aVertexPosition,1.0);
+        vNormal = normalize(normTrans * aVertexNormal);
+        vUV = aVertexUV.xy;
+        vTangent = normalize(normTrans * aVertexTangent.xyz);
+        vBitangent = normalize(cross(vNormal, vTangent));
+        vVertColor = aVertexColor;
+
+        gl_Position = uPMatrix * vPosition;
+    }
+</script>
+
+<script type="text/javascript">
+
+    var gl;
+    function initGL(canvas) {
+        try {
+            gl = canvas.getContext("webgl", {antialias: true}) ||
+                 canvas.getContext("experimental-webgl", {antialias: true});
+            var attr = gl.getContextAttributes();
+            console.log(attr);
+
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+            var extTFL = gl.getExtension("OES_texture_float_linear");
+            if(undefined != extTFL) {
+              glExtensions["OES_texture_foat_linear"] = extTFL;
+            }
+
+            var extTF = gl.getExtension("OES_texture_float");
+            if(undefined != extTF){
+              glExtensions["OES_texture_foat"] = extTF;
+            }
+
+            var extDT = gl.getExtension("WEBKIT_WEBGL_depth_texture");
+            if(undefined != extDT){
+              glExtensions["WEBKIT_WEBGL_depth_texture"] = extDT;
+            }
+
+            var extIA = gl.getExtension("ANGLE_instanced_arrays");
+            if(undefined != extIA){
+              glExtensions["ANGLE_instanced_arrays"] = extIA;
+            }
+            gl.viewportHeight = canvas.height;
+
+        } catch (e) {
+        }
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+    }
+
+
+    function drawScene() {
+        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        var q = new Quaternion();
+        //q.rotateY(currTime*0.2 + Math.PI*0.5);
+        //q.rotateY(Math.PI*0.5);
+        ccd.transform.setRotation(q);
+        ccd.transform.setScale(new Vector3(0.1, 0.1, 0.1));
+        ccd.transform.setPosition(new Vector3(0.0, 0.0,-5.0));
+
+        ccd.animate(currTime);
+        ccd.drawDebug(pMatrix, currTime);
+        /*
+        var q = new Quaternion();
+        //q.rotateY(currTime*0.2 + Math.PI*0.5);
+        q.rotateY(Math.PI*0.5);
+        skelModel.transform.setRotation(q);
+        skelModel.transform.setScale(new Vector3(0.08, 0.08, 0.08));
+        skelModel.transform.setPosition(new Vector3(0.0, -2.0,-5.0));
+        skelModel.setAnimationBones("all");
+
+        skelModel.setTime(1.0 * currTime);
+        ikAnim.animate(currTime);
+        skelModel.draw(pMatrix, currTime);
+        ikAnim.drawDebug(pMatrix, currTime);
+        */
+        /*
+        var q = new Quaternion();
+        q.rotateZ(currTime*0.2);
+        q.rotateX(currTime*0.2);
+        sphereModel.transform.setRotation(q);
+        sphereModel.transform.setScale(new Vector3(1.2, 1.2,1.2));
+        sphereModel.transform.setPosition(new Vector3(0.0, 0.0,-5.0));
+        sphereModel.draw(pMatrix, currTime);
+        */
+
+
+        /*
+        q = new Quaternion();
+        q.rotateZ(-0.5*Math.PI);
+        q.rotateX(-0.25*Math.PI + Math.sin(currTime)*0.25 + 0.75);
+        q.rotateY(-0.25*Math.PI + Math.cos(currTime*1.5)*0.25 + 0.5);
+        planeModel.transform.setRotation(q);
+        planeModel.transform.setScale(new Vector3(20.0, 20.0,1.0));
+        planeModel.transform.setPosition(new Vector3(0.0, -0.5,-8.0));
+        planeModel.draw(pMatrix, currTime);
+        */
+    }
+
+
+    var mouse = [250,250];
+    var mouseRadius = 10;
+    var currentAngle = [0,0]; // [x-axis, y-axis] degrees
+    var startTime = 0.0;
+    var currTime = 0.0;
+
+    var pMatrix;
+    var skelModel;
+    var ikAnim;
+    var ccd;
+
+    function initScene(){
+      ccd = new CCD(gl);
+      /*
+      var smd = new SMDLoader(gl);
+      skelModel = new SkeletalModel(gl);
+      skelModel.material.shader.initShader("shader-fs","shader-vs");
+      ikAnim = new IKAnimator(gl);
+      ikAnim.setSkeletalModel(skelModel);
+
+
+      var ikCallback = function(){
+        skelModel.setAnimationBones("all");
+        skelModel.setTime(0.0);
+        ikAnim.setRootJoint("lft_clavicle", false);
+        //ikAnim.setEndJoint("rt_clavicle|rt_shoulder|rt_elbow|rt_wrist", false);
+        ikAnim.setEndJoint("lft_hand_finger", false);
+        ikAnim.calculateJointArray();
+      };
+      skelModel.loadSMD("assets/","jones_reference.smd", "all_animations.smd",
+                        "all", ikCallback);
+      skelModel.fCurrentAnimStartTime = 1;
+      skelModel.fCurrentAnimEndTime = 46;//215.0;
+      skelModel.fTotalAnimationTime = 46;//215.0;
+      */
+
+    }
+
+    function webGLStart() {
+        var canvas = document.getElementById("webgl-canvas");
+        startTime = (new Date).getTime();
+
+        initGL(canvas);
+        initEventHandlers(canvas, mouse, currentAngle);
+        initScene();
+
+        
+        gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        //gl.disable(gl.DEPTH_TEST);
+        gl.enable(gl.DEPTH_TEST);
+        gl.enable(gl.CULL_FACE);
+        gl.frontFace(gl.CCW);
+
+        pMatrix = new Matrix44();
+        pMatrix.perspective(
+                             60.0 * Math.PI/180.0, 
+                             gl.viewportWidth / gl.viewportHeight, 
+                             0.1, 
+                             100.0
+                           );
+
+        var tick = function() {
+          currTime = ((new Date).getTime() - startTime)*0.001;
+          drawScene();
+          window.requestAnimationFrame(tick,canvas);
+        };
+        tick();
+    }
+
+    function initEventHandlers(canvas, mousePosition, currentAngle)
+    {
+      var lastX = -1;
+      var lastY = -1;
+      var dragging = false;
+
+      canvas.onmousedown = function(ev) {  //Mouse is pressed
+        var x = ev.clientX;
+        var y = ev.clientY;
+
+        var rect = ev.target.getBoundingClientRect();
+        if(rect.left <= x 
+            && x <= rect.right 
+            && rect.top <= y 
+            && y <= rect.bottom
+          ) {
+          lastX = x; 
+          lastY = y;
+          mousePosition[0] = x;
+          mousePosition[1] = canvas.height - y;
+          dragging = true;
+
+        }
+      };
+
+      canvas.onmouseup = function(ev){ //Mouse is released
+        dragging = false;
+      }
+
+      canvas.onmousemove = function(ev) { //Mouse is moved
+        var x = ev.clientX;
+        var y = ev.clientY;
+        if(dragging) {
+          //put some kind of dragging logiv in here
+          //Here is a roation example
+          var factor = 100/canvas.height;
+          var dx = factor * (x - lastX);
+          var dy = factor * (y - lastY);
+          //Limit x-axis roation angle to -90 to 90 degrees
+          currentAngle[0] = Math.max(Math.min(currentAngle[0] + dy, 90), -90);
+          currentAngle[1] = currentAngle[1] + dx;
+
+          mousePosition[0] = x;
+          mousePosition[1] = canvas.height - y;
+
+        }
+        lastX = x;
+        lastY = y;
+
+      }
+    }
+
+</script>
+
+
+</head>
+
+
+<body onload="webGLStart();">
+  <canvas id="webgl-canvas" style="border: none;" width="500" height="500">
+  </canvas>
+  <!--<iframe src="tests.html" align="right" width="500" height="500" frameborder="0"></iframe>-->
+  <br>
+  <hr>
+  Linked Javascript Files:
+  <br>
+  <a href="matrix.js" target="_blank"> matrix.js</a><br>
+  <a href="math.js" target="_blank"> math.js</a><br>
+  <a href="mesh.js" target="_blank"> mesh.js</a><br>
+  <a href="shader.js" target="_blank"> shader.js</a><br>
+  <a href="texture.js" target="_blank"> texture.js</a><br>
+  <a href="model.js" target="_blank"> model.js</a><br>
+  <a href="material.js" target="_blank"> material.js</a><br>
+  <a href="transform.js" target="_blank"> transform.js</a><br>
+  <a href="smd_loader.js" target="_blank">smd_loader.js</a><br>
+  <a href="skeletal_model.js" target="_blank">skeletal_model.js</a><br>
+  <a href="ik_animator.js" target="_blank">ik_animator.js</a><br>
+
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="/resources/qunit.js"></script>
+  <script src="/resources/tests.js"></script>
+
+
+</body>
+
+</html>
+
+

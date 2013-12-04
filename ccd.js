@@ -46,29 +46,6 @@ CCD.prototype.setupJoints = function() {
   j4.id = 3;
   j4.parentID = 2;
   j4.refPoseTranslation.set(8,0,0);
-  
-
-//  for(var i = 0; i < this.joints.length; i++){
-//    var joint = this.joints[i];
-//    joint.animationWorldBases.push(new Matrix44());
-//    joint.animationTranslations.push(joint.refPoseTranslation.clone());
-//    joint.animationRotations.push(new Vector3(0,0,0));
-//    joint.currentMatrices = joint.animationWorldBases;
-//  }
-//
-//
-//  for(var i = 0; i < this.joints.length; i++){
-//    var joint = this.joints[i];
-//    var rot = new Quaternion();
-//    rot.fromEulerAngles(joint.animationRotations[0]);
-//    this.calculateJoint(
-//                        0,
-//                        joint, 
-//                        joint.animationTranslations[0], 
-//                        rot
-//                        );
-//
-//  }
 
   this.calculateJointsState(true);
 
@@ -81,7 +58,6 @@ CCD.prototype.calculateMesh = function() {
   this.mesh.clear();
 
   //calculate positions
-  //positions.push(new Vector3(0,0,0));
   for(var i = 0; i < this.joints.length; i++){
     var joint = this.joints[i];
 //    var mat0 = joint.animationWorldBases[0];
@@ -249,29 +225,8 @@ CCD.prototype.animate = function(time){
     iterationCount++;
   }
 
-  //if(iterationCount == 20){
-  //  console.debug("Hit max iteration count");
-  //}
-
   this.calculateMesh();
 };
-
-//CCD.prototype.calculateJoint = function(frame, joint, translation, rotation){
-//  var jointID = joint.id;
-//  //var mat = joint.animationCombinedBases[frame];
-//
-//  var targetMatrix = joint.currentMatrices[frame];
-//  var animPose = joint.animationWorldBases[frame];
-//  animPose.identity();
-//  if( joint.parentID != -1 ) {
-//    this.joints[joint.parentID].animationWorldBases[frame].copyInto(animPose);
-//  }
-//
-//  animPose.translate(translation.x, translation.y, translation.z);
-//  animPose.rotate(rotation);
-//
-//  return animPose;
-//};
 
 CCD.prototype.drawDebug = function(projMat, time){
  
