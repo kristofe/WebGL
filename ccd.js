@@ -22,7 +22,6 @@ CCD.prototype.setupJoints = function() {
   var j4 = new Joint();
 
   this.joints.push(j1,j2,j3,j4);
-  //this.joints.push(j1,j2,j3);
 
   j1.id = 0;
   j1.children.push(j2);
@@ -35,7 +34,6 @@ CCD.prototype.setupJoints = function() {
   j2.children.push(j3);
   j2.childCount = 1;
   j2.refPoseTranslation.set(8,0,0);
-
   
   j3.id = 2;
   j3.parentID = 1;
