@@ -11,6 +11,7 @@ function Material(gl){
   this.zWrite = true;
   this.culling = true;
   this.lineWidth = 1.0;
+  this.pointSize = 2.0;
   
 }
 
@@ -60,6 +61,10 @@ Material.prototype.bind = function(mesh){
   */
   this.gl.depthMask(this.zWrite);
   this.gl.lineWidth(this.lineWidth);
+
+
+  //this.gl.enable(this.gl.VERTEX_PROGRAM_POINT_SIZE);
+  //this.gl.enable(this.gl.POINT_SMOOTH);
 
 
 }
