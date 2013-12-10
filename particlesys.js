@@ -212,6 +212,8 @@ ParticleSystem.prototype.setupMaterial = function(gl){
 
 //DIVERGENCE FREE NOISE
 ParticleSystem.prototype.divergenceFreeNoise = function(pos, time){
+  //Assuming the range of pos is -1 to 1. 
+  //That accounts for the *0.5+0.5 to transform it to the range 0-1
   var pRangeScale = 4.0;
   var pDomainScale = 4.0;
   
