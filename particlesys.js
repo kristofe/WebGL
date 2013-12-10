@@ -11,7 +11,7 @@ function ParticleSystem(gl){
   this.material = new Material(gl);
   this.transform = new Transform();
 
-  this.particleCount = 100.0;
+  this.particleCount = 1000.0;
   this.particles = [];
 
   var velScale = 1.0/Math.sqrt(2.0);
@@ -31,6 +31,7 @@ function ParticleSystem(gl){
 
   this.setupMaterial();
   this.calculateMesh();
+  this.calculateVelocityMesh(this.lastUpdateTime);
 }
 
 ParticleSystem.prototype.calculateMesh = function() {
@@ -61,6 +62,35 @@ ParticleSystem.prototype.calculateMesh = function() {
 
 };
 
+ParticleSystem.prototype.calculateVelocityMesh = function(time) {
+  var positions = [];
+  this.meshLines.clear();
+  var lineLength = 1/128;
+  for(var i = 0; i < 32; i++) {
+    for(var j = 0; j < 32; j++) {
+      var p0 = new Vector3(i/16 - 1, j/16 - 1, 0);
+      var p1 = this.getVelocity(p0, time);
+      p1.scale(lineLength);
+      p1.add(p0);
+      this.meshLines.positions.push(p0);
+      this.meshLines.positions.push(p1);
+      this.meshLines.colors.push(new Vector4(0.2,0,0,1));
+      this.meshLines.colors.push(new Vector4(1,0,0,1));
+    }
+  }
+
+  this.meshLines.primitiveType = this.gl.LINES;
+
+
+  if(this.meshLines.vertexBuffer instanceof WebGLBuffer){
+    this.meshLines.updateBuffers();
+  } else {
+    this.meshLines.constructBuffers();
+  }
+
+};
+
+
 
 ParticleSystem.prototype.simulate = function(time){
   var dt = time - this.lastUpdateTime;
@@ -68,7 +98,9 @@ ParticleSystem.prototype.simulate = function(time){
   for(var i = 0; i < this.particleCount; i++) {
     var particle = this.particles[i];
     var p = particle.position;
-    var v = particle.velocity;
+    //var v = particle.velocity;
+    var v =  this.getVelocity(p, time);
+    v.scale(0.01);
     var x = p.x + v.x*dt;
     var y = p.y + v.y*dt;
 
@@ -80,6 +112,7 @@ ParticleSystem.prototype.simulate = function(time){
     particle.position.set(x,y,0);
   }
   this.calculateMesh();
+  this.calculateVelocityMesh(this.lastUpdateTime);
 };
 
 ParticleSystem.prototype.draw = function(projMat, time){
@@ -100,7 +133,23 @@ ParticleSystem.prototype.draw = function(projMat, time){
         this.mesh.numItems
         );
   }
-}
+  if(this.meshLines.vertexBuffer instanceof WebGLBuffer){
+    
+    this.material.bind(this.meshLines);
+    this.material.setUniforms(
+        this.transform.matrix.m,
+        this.transform.inverse.m,
+        this.transform.inverseTranspose.m,
+        projMat.m, 
+        time
+        );
+    this.gl.drawArrays(
+        this.meshLines.primitiveType,
+        0, 
+        this.meshLines.numItems
+        );
+  }
+};
 
 
 ParticleSystem.prototype.setupMaterial = function(gl){
@@ -148,7 +197,7 @@ ParticleSystem.prototype.setupMaterial = function(gl){
   vsSource +="        vUV = aVertexUV.xy;\n";
   vsSource +="        vNormal = aVertexNormal.xyz;\n";
   vsSource +="        vTangent = aVertexTangent.xyz;\n";
-  vsSource +="        gl_PointSize = 8.0;\n";
+  vsSource +="        gl_PointSize = 4.0;\n";
   //vsSource +="        vec4 pos = uPMatrix * vPosition;\n";
   vsSource +="        vec4 pos = vec4(aVertexPosition, 1.0);\n";
   vsSource +="        gl_Position = vec4(pos.xy, 0.0, 1.0);\n";
@@ -157,11 +206,42 @@ ParticleSystem.prototype.setupMaterial = function(gl){
   this.material.shader.initShaderWithSource(fsSource,vsSource);
   this.material.zTest = false;
   this.material.zWrite = false;
-  this.material.lineWidth = 3.0;
+  this.material.lineWidth = 1.0;
 
 };
 
 
+ParticleSystem.prototype.getVelocity = function(pos, time){
+  var pRangeScale = 4.0;
+  var pDomainScale = 4.0;
+  
+  var origin = pRangeScale * Math.abs(
+      noise(pDomainScale*pos.x*0.5+0.5,pDomainScale*pos.y*0.5+0.5,time *0.3)
+      );
 
+				//Calculate the gradient to orient the element
+  var dy = pRangeScale * Math.abs(
+      noise(pDomainScale*pos.x*0.5+0.5,pDomainScale*(pos.y + 0.001)*0.5+0.5,time *0.3)
+      );
+  var dx = pRangeScale * Math.abs(
+      noise(pDomainScale*(pos.x+ 0.001)*0.5+0.5,pDomainScale*pos.y*0.5+0.5,time *0.3)
+      );
+  
+  var baseGradient = new Vector3(dx - origin, dy - origin, 0);
+  //gradient.Normalize();
+  baseGradient.scale(1000.0);
+  var gradient = baseGradient.clone();
+  
+  //Vector3 gradient = getGradientFromLines(gridCell._worldPosition, baseGradient);
+  
+  var lateralToGradient = new Vector3(gradient.y, -gradient.x, 0.0);
+  var normal = lateralToGradient.cross(gradient);
+  normal.normalize();
+  var velocity = normal.cross(gradient);
+  
+  return velocity;
+  //gridCell._fieldGradient = gradient;
+  //gridCell._flowVelocity = velocity;
+};
 
 
