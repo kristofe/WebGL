@@ -69,7 +69,7 @@ ParticleSystem.prototype.calculateVelocityMesh = function(time) {
   for(var i = 0; i < 32; i++) {
     for(var j = 0; j < 32; j++) {
       var p0 = new Vector3(i/16 - 1, j/16 - 1, 0);
-      var p1 = this.getVelocity(p0, time);
+      var p1 = this.divergenceFreeNoise(p0, time);
       p1.scale(lineLength);
       p1.add(p0);
       this.meshLines.positions.push(p0);
@@ -99,7 +99,7 @@ ParticleSystem.prototype.simulate = function(time){
     var particle = this.particles[i];
     var p = particle.position;
     //var v = particle.velocity;
-    var v =  this.getVelocity(p, time);
+    var v =  this.divergenceFreeNoise(p, time);
     v.scale(0.01);
     var x = p.x + v.x*dt;
     var y = p.y + v.y*dt;
@@ -210,8 +210,8 @@ ParticleSystem.prototype.setupMaterial = function(gl){
 
 };
 
-
-ParticleSystem.prototype.getVelocity = function(pos, time){
+//DIVERGENCE FREE NOISE
+ParticleSystem.prototype.divergenceFreeNoise = function(pos, time){
   var pRangeScale = 4.0;
   var pDomainScale = 4.0;
   
@@ -228,11 +228,9 @@ ParticleSystem.prototype.getVelocity = function(pos, time){
       );
   
   var baseGradient = new Vector3(dx - origin, dy - origin, 0);
-  //gradient.Normalize();
   baseGradient.scale(1000.0);
   var gradient = baseGradient.clone();
   
-  //Vector3 gradient = getGradientFromLines(gridCell._worldPosition, baseGradient);
   
   var lateralToGradient = new Vector3(gradient.y, -gradient.x, 0.0);
   var normal = lateralToGradient.cross(gradient);
@@ -240,8 +238,6 @@ ParticleSystem.prototype.getVelocity = function(pos, time){
   var velocity = normal.cross(gradient);
   
   return velocity;
-  //gridCell._fieldGradient = gradient;
-  //gridCell._flowVelocity = velocity;
 };
 
 
