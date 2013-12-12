@@ -26,7 +26,7 @@ Model.prototype.draw = function(projMat, time){
     this.gl.drawArrays(
                   this.mesh.primitiveType,
                   0, 
-                  this.mesh.vertexBuffer.numItems
+                  this.mesh.numItems
                   );
   }
   else{
