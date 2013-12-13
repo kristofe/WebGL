@@ -15,6 +15,7 @@
 <script type="text/javascript" src="transform.js"></script>
 <script type="text/javascript" src="particlesys.js"></script>
 <script type="text/javascript" src="noise.js"></script>
+<script type="text/javascript" src="renderer.js"></script>
 
 
 <script id="shader-fs" type="x-shader/x-fragment">
@@ -124,6 +125,7 @@
         if (!gl) {
             alert("Could not initialise WebGL, sorry :-(");
         }
+
     }
 
 
@@ -164,6 +166,7 @@
     var particles;
     var sphereModel;
     var planeModel;
+    var renderer;
 
     function initScene(){
       sphereModel = new Model(gl);
@@ -195,6 +198,8 @@
         gl.enable(gl.DEPTH_TEST);
         gl.enable(gl.CULL_FACE);
         gl.frontFace(gl.CCW);
+
+        renderer = new Renderer(gl, canvas);
 
         pMatrix = new Matrix44();
         pMatrix.perspective(
@@ -271,7 +276,7 @@
 
 
 <body onload="webGLStart();">
-  <canvas id="webgl-canvas" style="border: none;" width="500" height="500">
+  <canvas id="webgl-canvas" style="border: none;" width="512" height="512">
   </canvas>
   <!--<iframe src="tests.html" align="right" width="500" height="500" frameborder="0"></iframe>-->
   <br>
@@ -288,6 +293,7 @@
   <a href="transform.js" target="_blank"> transform.js</a><br>
   <a href="particlesys.js" target="_blank"> particlesys.js</a><br>
   <a href="noise.js" target="_blank"> noise.js</a><br>
+  <a href="renderer.js" target="_blank"> renderer.js</a><br>
 
   <div id="qunit"></div>
   <div id="qunit-fixture"></div>

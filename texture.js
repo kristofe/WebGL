@@ -7,6 +7,9 @@ function Texture(gl) {
   this.image = {};
   this.name = "";
   this.loaded = false;
+  this.renderbuffer = -1;
+  this.framebuffer = -1;
+  this.fbo = false;
 }
 
 Texture.prototype.load = function(name, unit) {
@@ -39,3 +42,45 @@ Texture.prototype.activate = function() {
   }
 }
 
+Texture.prototype.deactivate = function() {
+  if(this.loaded){
+    gl.activeTexture(gl.TEXTURE0 + this.glTextureUnit);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+}
+
+
+Texture.prototype.bindFBO = function() {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+};
+
+Texture.prototype.unbindFBO = function() {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+};
+
+Texture.prototype.createFBO = function(width, height){
+  this.fbo = true;
+  // 1. Init Color Texture 
+  this.glTexture = gl.createTexture(); 
+  gl.bindTexture( gl.TEXTURE_2D, this.glTexture);
+  gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); 
+  gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, 
+                 gl.UNSIGNED_BYTE, null);
+
+  // 2. Init Render Buffer 
+  this.renderbuffer = gl.createRenderbuffer();
+  gl.bindRenderbuffer( gl.RENDERBUFFER, this.renderbuffer); 
+  gl.renderbufferStorage( gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+
+  // 3. Init Frame Buffer
+  this.framebuffer = gl.createFramebuffer();
+  gl.bindFramebuffer( gl.FRAMEBUFFER, this.framebuffer); 
+  gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D,
+                           this.glTexture, 0);
+  gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, 
+                              gl.RENDERBUFFER, this.renderbuffer);
+
+};
