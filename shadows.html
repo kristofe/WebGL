@@ -16,7 +16,7 @@
 <script type="text/javascript" src="particlesys.js"></script>
 <script type="text/javascript" src="noise.js"></script>
 <script type="text/javascript" src="renderer.js"></script>
-<script type="text/javascript" src="rendertarget.js"></script>
+<script type="text/javascript" src="shadowmap.js"></script>
 
 
 <script id="shader-fs" type="x-shader/x-fragment">
@@ -100,27 +100,8 @@
 
             gl.viewportWidth = canvas.width;
             gl.viewportHeight = canvas.height;
-            var extTFL = gl.getExtension("OES_texture_float_linear");
-            if(undefined != extTFL) {
-              glExtensions["OES_texture_foat_linear"] = extTFL;
-            }
-
-            var extTF = gl.getExtension("OES_texture_float");
-            if(undefined != extTF){
-              glExtensions["OES_texture_foat"] = extTF;
-            }
-
-            var extDT = gl.getExtension("WEBKIT_WEBGL_depth_texture");
-            if(undefined != extDT){
-              glExtensions["WEBKIT_WEBGL_depth_texture"] = extDT;
-            }
-
-            var extIA = gl.getExtension("ANGLE_instanced_arrays");
-            if(undefined != extIA){
-              glExtensions["ANGLE_instanced_arrays"] = extIA;
-            }
-            gl.viewportHeight = canvas.height;
-
+            renderer = new Renderer(gl, canvas);
+            renderer.loadAllExtensions();
         } catch (e) {
         }
         if (!gl) {
@@ -132,39 +113,43 @@
 
     function drawScene() {
 
-        renderTarget.bind();
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-        gl.clearDepth(1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        shadowMap.bind();
 
-        var q = new Quaternion();
-        q.rotateX(currTime);
-        sphereModel.transform.setRotation(q);
-        sphereModel.transform.setPosition(new Vector3(1.0, 0.0,-5.0));
-        sphereModel.draw(pMatrix, currTime);
+        drawSpheres();
 
-        q.identity();
-        q.rotateY(currTime);
-        sphereModel.transform.setRotation(q);
-        sphereModel.transform.setPosition(new Vector3(-1.0, 0.0,-5.0));
-        sphereModel.draw(pMatrix, currTime);
+        shadowMap.unbind();
 
-        renderTarget.unbind();
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
+        drawSpheres();
 
         q = new Quaternion();
-        var axis = new Vector3(1,1,1).normalize();
-        q.setAxisAngle(axis,-0.5*Math.PI*currTime);
+        //var axis = new Vector3(1,1,1).normalize();
+        //q.setAxisAngle(axis,-0.5*Math.PI*currTime);
+        q.rotateX(+0.5*Math.PI);
         planeModel.transform.setRotation(q);
         planeModel.transform.setScale(new Vector3(10.0, 20.0,1.0));
         planeModel.transform.setPosition(new Vector3(0.0, -1.1,-10.0));
         planeModel.draw(pMatrix, currTime);
 
 
-        renderTarget.debugDraw(pMatrix, currTime);
+        shadowMap.debugDraw(pMatrix, currTime);
     }
+
+    function drawSpheres() {
+      gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      var q = new Quaternion();
+      q.rotateX(currTime);
+      sphereModel.transform.setRotation(q);
+      sphereModel.transform.setPosition(new Vector3(1.0, 0.3,-3.5));
+      sphereModel.draw(pMatrix, currTime);
+
+      q.identity();
+      q.rotateY(currTime);
+      sphereModel.transform.setRotation(q);
+      sphereModel.transform.setPosition(new Vector3(-1.0, 0.3,-3.5));
+      sphereModel.draw(pMatrix, currTime);
+
+    };
 
 
     var mouse = [250,250];
@@ -178,20 +163,20 @@
     var sphereModel;
     var planeModel;
     var renderer;
-    var renderTarget;
+    var shadowMap;
 
     function initScene(){
-      renderTarget = new RenderTarget(gl, renderer.canvas.width, renderer.canvas.height);
+      shadowMap = new ShadowMap(gl, renderer.canvas.width, renderer.canvas.height);
       sphereModel = new Model(gl);
       sphereModel.material.shader.initShader("shader-fs","shader-vs");
       sphereModel.material.texture.load("testTexture.jpg", 0);
-      sphereModel.material.zWrite = false;
+      sphereModel.material.zWrite = true;
       sphereModel.mesh.createSphereMesh( 10,10);
 
       planeModel = new Model(gl);
       planeModel.material.shader.initShader("shader-fs","shader-vs");
       //planeModel.material.texture.load("testTexture.jpg", 0);
-      planeModel.material.setTexture(renderTarget.getTexture());
+      planeModel.material.setTexture(shadowMap.getTexture());
       planeModel.material.culling = false;
       planeModel.mesh.createGridMesh( 10,10);
 
@@ -203,7 +188,6 @@
         startTime = (new Date).getTime();
 
         initGL(canvas);
-        renderer = new Renderer(gl, canvas);
         initEventHandlers(canvas, mouse, currentAngle);
         initScene();
 

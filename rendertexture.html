@@ -100,33 +100,13 @@
 
             gl.viewportWidth = canvas.width;
             gl.viewportHeight = canvas.height;
-            var extTFL = gl.getExtension("OES_texture_float_linear");
-            if(undefined != extTFL) {
-              glExtensions["OES_texture_foat_linear"] = extTFL;
-            }
-
-            var extTF = gl.getExtension("OES_texture_float");
-            if(undefined != extTF){
-              glExtensions["OES_texture_foat"] = extTF;
-            }
-
-            var extDT = gl.getExtension("WEBKIT_WEBGL_depth_texture");
-            if(undefined != extDT){
-              glExtensions["WEBKIT_WEBGL_depth_texture"] = extDT;
-            }
-
-            var extIA = gl.getExtension("ANGLE_instanced_arrays");
-            if(undefined != extIA){
-              glExtensions["ANGLE_instanced_arrays"] = extIA;
-            }
-            gl.viewportHeight = canvas.height;
+            renderer = new Renderer(gl, canvas);
 
         } catch (e) {
         }
         if (!gl) {
             alert("Could not initialise WebGL, sorry :-(");
         }
-
     }
 
 
@@ -308,6 +288,7 @@
   <a href="particlesys.js" target="_blank"> particlesys.js</a><br>
   <a href="noise.js" target="_blank"> noise.js</a><br>
   <a href="renderer.js" target="_blank"> renderer.js</a><br>
+  <a href="rendertarget.js" target="_blank"> rendertarget.js</a><br>
 
   <div id="qunit"></div>
   <div id="qunit-fixture"></div>
