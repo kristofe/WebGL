@@ -210,7 +210,7 @@ Mesh.prototype.createScreenQuad = function(min, max){
   //Second Triangle
   this.positions.push(p3, p4, p5);
   this.normals.push(norm, norm, norm);
-  this.uvs.push(uv4, uv4, uv5);
+  this.uvs.push(uv3, uv4, uv5);
 
 
   this.primitiveType = gl.TRIANGLES;

@@ -51,11 +51,12 @@ Texture.prototype.deactivate = function() {
 
 
 Texture.prototype.bindFBO = function() {
+  gl.bindTexture( gl.TEXTURE_2D, null);
   gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
 };
 
 Texture.prototype.unbindFBO = function() {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.bindFramebuffer( gl.FRAMEBUFFER, null); 
 };
 
 Texture.prototype.setupFBO = function(width, height, create){
@@ -90,8 +91,15 @@ Texture.prototype.setupFBO = function(width, height, create){
   gl.framebufferRenderbuffer( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, 
                               gl.RENDERBUFFER, this.renderbuffer);
 
+  var stat = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+  if(stat != gl.FRAMEBUFFER_COMPLETE){
+    throw("FBO Not Complete");
+  }
+
+
   // 4. Cleanup
   gl.bindTexture(gl.TEXTURE_2D, null);
   gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+  gl.bindFramebuffer( gl.FRAMEBUFFER, null); 
 
 };

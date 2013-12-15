@@ -73,7 +73,7 @@ RenderTarget.prototype.setupMaterial = function(gl){
   fsSource +="    void main(void) {\n";
   //fsSource +="      float t= sin(gl_PointCoord.x * 0.01 + uTime);\n"
   //fsSource +="      vec3 color = vec3(t,t,t);\n"
-  fsSource +="      vec3 color = texture2D(uTexture01, vUV * 2.0).rgb;\n"
+  fsSource +="      vec3 color = texture2D(uTexture01, vUV).rgb;\n"
   fsSource +="      gl_FragColor = vec4(color, 1.0);\n"
   fsSource +="    }\n";
 
