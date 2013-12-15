@@ -60,6 +60,7 @@ Texture.prototype.unbindFBO = function() {
 
 Texture.prototype.setupFBO = function(width, height, create){
   this.fbo = true;
+  this.loaded = true;
   // 1. Init Color Texture 
   if(create){
     this.glTexture = gl.createTexture(); 

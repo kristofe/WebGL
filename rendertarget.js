@@ -114,6 +114,7 @@ RenderTarget.prototype.setupMaterial = function(gl){
   this.debugMaterial.zTest = false;
   this.debugMaterial.zWrite = false;
   this.debugMaterial.lineWidth = 1.0;
+  this.debugMaterial.setTexture(this.texture);
 
 };
 

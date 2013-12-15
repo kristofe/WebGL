@@ -185,7 +185,8 @@
 
       planeModel = new Model(gl);
       planeModel.material.shader.initShader("shader-fs","shader-vs");
-      planeModel.material.setTexture(renderTarget.getTexture());
+      planeModel.material.texture.load("testTexture.jpg", 0);
+      //planeModel.material.setTexture(renderTarget.getTexture());
       planeModel.material.culling = false;
       planeModel.mesh.createGridMesh( 10,10);
 
