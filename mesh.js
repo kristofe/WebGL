@@ -186,14 +186,14 @@ Mesh.prototype.createVertexBuffer = function (vertArray, stride){
   //return vertexBuffer;
 } 
 
-Mesh.prototype.createFullScreenQuad = function(){
+Mesh.prototype.createScreenQuad = function(min, max){
   var norm = new Vector3(0,0,1);
-  var p0 = new Vector3(-1.0,-1.0, 0.0);
-  var p1 = new Vector3( 1.0,-1.0, 0.0);
-  var p2 = new Vector3(-1.0, 1.0, 0.0);
-  var p3 = new Vector3(-1.0, 1.0, 0.0);
-  var p4 = new Vector3( 1.0,-1.0, 0.0);
-  var p5 = new Vector3( 1.0, 1.0, 0.0);
+  var p0 = new Vector3( min.x, min.y, 0.0);
+  var p1 = new Vector3( max.x, min.y, 0.0);
+  var p2 = new Vector3( min.x, max.y, 0.0);
+  var p3 = new Vector3( min.x, max.y, 0.0);
+  var p4 = new Vector3( max.x, min.y, 0.0);
+  var p5 = new Vector3( max.x, max.y, 0.0);
 
   var uv0 = new Vector2( 0.0, 0.0);
   var uv1 = new Vector2( 1.0, 0.0);

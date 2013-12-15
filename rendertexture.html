@@ -16,6 +16,7 @@
 <script type="text/javascript" src="particlesys.js"></script>
 <script type="text/javascript" src="noise.js"></script>
 <script type="text/javascript" src="renderer.js"></script>
+<script type="text/javascript" src="rendertarget.js"></script>
 
 
 <script id="shader-fs" type="x-shader/x-fragment">
@@ -130,6 +131,8 @@
 
 
     function drawScene() {
+
+        renderTarget.bind();
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -145,14 +148,18 @@
         sphereModel.transform.setPosition(new Vector3(-1.0, 0.0,-5.0));
         sphereModel.draw(pMatrix, currTime);
 
-        /*
+        renderTarget.unbind();
+        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
         q = new Quaternion();
         q.rotateX(-0.5*Math.PI);
         planeModel.transform.setRotation(q);
         planeModel.transform.setScale(new Vector3(10.0, 20.0,1.0));
         planeModel.transform.setPosition(new Vector3(0.0, -1.1,-10.0));
         planeModel.draw(pMatrix, currTime);
-        */
+        renderTarget.debugDraw(pMatrix, currTime);
     }
 
 
@@ -167,17 +174,18 @@
     var sphereModel;
     var planeModel;
     var renderer;
+    var renderTarget;
 
     function initScene(){
+      renderTarget = new RenderTarget(gl, renderer.canvas.width, renderer.canvas.height);
       sphereModel = new Model(gl);
       sphereModel.material.shader.initShader("shader-fs","shader-vs");
       sphereModel.material.texture.load("testTexture.jpg", 0);
       sphereModel.mesh.createSphereMesh( 10,10);
 
       planeModel = new Model(gl);
-      planeModel.material = sphereModel.material;
-      //planeModel.material.shader.initShader("shader-fs","shader-vs");
-      //planeModel.material.texture.load("testTexture.jpg", 0);
+      planeModel.material.shader.initShader("shader-fs","shader-vs");
+      planeModel.material.setTexture(renderTarget.getTexture());
       planeModel.material.culling = false;
       planeModel.mesh.createGridMesh( 10,10);
 
@@ -189,6 +197,7 @@
         startTime = (new Date).getTime();
 
         initGL(canvas);
+        renderer = new Renderer(gl, canvas);
         initEventHandlers(canvas, mouse, currentAngle);
         initScene();
 
@@ -199,7 +208,6 @@
         gl.enable(gl.CULL_FACE);
         gl.frontFace(gl.CCW);
 
-        renderer = new Renderer(gl, canvas);
 
         pMatrix = new Matrix44();
         pMatrix.perspective(
