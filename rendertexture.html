@@ -114,6 +114,7 @@
 
         renderTarget.bind();
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.depthMask(true);//This is necessary to clear the depth texture
         gl.clearDepth(1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -131,6 +132,7 @@
 
         renderTarget.unbind();
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.depthMask(true);//This is necessary to clear the depth texture
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 

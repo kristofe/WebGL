@@ -136,6 +136,7 @@
 
     function drawSpheres() {
       gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+      gl.depthMask(true);//This is necessary to clear the depth texture
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       var q = new Quaternion();
       q.rotateX(currTime);
@@ -146,7 +147,7 @@
       q.identity();
       q.rotateY(currTime);
       sphereModel.transform.setRotation(q);
-      sphereModel.transform.setPosition(new Vector3(-1.0, 0.3,-3.5));
+      sphereModel.transform.setPosition(new Vector3(-1.0, 0.3,-7.5));
       sphereModel.draw(pMatrix, currTime);
 
     };
@@ -204,7 +205,7 @@
                              60.0 * Math.PI/180.0, 
                              gl.viewportWidth / gl.viewportHeight, 
                              0.1, 
-                             100.0
+                             20.0
                            );
 
         var tick = function() {

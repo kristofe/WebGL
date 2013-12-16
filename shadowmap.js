@@ -61,10 +61,18 @@ ShadowMap.prototype.setupMaterial = function(gl){
   fsSource +="    uniform float uTime;\n";
   fsSource +="    uniform mat4 uMVMatrix;\n";
   fsSource +="\n";
+  fsSource +="    float LinearizeDepth(vec2 uv)\n";
+  fsSource +="    {\n";
+  fsSource +="      float n = 1.0; // camera z near\n";
+  fsSource +="      float f = 20.0; // camera z far\n";
+  fsSource +="      float z = texture2D(uTexture01, uv).x;\n";
+  fsSource +="      return (2.0 * n) / (f + n - z * (f - n));\n";	
+  fsSource +="    }\n";
   fsSource +="    void main(void) {\n";
   //fsSource +="      float t= sin(gl_PointCoord.x * 0.01 + uTime);\n"
   //fsSource +="      vec3 color = vec3(t,t,t);\n"
-  fsSource +="      vec3 color = texture2D(uTexture01, vUV).rgb;\n"
+  //fsSource +="      vec3 color = texture2D(uTexture01, vUV).rgb;\n"
+  fsSource +="      vec3 color = vec3(LinearizeDepth(vUV));\n"
   fsSource +="      gl_FragColor = vec4(color, 1.0);\n"
   fsSource +="    }\n";
 
