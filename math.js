@@ -188,6 +188,15 @@ Vector3.prototype.getRotationToAlign = function(other){
   return new Vector4(axis.x, axis.y, axis.z, angle);
 }
 
+Vector3.prototype.getQuatToAlign = function(other){
+  var axisAngle =  this.getRotationToAlign(other);
+  var q = new Quaternion();
+  q.setAxisAngle(new Vector3(axisAngle.x, axisAngle.y, axisAngle.z), axisAngle.w);
+  
+  return q;
+};
+
+
 Vector3.prototype.dot = function(other) {
   return Vector3.dot(this, other);
 };

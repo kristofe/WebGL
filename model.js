@@ -11,7 +11,7 @@ function Model(gl){
   
 }
 
-Model.prototype.draw = function(projMat, time){
+Model.prototype.draw = function(projMat, time, renderer){
  
   this.material.bind(this.mesh);
   //this.mesh.bind(this.material.shader);
@@ -22,6 +22,7 @@ Model.prototype.draw = function(projMat, time){
       projMat.m, 
       time
       );
+  this.material.setRendererUniforms(renderer);
   if(this.mesh.indexBuffer == -1){
     this.gl.drawArrays(
                   this.mesh.primitiveType,

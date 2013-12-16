@@ -340,7 +340,7 @@ ShaderProgram.prototype.setupAttributesAndUniforms = function(){
   this.time =gl.getUniformLocation(this.glProgram, 
                                                        "uTime");
 
-}
+};
 
 
 ShaderProgram.prototype.bind = function(mesh){
@@ -389,7 +389,7 @@ ShaderProgram.prototype.bind = function(mesh){
                         mesh.colorOffset 
                         );
                         
-}
+};
 
 ShaderProgram.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p, pTime) {
   var gl = this.gl;
@@ -401,4 +401,34 @@ ShaderProgram.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, 
   gl.uniform1i(this.texture02,1);
   gl.uniform1f(this.time, pTime);
 
-}
+};
+
+ShaderProgram.prototype.setRendererUniforms = function(renderer) {
+  var gl = this.gl;
+  var uniformInfo;
+
+  uniformInfo = this.uniforms["uCameraMatrix"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentCamera.transform.matrix.m);
+  }
+  uniformInfo = this.uniforms["uCameraMatrixInverse"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentCamera.transform.inverse.m);
+  }
+
+  
+  uniformInfo = this.uniforms["uLightMatrix"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentLight.transform.matrix.m);
+  }
+  uniformInfo = this.uniforms["uLightMatrixInverse"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentLight.transform.inverse.m);
+  }
+
+  uniformInfo = this.uniforms["uRenderFromLight"];
+  if(uniformInfo != null){
+    gl.uniform1f(uniformInfo.slot, renderer.renderFromLight);
+  }
+
+};

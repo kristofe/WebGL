@@ -73,4 +73,7 @@ Material.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p, ti
   this.shader.setUniforms(mv, mInverse, mInverseTranspose, p, time);
 }
 
+Material.prototype.setRendererUniforms = function(renderer){
+  this.shader.setRendererUniforms(renderer);
+}
 
