@@ -45,6 +45,13 @@
     const float Far = 20.0;
     const float LinearDepthConstant = 1.0 / (Far - Near);
 
+    float LinearizeDepth(vec2 uv)
+    {
+      float n = 0.1; // camera z near;
+      float f = 20.0; // camera z far;
+      float z = texture2D(uShadowMap, uv).x;
+      return (2.0 * n) / (f + n - z * (f - n));	
+    }
     void main(void) {
 
       if(uRenderFromLight == 0.0){
@@ -54,19 +61,20 @@
         float shadow = 1.0;
         depth.z *= 0.96;
         
-        /*
-        float shadowDepth = texture2D(uShadowMap, depth.xy).x;
+        
+        //float shadowDepth = texture2D(uShadowMap, depth.xy).x;
+        float shadowDepth = LinearizeDepth(depth.xy);
         if (depth.z > shadowDepth){
           shadow = 0.3;
         }
-        */
+       
         
         vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
-        gl_FragColor = vec4(texColor, 1.0);
+        //gl_FragColor = vec4(texColor, 1.0);
         //gl_FragColor = vec4(texColor, 1.0) * shadow;
-        float t = depth.z;
-        //gl_FragColor = vec4(texColor,1) *  vec4(t, t, t, 1.0);
-        gl_FragColor = vec4(t, t, t, 1.0);
+        float t = shadow;
+        //gl_FragColor = vec4(t, t, t, 1.0);
+        gl_FragColor = vec4(texColor,1) *  vec4(t, t, t, 1.0);
         //gl_FragColor = vec4(depth.x, depth.y, depth.z, 1.0);
       }
       else{
@@ -201,8 +209,7 @@
     function drawObjects() {
       gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
       gl.depthMask(true);//This is necessary to clear the depth texture
-      //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      gl.clear(gl.DEPTH_BUFFER_BIT);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       var q = new Quaternion();
       q.rotateX(currTime);
       sphereModel.transform.setRotation(q);
@@ -247,7 +254,7 @@
       var q = fwd.getQuatToAlign(lightDir);
 
       //renderer.currentLight.transform.setRotation(q);
-      //renderer.currentLight.transform.setPosition(new Vector3(4,2,0));
+      //renderer.currentLight.transform.setPosition(new Vector3(5,2,0));
 
       shadowMap = new ShadowMap(gl, renderer.canvas.width, renderer.canvas.height);
       sphereModel = new Model(gl);

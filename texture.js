@@ -3,7 +3,6 @@
 function Texture(gl) {
   this.gl = gl;
   this.glTexture = -1;
-  this.glDepthTexture = -1;
   this.glTextureUnit = 0;
   this.image = {};
   this.name = "";
@@ -11,8 +10,7 @@ function Texture(gl) {
   this.renderbuffer = -1;
   this.framebuffer = -1;
   this.fbo = false;
-  this.showDepth = false;
-  this.depthFBO = false;
+  this.depthBuffer = false;
 }
 
 Texture.prototype.load = function(name, unit) {
@@ -41,12 +39,7 @@ Texture.prototype.loadTextureComplete = function(){
 Texture.prototype.activate = function() {
   if(this.loaded){
     gl.activeTexture(gl.TEXTURE0 + this.glTextureUnit);
-    if(this.showDepth){
-      gl.bindTexture(gl.TEXTURE_2D, this.glDepthTexture);
-    }
-    else{
-      gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
-    }
+    gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
   }
 }
 
@@ -59,25 +52,12 @@ Texture.prototype.deactivate = function() {
 
 
 Texture.prototype.bindFBO = function() {
-
-  if(this.depthFBO == false){
-    gl.bindTexture( gl.TEXTURE_2D, null);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-  }
-  else
-  {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-    gl.viewport(0, 0, 512, 512); // Match the viewport to the texture size
-    gl.colorMask(false, false, false, false); // Don't write to the color channels at all
-    gl.clear(gl.DEPTH_BUFFER_BIT); // Clear only the depth buffer
-  }
+  gl.bindTexture( gl.TEXTURE_2D, null);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
 };
 
 Texture.prototype.unbindFBO = function() {
   gl.bindFramebuffer( gl.FRAMEBUFFER, null); 
-  if(this.depthFBO){
-    gl.colorMask(true, true, true, true); // Don't write to the color channels at all
-  }
 };
 
 Texture.prototype.setupFBO = function(width, height, create){
@@ -148,11 +128,11 @@ gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER,
 Texture.prototype.setupDepthFBO = function(width, height){
   this.fbo = true;
   this.loaded = true;
-  this.depthFBO = true;
+  this.depthBuffer = true;
   //this.glTextureUnit = 0;
   // Create a color texture
-  this.glTexture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
+  var tmpTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tmpTexture);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -161,8 +141,8 @@ Texture.prototype.setupDepthFBO = function(width, height){
                 gl.UNSIGNED_BYTE, null);
 
   // Create the depth texture
-  this.glDepthTexture = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, this.glDepthTexture);
+  this.glTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, this.glTexture);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -173,9 +153,9 @@ Texture.prototype.setupDepthFBO = function(width, height){
   this.framebuffer = gl.createFramebuffer();
   gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, 
-                          this.glTexture, 0);
+                          tmpTexture, 0);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, 
-                          this.glDepthTexture, 0);
+                          this.glTexture, 0);
 
   if(!gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
             console.error("Framebuffer incomplete!");

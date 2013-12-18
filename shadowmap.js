@@ -24,10 +24,14 @@ ShadowMap.prototype.getTexture = function(){
 
 ShadowMap.prototype.bind = function(){
   this.texture.bindFBO();
+  this.gl.viewport(0, 0, 512, 512); // Match the viewport to the texture size
+  this.gl.colorMask(false, false, false, false); // Don't write to the color channels at all
+  this.gl.clear(gl.DEPTH_BUFFER_BIT); // Clear only the depth buffer
 };
 
 ShadowMap.prototype.unbind = function(){
   this.texture.unbindFBO();
+  this.gl.colorMask(true, true, true, true); // Don't write to the color channels at all
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -79,6 +83,7 @@ ShadowMap.prototype.setupMaterial = function(gl){
   //fsSource +="      vec3 color = vec3(t,t,t);\n"
   //fsSource +="      vec3 color = texture2D(uTexture01, vUV).rgb;\n"
   fsSource +="      vec3 color = vec3(LinearizeDepth(vUV));\n"
+  //fsSource +="      vec3 color = vec3(texture2D(uShadowMap,vUV));\n"
   fsSource +="      gl_FragColor = vec4(color, 1.0);\n"
   fsSource +="    }\n";
 
