@@ -42,52 +42,6 @@ function ShaderProgram(gl) {
 
 }
 
-
-/*
-ShaderProgram.prototype.getTextOfScriptElement = function(id) {
-  var scriptElement = document.getElementById(id);
-  if (!scriptElement) {
-      return null;
-  }
-
-  var str = "";
-  var k = scriptElement.firstChild;
-  while (k) {
-      if (k.nodeType == 3) {
-          str += k.textContent;
-      }
-      k = k.nextSibling;
-  }
-
-  return str;
-
-}
-ShaderProgram.prototype.loadShaderFromDocument = function (id) {
-  var str = this.getTextOfScriptElement(id);
-  var shader;
-  if (shaderScript.type == "x-shader/x-fragment") {
-      shader = gl.createShader(gl.FRAGMENT_SHADER);
-      this.fragShaderSource = str;
-  } else if (shaderScript.type == "x-shader/x-vertex") {
-      shader = gl.createShader(gl.VERTEX_SHADER);
-      this.vertShaderSource = str;
-  } else {
-      return null;
-  }
-
-  gl.shaderSource(shader, str);
-  gl.compileShader(shader);
-
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      var err = gl.getShaderInfoLog(shader);
-      console.error(err);
-      alert(err);
-      return null;
-  }
-
-  return shader;
-}
-*/
 ShaderProgram.prototype.compileShaderType = function(str, type) {
   var gl = this.gl;
   var shader = gl.createShader(type);
@@ -149,74 +103,6 @@ ShaderProgram.prototype.getShader = function(id) {
 
   return shader;
 }
-
-/*
-ShaderProgram.prototype.initShaders = 
-  function(fragment_shadername, vertex_shadername) 
-{
-  this.fragShaderName = fragment_shadername;
-  this.vertShaderName = vertex_shadername;
-
-  this.fragShaderID = this.loadShaderFromShader(fragment_shadername);
-  this.vertShaderID = this.loadShaderFromShader(vertex_shadername);
-
-  var shaderProgram = gl.createProgram();
-  gl.attachShader(this.shaderProgramID, this.vertShaderID);
-  gl.attachShader(this.shaderProgramID, this.fragShaderID);
-
-  //This is where you can set the vertex attribute locations
-  for(var i = 0; i < this.attributeSlots.length; ++i) {
-    var attributeName = this.attributeSlots[i][0];
-    var attributeSlot = this.attributeSlots[i][1];
-    gl.bindAttribLocation(this.shaderProgramID, attributeSlot, attributeName);
-  }
-  gl.linkProgram(this.shaderProgramID);
-
-  if (!gl.getProgramParameter(this.shaderProgramID, gl.LINK_STATUS)) {
-      alert("Could not initialise shaders");
-  }
-
-  this.cacheUniformData(gl);
-
-  return this.shaderProgramID;
-}
-
-ShaderProgram.prototype.cacheUniformData = function( gl ) {
-  var total = gl.getProgramParameter(this.shaderProgramID, gl.ACTIVE_UNIFORMS);
-  for( var i = 0; i < total; ++i) {
-    //WebGLActiveInfo = { GLint: size, GLenum: type, DOMString: name};
-    var activeInfo = gl.getActiveUniform(this.shaderProgramID, i);
-    var slot = gl.getUniformLocation(this.shaderProgramID, activeInfo.name);
-
-    this.uniforms[activeInfo.name] = {
-                                      "slot" : slot,
-                                      "size" : activeInfo.size,
-                                      "type" : activeInfo.type,
-                                      "name" : activeInfo.name
-                                     };
-  }
-
-}
-    /* Uniform Types */
-/*
-gl.FLOAT
-gl.FLOAT_VEC2
-gl.FLOAT_VEC3
-gl.FLOAT_VEC4
-gl.INT
-gl.INT_VEC2
-gl.INT_VEC3
-gl.INT_VEC4
-gl.BOOL
-gl.BOOL_VEC2
-gl.BOOL_VEC3
-gl.BOOL_VEC4
-gl.FLOAT_MAT2
-gl.FLOAT_MAT3
-gl.FLOAT_MAT4
-gl.SAMPLER_2D
-gl.SAMPLER_CUBE
-*/
 
 ShaderProgram.prototype.cacheAttributeData = function() {
   var gl = this.gl;
@@ -300,6 +186,10 @@ ShaderProgram.prototype.setupAttributesAndUniforms = function(){
 
   this.cacheUniformData();
   this.cacheAttributeData();
+  
+
+  //DEPRECATED:
+  //TODO: remove the following way of storing attributes
 
   this.vertexPositionAttribute = 
                   gl.getAttribLocation(this.glProgram, "aVertexPosition");
@@ -391,18 +281,53 @@ ShaderProgram.prototype.bind = function(mesh){
                         
 };
 
+
+//DEPRECATED: uniforms are now split between model and renderer
+//TODO: CHANGE HARD CODED UNIFORM NAMES TO AN ARRAY OF NAMES PASSED IN.
+//Need to add the type so the correct uniform call is made
+
 ShaderProgram.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p, pTime) {
   var gl = this.gl;
-  gl.uniformMatrix4fv(this.pMatrixUniform, false, p);
-  gl.uniformMatrix4fv(this.mvMatrixUniform, false, mv);
-  gl.uniformMatrix4fv(this.mInverse, false, mInverse);
-  gl.uniformMatrix4fv(this.mInverseTranspose, false, mInverseTranspose);
-  gl.uniform1i(this.texture01,0);
-  gl.uniform1i(this.texture02,1);
-  gl.uniform1f(this.time, pTime);
+  var uniformInfo;
+
+  uniformInfo = this.uniforms["uPMatrix"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, p);
+  }
+  uniformInfo = this.uniforms["uMVMatrix"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, mv);
+  }
+
+  uniformInfo = this.uniforms["uInverse"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, mInverse);
+  }
+
+  uniformInfo = this.uniforms["uInverseTranspose"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, mInverseTranspose);
+  }
+
+  uniformInfo = this.uniforms["uTexture01"];
+  if(uniformInfo != null){
+    gl.uniform1i(uniformInfo.slot, 0);
+  }
+
+  uniformInfo = this.uniforms["uTexture02"];
+  if(uniformInfo != null){
+    gl.uniform1i(uniformInfo.slot, 1);
+  }
+
+  uniformInfo = this.uniforms["uTime"];
+  if(uniformInfo != null){
+    gl.uniform1f(uniformInfo.slot, pTime);
+  }
 
 };
 
+//TODO: CHANGE HARD CODED UNIFORM NAMES TO AN ARRAY OF NAMES PASSED IN.
+//Need to add the type so the correct uniform call is made
 ShaderProgram.prototype.setRendererUniforms = function(renderer) {
   var gl = this.gl;
   var uniformInfo;
@@ -431,4 +356,46 @@ ShaderProgram.prototype.setRendererUniforms = function(renderer) {
     gl.uniform1f(uniformInfo.slot, renderer.renderFromLight);
   }
 
+  uniformInfo = this.uniforms["uPMatrix"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentCamera.projection.m);
+  }
+
+  uniformInfo = this.uniforms["uTime"];
+  if(uniformInfo != null){
+    gl.uniform1f(uniformInfo.slot, renderer.currTime);
+  }
+};
+
+
+//TODO: CHANGE HARD CODED UNIFORM NAMES TO AN ARRAY OF NAMES PASSED IN.
+//Need to add the type so the correct uniform call is made
+ShaderProgram.prototype.setModelUniforms = function(model) {
+  var gl = this.gl;
+  var uniformInfo;
+
+  uniformInfo = this.uniforms["uMVMatrix"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, model.transform.matrix.m);
+  }
+
+  uniformInfo = this.uniforms["uInverse"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, model.transform.inverse.m);
+  }
+
+  uniformInfo = this.uniforms["uInverseTranspose"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, model.transform.inverseTranspose.m);
+  }
+
+  uniformInfo = this.uniforms["uTexture01"];
+  if(uniformInfo != null){
+    gl.uniform1i(uniformInfo.slot, 0);
+  }
+
+  uniformInfo = this.uniforms["uTexture02"];
+  if(uniformInfo != null){
+    gl.uniform1i(uniformInfo.slot, 1);
+  }
 };

@@ -11,7 +11,32 @@ function Renderer(gl, canvas) {
   this.cameras = [this.currentCamera];
   this.lights = [this.currentLight];
   this.renderFromLight = 0;
+  this.currTime = 0;
 }
+
+Renderer.prototype.drawModel = function(model) {
+ 
+  model.material.bind(model.mesh);
+  model.material.setModelUniforms(model);
+  model.material.setRendererUniforms(renderer);
+  if(model.mesh.indexBuffer == -1){
+    model.gl.drawArrays(
+                  model.mesh.primitiveType,
+                  0, 
+                  model.mesh.numItems
+                  );
+  }
+  else{
+    model.gl.bindBuffer(gl.ARRAY_BUFFER,model.mesh.vertexBuffer);
+    model.gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,model.mesh.indexBuffer);
+    model.gl.drawElements(
+                  model.mesh.primitiveType,
+                  model.mesh.indices.length()/3, 
+                  gl.UNSIGNED_SHORT,
+                  0 
+                  );
+  }
+};
 
 Renderer.prototype.loadAllExtensions = function() {
   var extTFL = gl.getExtension("OES_texture_float_linear");
