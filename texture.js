@@ -12,6 +12,7 @@ function Texture(gl) {
   this.framebuffer = -1;
   this.fbo = false;
   this.showDepth = false;
+  this.depthFBO = false;
 }
 
 Texture.prototype.load = function(name, unit) {
@@ -58,12 +59,25 @@ Texture.prototype.deactivate = function() {
 
 
 Texture.prototype.bindFBO = function() {
-  gl.bindTexture( gl.TEXTURE_2D, null);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+
+  if(this.depthFBO == false){
+    gl.bindTexture( gl.TEXTURE_2D, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+  }
+  else
+  {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+    gl.viewport(0, 0, 512, 512); // Match the viewport to the texture size
+    gl.colorMask(false, false, false, false); // Don't write to the color channels at all
+    gl.clear(gl.DEPTH_BUFFER_BIT); // Clear only the depth buffer
+  }
 };
 
 Texture.prototype.unbindFBO = function() {
   gl.bindFramebuffer( gl.FRAMEBUFFER, null); 
+  if(this.depthFBO){
+    gl.colorMask(true, true, true, true); // Don't write to the color channels at all
+  }
 };
 
 Texture.prototype.setupFBO = function(width, height, create){
@@ -134,6 +148,7 @@ gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER,
 Texture.prototype.setupDepthFBO = function(width, height){
   this.fbo = true;
   this.loaded = true;
+  this.depthFBO = true;
   //this.glTextureUnit = 0;
   // Create a color texture
   this.glTexture = gl.createTexture();
@@ -161,4 +176,10 @@ Texture.prototype.setupDepthFBO = function(width, height){
                           this.glTexture, 0);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, 
                           this.glDepthTexture, 0);
+
+  if(!gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+            console.error("Framebuffer incomplete!");
+        }
+        
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 };

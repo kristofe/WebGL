@@ -50,22 +50,24 @@
       if(uRenderFromLight == 0.0){
         
         vec3 depth = vPosition.xyz / vPosition.w;
-        //depth.z = length(vWorldVertex.xyz - uLightPosition) * LinearDepthConstant;
+        depth.z = length(vWorldVertex.xyz - uLightPosition) * LinearDepthConstant;
         float shadow = 1.0;
         depth.z *= 0.96;
         
+        /*
         float shadowDepth = texture2D(uShadowMap, depth.xy).x;
         if (depth.z > shadowDepth){
           shadow = 0.3;
         }
+        */
         
         vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
         gl_FragColor = vec4(texColor, 1.0);
         //gl_FragColor = vec4(texColor, 1.0) * shadow;
-        //float t = shadow;
+        float t = depth.z;
         //gl_FragColor = vec4(texColor,1) *  vec4(t, t, t, 1.0);
-        //gl_FragColor = vec4(t, t, t, 1.0);
-        //gl_FragColor = vec4(depth.z, depth.z, depth.z, 1.0);
+        gl_FragColor = vec4(t, t, t, 1.0);
+        //gl_FragColor = vec4(depth.x, depth.y, depth.z, 1.0);
       }
       else{
         vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
@@ -175,6 +177,7 @@
 
 
     function drawScene() {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         shadowMap.bind();
 
@@ -243,8 +246,8 @@
       var lightDir = new Vector3(1,1,1).normalize();
       var q = fwd.getQuatToAlign(lightDir);
 
-      renderer.currentLight.transform.setRotation(q);
-      renderer.currentLight.transform.setPosition(new Vector3(4,2,0));
+      //renderer.currentLight.transform.setRotation(q);
+      //renderer.currentLight.transform.setPosition(new Vector3(4,2,0));
 
       shadowMap = new ShadowMap(gl, renderer.canvas.width, renderer.canvas.height);
       sphereModel = new Model(gl);
