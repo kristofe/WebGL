@@ -144,7 +144,7 @@
           
           vViewVec = normalize(-viewVertex.xyz);
           // Project the vertex from the light's point of view
-          vPosition = depthScaleMatrix * uLightProjectionMatrix * uLightMatrix * vWorldVertex;
+          vPosition = depthScaleMatrix * uLightProjectionMatrix * uLightViewMatrix * vWorldVertex;
         }
         else{
           vPosition = uLightViewMatrix * uMVMatrix * vec4(aVertexPosition,1.0);
@@ -213,14 +213,14 @@
       var q = new Quaternion();
       q.rotateX(currTime);
       sphereModel.transform.setRotation(q);
-      sphereModel.transform.setPosition(new Vector3(1.0, 0.3,-3.5));
+      sphereModel.transform.setPosition(new Vector3(1.0, 0.5,-3.5));
       sphereModel.drawRenderer(renderer);
       renderer.drawModel(sphereModel);
 
       q.identity();
       q.rotateY(currTime);
       sphereModel.transform.setRotation(q);
-      sphereModel.transform.setPosition(new Vector3(-1.0, 0.3,-7.5));
+      sphereModel.transform.setPosition(new Vector3(-1.0, 0.0,-5.5));
       renderer.drawModel(sphereModel);
 
       q.identity();
@@ -253,8 +253,8 @@
       var lightDir = new Vector3(1,1,1).normalize();
       var q = fwd.getQuatToAlign(lightDir);
 
-      //renderer.currentLight.transform.setRotation(q);
-      //renderer.currentLight.transform.setPosition(new Vector3(5,2,0));
+      renderer.currentLight.transform.setRotation(q);
+      renderer.currentLight.transform.setPosition(new Vector3(5,2,0));
 
       shadowMap = new ShadowMap(gl, renderer.canvas.width, renderer.canvas.height);
       sphereModel = new Model(gl);
