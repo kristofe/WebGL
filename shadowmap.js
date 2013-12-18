@@ -3,6 +3,7 @@
 function ShadowMap(gl, width, height){
   this.gl = gl;
   this.texture = new Texture(gl);
+  this.texture.glTextureUnit = 2;
   this.width = width;
   this.height = height;
   this.texture.setupDepthFBO(width, height);
@@ -33,9 +34,12 @@ ShadowMap.prototype.unbind = function(){
 // Debug Drawing routines
 ///////////////////////////////////////////////////////////////////////////////
 
-ShadowMap.prototype.debugDraw = function(projMat, time){
+ShadowMap.prototype.debugDraw = function(projMat, time, renderer){
  
   this.debugMaterial.bind(this.debugMesh);
+  this.debugMaterial.setModelUniforms(this);
+  this.debugMaterial.setRendererUniforms(renderer);
+  /*
   this.debugMaterial.setUniforms(
       this.transform.matrix.m,
       this.transform.inverse.m,
@@ -43,6 +47,7 @@ ShadowMap.prototype.debugDraw = function(projMat, time){
       projMat.m, 
       time
       );
+  */
   this.gl.drawArrays(this.debugMesh.primitiveType, 0, this.debugMesh.numItems);
 };
 
@@ -58,14 +63,15 @@ ShadowMap.prototype.setupMaterial = function(gl){
   fsSource +="\n";
   fsSource +="    uniform sampler2D uTexture01;\n";
   fsSource +="    uniform sampler2D uTexture02;\n";
+  fsSource +="    uniform sampler2D uShadowMap;\n";
   fsSource +="    uniform float uTime;\n";
   fsSource +="    uniform mat4 uMVMatrix;\n";
   fsSource +="\n";
   fsSource +="    float LinearizeDepth(vec2 uv)\n";
   fsSource +="    {\n";
-  fsSource +="      float n = 1.0; // camera z near\n";
+  fsSource +="      float n = 0.1; // camera z near\n";
   fsSource +="      float f = 20.0; // camera z far\n";
-  fsSource +="      float z = texture2D(uTexture01, uv).x;\n";
+  fsSource +="      float z = texture2D(uShadowMap, uv).x;\n";
   fsSource +="      return (2.0 * n) / (f + n - z * (f - n));\n";	
   fsSource +="    }\n";
   fsSource +="    void main(void) {\n";
@@ -89,6 +95,7 @@ ShadowMap.prototype.setupMaterial = function(gl){
   vsSource +="    uniform mat4 uPMatrix;\n";
   vsSource +="    uniform sampler2D uTexture01;\n";
   vsSource +="    uniform sampler2D uTexture02;\n";
+  vsSource +="    uniform sampler2D uShadowMap;\n";
   vsSource +="    uniform float uTime;\n";
   vsSource +="\n";
   vsSource +="    varying vec4 vPosition;\n";

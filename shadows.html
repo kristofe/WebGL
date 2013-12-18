@@ -30,16 +30,47 @@
     varying vec3 vTangent;
     varying vec3 vBitangent;
     varying vec4 vVertColor;
+    varying vec4 vWorldVertex;
+    varying vec3 vViewVec;
 
     uniform sampler2D uTexture01;
     uniform sampler2D uTexture02;
+    uniform sampler2D uShadowMap;
     uniform float uTime;
     uniform mat4 uMVMatrix;
+    uniform vec3 uLightPosition;
+    uniform float uRenderFromLight;
+
+    const float Near = 0.1;
+    const float Far = 20.0;
+    const float LinearDepthConstant = 1.0 / (Far - Near);
 
     void main(void) {
-      vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
-      gl_FragColor = vec4(texColor, 1.0);// * vVertColor;
-      //gl_FragColor = vec4(1,0,0, 1.0);
+
+      if(uRenderFromLight == 0.0){
+        
+        vec3 depth = vPosition.xyz / vPosition.w;
+        //depth.z = length(vWorldVertex.xyz - uLightPosition) * LinearDepthConstant;
+        float shadow = 1.0;
+        depth.z *= 0.96;
+        
+        float shadowDepth = texture2D(uShadowMap, depth.xy).x;
+        if (depth.z > shadowDepth){
+          shadow = 0.3;
+        }
+        
+        vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
+        gl_FragColor = vec4(texColor, 1.0);
+        //gl_FragColor = vec4(texColor, 1.0) * shadow;
+        //float t = shadow;
+        //gl_FragColor = vec4(texColor,1) *  vec4(t, t, t, 1.0);
+        //gl_FragColor = vec4(t, t, t, 1.0);
+        //gl_FragColor = vec4(depth.z, depth.z, depth.z, 1.0);
+      }
+      else{
+        vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
+        gl_FragColor = vec4(texColor, 1.0);
+      }
         
     }
 
@@ -61,13 +92,16 @@
     uniform float uTime;
 
     uniform mat4 uCameraMatrix;
-    uniform mat4 uCameraMatrixInverse;
+    uniform mat4 uViewMatrix;
     uniform mat4 uLightMatrix;
-    uniform mat4 uLightMatrixInverse;
+    uniform mat4 uLightViewMatrix;
+    uniform mat4 uLightProjectionMatrix;
+    uniform vec3 uLightPosition;
     uniform float uRenderFromLight;
 
     uniform sampler2D uTexture01;
     uniform sampler2D uTexture02;
+    uniform sampler2D uShadowMap;
 
     //These will be passed to the fragment shader and will be interpreted per
     //pixel
@@ -78,27 +112,39 @@
     varying vec3 vBitangent;
     varying vec4 vVertColor;
 
+    const mat4 depthScaleMatrix = mat4(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
+
+    varying vec4 vWorldVertex;
+    varying vec3 vViewVec;
+
 
     void main(void) {
-        mat3 normTrans = mat3(uInverseTranspose);
-
         if(uRenderFromLight == 0.0){
-          vPosition = uCameraMatrixInverse * uMVMatrix * vec4(aVertexPosition,1.0);
+          mat3 normTrans = mat3(uMVMatrix);
+          vNormal = normalize(normTrans * aVertexNormal);
+          vUV = aVertexUV.xy;
+          vTangent = normalize(normTrans * aVertexTangent.xyz);
+          vBitangent = normalize(cross(vNormal, vTangent));
+          vVertColor = aVertexColor;
+
+
+          vWorldVertex = uMVMatrix * vec4(aVertexPosition, 1.0);
+          vec4 viewVertex = uViewMatrix * vWorldVertex;
+          gl_Position = uPMatrix * viewVertex;
+          
+          vViewVec = normalize(-viewVertex.xyz);
+          // Project the vertex from the light's point of view
+          vPosition = depthScaleMatrix * uLightProjectionMatrix * uLightMatrix * vWorldVertex;
         }
         else{
-          vPosition = uLightMatrixInverse * uMVMatrix * vec4(aVertexPosition,1.0);
+          vPosition = uLightViewMatrix * uMVMatrix * vec4(aVertexPosition,1.0);
+          vUV = aVertexUV.xy;
+          gl_Position = uPMatrix * vPosition;
+
         }
         
 
-        vNormal = normalize(normTrans * aVertexNormal);
-        vUV = aVertexUV.xy;
-        vTangent = normalize(normTrans * aVertexTangent.xyz);
-        vBitangent = normalize(cross(vNormal, vTangent));
-        vVertColor = aVertexColor;
 
-        vec4 pos = uPMatrix * vPosition;
-
-        gl_Position = pos;
     }
 </script>
 
@@ -133,39 +179,31 @@
         shadowMap.bind();
 
         renderer.renderFromLight = 1.0;
-        drawSpheres();
+        drawObjects();
 
         shadowMap.unbind();
         renderer.renderFromLight = 0.0;
 
-        drawSpheres();
+        drawObjects();
 
-        q = new Quaternion();
-        //var axis = new Vector3(1,1,1).normalize();
-        //q.setAxisAngle(axis,-0.5*Math.PI*currTime);
-        q.rotateX(+0.5*Math.PI);
-        planeModel.transform.setRotation(q);
-        planeModel.transform.setScale(new Vector3(10.0, 20.0,1.0));
-        planeModel.transform.setPosition(new Vector3(0.0, -1.1,-10.0));
-        //planeModel.draw(pMatrix, currTime, renderer);
-        renderer.drawModel(planeModel);
 
         shadowMap.debugDraw(
                             renderer.currentCamera.projection.m,
                             renderer.currTime, 
                             renderer
                            );
+                           
     }
 
-    function drawSpheres() {
+    function drawObjects() {
       gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
       gl.depthMask(true);//This is necessary to clear the depth texture
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.clear(gl.DEPTH_BUFFER_BIT);
       var q = new Quaternion();
       q.rotateX(currTime);
       sphereModel.transform.setRotation(q);
       sphereModel.transform.setPosition(new Vector3(1.0, 0.3,-3.5));
-      //sphereModel.draw(pMatrix, currTime, renderer);
       sphereModel.drawRenderer(renderer);
       renderer.drawModel(sphereModel);
 
@@ -173,8 +211,16 @@
       q.rotateY(currTime);
       sphereModel.transform.setRotation(q);
       sphereModel.transform.setPosition(new Vector3(-1.0, 0.3,-7.5));
-      //sphereModel.draw(pMatrix, currTime, renderer);
       renderer.drawModel(sphereModel);
+
+      q.identity();
+      q.rotateX(+0.5*Math.PI);
+      planeModel.transform.setRotation(q);
+      planeModel.transform.setScale(new Vector3(10.0, 20.0,1.0));
+      planeModel.transform.setPosition(new Vector3(0.0, -1.1,-10.0));
+      renderer.drawModel(planeModel);
+
+
 
     };
 
@@ -204,13 +250,15 @@
       sphereModel = new Model(gl);
       sphereModel.material.shader.initShader("shader-fs","shader-vs");
       sphereModel.material.texture.load("testTexture.jpg", 0);
+      sphereModel.material.addTexture(shadowMap.getTexture());
       sphereModel.material.zWrite = true;
       sphereModel.mesh.createSphereMesh( 10,10);
 
       planeModel = new Model(gl);
       planeModel.material.shader.initShader("shader-fs","shader-vs");
-      //planeModel.material.texture.load("testTexture.jpg", 0);
-      planeModel.material.setTexture(shadowMap.getTexture());
+      planeModel.material.texture.load("testTexture.jpg", 0);
+      planeModel.material.addTexture(shadowMap.getTexture());
+      //planeModel.material.setTexture(shadowMap.getTexture());
       planeModel.material.culling = false;
       planeModel.mesh.createGridMesh( 10,10);
 
@@ -231,18 +279,6 @@
         gl.enable(gl.DEPTH_TEST);
         gl.enable(gl.CULL_FACE);
         gl.frontFace(gl.CCW);
-
-
-        
-        /*
-        pMatrix = new Matrix44();
-        pMatrix.perspective(
-                             60.0 * Math.PI/180.0, 
-                             gl.viewportWidth / gl.viewportHeight, 
-                             0.1, 
-                             20.0
-                           );
-                           */
 
         var tick = function() {
           currTime = ((new Date).getTime() - startTime)*0.001;

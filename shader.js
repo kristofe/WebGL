@@ -336,7 +336,7 @@ ShaderProgram.prototype.setRendererUniforms = function(renderer) {
   if(uniformInfo != null){
     gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentCamera.transform.matrix.m);
   }
-  uniformInfo = this.uniforms["uCameraMatrixInverse"];
+  uniformInfo = this.uniforms["uViewMatrix"];
   if(uniformInfo != null){
     gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentCamera.transform.inverse.m);
   }
@@ -346,9 +346,22 @@ ShaderProgram.prototype.setRendererUniforms = function(renderer) {
   if(uniformInfo != null){
     gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentLight.transform.matrix.m);
   }
-  uniformInfo = this.uniforms["uLightMatrixInverse"];
+  uniformInfo = this.uniforms["uLightViewMatrix"];
   if(uniformInfo != null){
     gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentLight.transform.inverse.m);
+  }
+  uniformInfo = this.uniforms["uLightProjectionMatrix"];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, renderer.currentLight.projection.m);
+  }
+  uniformInfo = this.uniforms["uLightPosition"];
+  if(uniformInfo != null){
+    gl.uniform3f(
+        uniformInfo.slot, 
+        renderer.currentLight.transform.position.x,
+        renderer.currentLight.transform.position.y,
+        renderer.currentLight.transform.position.z
+        );
   }
 
   uniformInfo = this.uniforms["uRenderFromLight"];
@@ -364,6 +377,11 @@ ShaderProgram.prototype.setRendererUniforms = function(renderer) {
   uniformInfo = this.uniforms["uTime"];
   if(uniformInfo != null){
     gl.uniform1f(uniformInfo.slot, renderer.currTime);
+  }
+  
+  uniformInfo = this.uniforms["uShadowMap"];
+  if(uniformInfo != null){
+    gl.uniform1i(uniformInfo.slot, 2);
   }
 };
 

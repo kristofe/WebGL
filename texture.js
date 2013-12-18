@@ -134,6 +134,7 @@ gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER,
 Texture.prototype.setupDepthFBO = function(width, height){
   this.fbo = true;
   this.loaded = true;
+  //this.glTextureUnit = 0;
   // Create a color texture
   this.glTexture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, this.glTexture);

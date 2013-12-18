@@ -71,7 +71,8 @@ Material.prototype.bind = function(mesh){
 
 //DEPRECATED
 //TODO: REMOVE THIS FUNCTION
-Material.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p, time){
+Material.prototype.setUniforms = function(mv, mInverse, mInverseTranspose, p,
+                                          time){
   this.shader.setUniforms(mv, mInverse, mInverseTranspose, p, time);
 }
 Material.prototype.setModelUniforms = function(model){
