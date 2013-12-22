@@ -45,4 +45,10 @@ Transform.prototype.rotateEulerAngles = function(r){
   this.update();
 }
 
+Transform.prototype.lookAt = function(target, up){
+  this.matrix.lookAt(this.position, target, up);
+  this.inverse = this.matrix.clone().invert();
+  this.inverseTranspose = this.inverse.clone().transpose();
+};
+
 

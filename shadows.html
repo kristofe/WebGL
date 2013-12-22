@@ -249,12 +249,11 @@
     var shadowMap;
 
     function initScene(){
-      var fwd = new Vector3(0,0,1);
-      var lightDir = new Vector3(1,1,1).normalize();
-      var q = fwd.getQuatToAlign(lightDir);
-
-      renderer.currentLight.transform.setRotation(q);
-      renderer.currentLight.transform.setPosition(new Vector3(5,2,0));
+      //renderer.currentLight.transform.setPosition(new Vector3(5,2,0));
+      renderer.currentLight.transform.setPosition(new Vector3(2,2,0));
+      var target = new Vector3(0.0, 0, -4);
+      renderer.currentLight.transform.lookAt(target, Vector3.up());
+      //renderer.currentLight.transform.lookAt(new Vector3(0,0,0), Vector3.up());
 
       shadowMap = new ShadowMap(gl, renderer.canvas.width, renderer.canvas.height);
       sphereModel = new Model(gl);
@@ -262,6 +261,7 @@
       sphereModel.material.texture.load("testTexture.jpg", 0);
       sphereModel.material.addTexture(shadowMap.getTexture());
       sphereModel.material.zWrite = true;
+      sphereModel.mesh.primitiveType = gl.TRIANGLES;
       sphereModel.mesh.createSphereMesh( 10,10);
 
       planeModel = new Model(gl);
@@ -270,6 +270,7 @@
       planeModel.material.addTexture(shadowMap.getTexture());
       //planeModel.material.setTexture(shadowMap.getTexture());
       planeModel.material.culling = false;
+      planeModel.mesh.primitiveType = gl.TRIANGLES;
       planeModel.mesh.createGridMesh( 10,10);
 
 

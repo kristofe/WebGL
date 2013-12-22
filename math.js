@@ -79,6 +79,18 @@ Vector3.prototype.cross = function(b) {
   return out;
 };
 
+Vector3.fwd = function() {
+  return new Vector3(0,0,1);
+};
+
+Vector3.right = function() {
+  return new Vector3(1,0,0);
+};
+
+Vector3.up = function() {
+  return new Vector3(0,1,0);
+};
+
 Vector3.dot = function(a,b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 };
@@ -886,6 +898,115 @@ Matrix44.prototype.preMultiply = function(a) {
   //this.debugPrint("preMultiply " + this.getMatlabString(b));
   this.debugPrint("preMultiply\n"); 
   return this;
+};
+
+//This only rotates the matrix... it doesn't move it to the eye point.
+Matrix44.prototype.lookAt = function (eye, target, up) {
+  var fwd = target.clone().subtract(eye);
+  fwd.normalize();
+  var right = fwd.cross(up).normalize();
+  up = right.cross(fwd).normalize();
+
+  var m = new Float32Array(16);
+
+    m[0] = right.x;
+    m[1] = right.y;
+    m[2] = right.z;
+    m[3] = 0;
+    m[4] = up.x;
+    m[5] = up.y;
+    m[6] = up.z;
+    m[7] = 0;
+    m[8] = -fwd.x;
+    m[9] = -fwd.y;
+    m[10] = -fwd.z;
+    m[11] = 0;
+    m[12] = 0;//eye.x;
+    m[13] = 0;//eye.y;
+    m[14] = 0;//eye.z;
+    m[15] = 1;
+
+    this.preMultiply(m);
+    return this;
+};
+
+Matrix44.prototype.lookAtOld = function (eye, center, up) {
+  
+    var x0, x1, x2, y0, y1, y2, z0, z1, z2, len,
+        eyex = eye.x,
+        eyey = eye.y,
+        eyez = eye.z,
+        upx = up.x,
+        upy = up.y,
+        upz = up.z,
+        centerx = center.x,
+        centery = center.y,
+        centerz = center.z;
+
+    if (Math.abs(eyex - centerx) < 0.000001 &&
+        Math.abs(eyey - centery) < 0.000001 &&
+        Math.abs(eyez - centerz) < 0.000001) {
+        return this.identity();
+    }
+
+    z0 = eyex - centerx;
+    z1 = eyey - centery;
+    z2 = eyez - centerz;
+
+    len = 1 / Math.sqrt(z0 * z0 + z1 * z1 + z2 * z2);
+    z0 *= len;
+    z1 *= len;
+    z2 *= len;
+
+    x0 = upy * z2 - upz * z1;
+    x1 = upz * z0 - upx * z2;
+    x2 = upx * z1 - upy * z0;
+    len = Math.sqrt(x0 * x0 + x1 * x1 + x2 * x2);
+    if (!len) {
+        x0 = 0;
+        x1 = 0;
+        x2 = 0;
+    } else {
+        len = 1 / len;
+        x0 *= len;
+        x1 *= len;
+        x2 *= len;
+    }
+
+    y0 = z1 * x2 - z2 * x1;
+    y1 = z2 * x0 - z0 * x2;
+    y2 = z0 * x1 - z1 * x0;
+
+    len = Math.sqrt(y0 * y0 + y1 * y1 + y2 * y2);
+    if (!len) {
+        y0 = 0;
+        y1 = 0;
+        y2 = 0;
+    } else {
+        len = 1 / len;
+        y0 *= len;
+        y1 *= len;
+        y2 *= len;
+    }
+
+    this.m[0] = x0;
+    this.m[1] = y0;
+    this.m[2] = z0;
+    this.m[3] = 0;
+    this.m[4] = x1;
+    this.m[5] = y1;
+    this.m[6] = z1;
+    this.m[7] = 0;
+    this.m[8] = x2;
+    this.m[9] = y2;
+    this.m[10] = z2;
+    this.m[11] = 0;
+    this.m[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+    this.m[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+    this.m[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+    this.m[15] = 1;
+
+    return this;
 };
 
 
