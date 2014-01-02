@@ -1,5 +1,18 @@
 "use strict";
 
+/*
+
+   Changes for this:
+
+   Pass an array of names, values and types to bind uniforms.
+
+   Then loop through each calling the appropriate glUniform on the correct
+   uniform name.  This should be passed through to the shader
+
+
+   */
+
+
 function Material(gl){
   this.gl = gl;
   this.shader = new ShaderProgram(gl);

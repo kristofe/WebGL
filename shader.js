@@ -1,4 +1,22 @@
 "use strict";
+/*
+   For Uniforms:
+   Pass an array of names, values and types to bind uniforms.
+
+   Then loop through each calling the appropriate glUniform on the correct
+   uniform name.  
+   This can be called by the model, the renderer etc each with its own set of
+   attributes.  If an attribute isn't in the shader then nothing gets set.
+
+
+   For Attributes:
+   The mesh will pass in an array of structs containiing the glBuffer, the 
+   attribute name, size of the items in the buffer, and the type,
+
+   Note item size is the number of the elements of the type.  So if the buffer 
+   has Vector3's then the items size is 3.
+   The number of vertices is passed in seperately.  
+*/
 
 function ShaderProgram(gl) {
   this.gl = gl;
@@ -39,6 +57,25 @@ function ShaderProgram(gl) {
   this.typeToString[gl.FLOAT_MAT4] = "FLOAT_MAT4";
   this.typeToString[gl.SAMPLER_2D] = "SAMPLER_2D";
   this.typeToString[gl.SAMPLER_CUBE] = "SAMPLER_CUBE";
+
+  this.stringToType = {};
+  this.stringToType["FLOAT"] = gl.FLOAT;
+  this.stringToType["FLOAT_VEC2"] = gl.FLOAT_VEC2;
+  this.stringToType["FLOAT_VEC3"] = gl.FLOAT_VEC3;
+  this.stringToType["FLOAT_VEC4"] = gl.FLOAT_VEC4;
+  this.stringToType["INT"] = gl.INT;
+  this.stringToType["INT_VEC2"] = gl.INT_VEC2;
+  this.stringToType["INT_VEC3"] = gl.INT_VEC3;
+  this.stringToType["INT_VEC4"] = gl.INT_VEC4;
+  this.stringToType["BOOL"] = gl.BOOL;
+  this.stringToType["BOOL_VEC2"] = gl.BOOL_VEC2;
+  this.stringToType["BOOL_VEC3"] = gl.BOOL_VEC3;
+  this.stringToType["BOOL_VEC4"] = gl.BOOL_VEC4;
+  this.stringToType["FLOAT_MAT2"] = gl.FLOAT_MAT2;
+  this.stringToType["FLOAT_MAT3"] = gl.FLOAT_MAT3;
+  this.stringToType["FLOAT_MAT4"] = gl.FLOAT_MAT4;
+  this.stringToType["SAMPLER_2D"] = gl.SAMPLER_2D;
+  this.stringToType["SAMPLER_CUBE"] = gl.SAMPLER_CUBE;
 
 }
 

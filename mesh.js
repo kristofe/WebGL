@@ -1,5 +1,67 @@
 "use strict";
 
+
+/*
+
+   For mesh just store each attribute in its own array.. as it is now.
+   but bind each array seperately instead of interleaving.
+
+   Then map the array to the attribute name and pass that to the shader.
+   So it can map the attributes correctly
+
+
+   from an early example:
+   function initBuffers() {
+  //Create Square Position Buffer
+    squareVertexPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+    var vertices = [
+         1.0,  1.0,  0.0,
+        -1.0,  1.0,  0.0,
+         1.0, -1.0,  0.0,
+        -1.0, -1.0,  0.0
+    ];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    squareVertexPositionBuffer.itemSize = 3;
+    squareVertexPositionBuffer.numItems = 4;
+ 
+  //Create Square UV Buffer
+    squareVertexUVBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexUVBuffer);
+    var uvs = [
+         1.0, 1.0,
+         0.0, 1.0,
+         1.0, 0.0,
+         0.0, 0.0
+    ];
+     
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+    squareVertexUVBuffer.itemSize = 2;
+    squareVertexUVBuffer.numItems = 4;
+}
+ 
+ 
+function drawScene() {
+    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+ 
+ 
+    pMatrix = identity();
+    mvMatrix = identity();
+ 
+    //pMatrix = ortho(-1, 1, -1, 1, 0.01, 10);
+    //pMatrix = makePerspective(45 * Math.PI/180.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+    //mvMatrix = makeTranslation(0.0, 0.0, -0.01);
+ 
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexUVBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexUVAttribute, squareVertexUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    setUniforms();
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+}
+   */
+
 function Vertex() {
   this.data = [];
 }
