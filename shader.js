@@ -39,6 +39,8 @@ function ShaderProgram(gl) {
                           ["aVertexColor", 4]
                         ];
   this.uniformSlots = [];
+
+  //TODO: THIS SHOULD GO IN A GL UTILS CLASS
   this.typeToString = {};
   this.typeToString[gl.FLOAT] = "FLOAT";
   this.typeToString[gl.FLOAT_VEC2] = "FLOAT_VEC2";
@@ -141,6 +143,47 @@ ShaderProgram.prototype.getShader = function(id) {
   return shader;
 }
 
+
+//NEW: Should replace
+
+ShaderProgram.prototype.bindMeshAttributes = function(mesh) {
+  var gl = this.gl;
+  for(var i = 0; i < mesh.buffers.length; i++) {
+    var meshBuffer = mesh.buffers[i];
+    var attr = this.attributes[meshBuffer.name];
+    if(attr == null) {
+      console.error("Attribute not found for: " + meshBuffer.name);
+      continue;
+    }
+    if(attr.type != meshBuffer.type){
+      console.error("Attribute type mismatch for: " + meshBuffer.name 
+                    + " type mesh: " + meshBuffer.type
+                    + " type attribute " + attr.type
+                    + " meshBufferName: " + meshBuffer.name
+                    + " attributeName: " + attr.name
+                   );
+      continue;
+    }
+
+    gl.bindBuffer(
+                      meshBuffer.stringToType[meshBuffer.bufferType], 
+                      meshBuffer.buffer
+                    );
+    gl.vertexAttribPointer(
+                            this.attr.slot,
+                            meshBuffer.itemSize,
+                            meshBuffer.stringToType[meshBuffer.type], 
+                            meshBuffer.normalized,
+                            meshBuffer.stride,
+                            meshBuffer.pointer
+                          );
+
+
+
+  }
+
+};
+
 ShaderProgram.prototype.cacheAttributeData = function() {
   var gl = this.gl;
   var total = gl.getProgramParameter(this.glProgram, gl.ACTIVE_ATTRIBUTES);
@@ -153,7 +196,8 @@ ShaderProgram.prototype.cacheAttributeData = function() {
                                       "slot" : slot,
                                       "size" : activeInfo.size,
                                       "type" : this.typeToString[activeInfo.type],
-                                      "name" : activeInfo.name
+                                      "name" : activeInfo.name,
+                                      "info" : activeInfo
                                      };
     console.debug(this.attributes[activeInfo.name]);
   }
@@ -172,7 +216,8 @@ ShaderProgram.prototype.cacheUniformData = function() {
                                       "slot" : slot,
                                       "size" : activeInfo.size,
                                       "type" : this.typeToString[activeInfo.type],
-                                      "name" : activeInfo.name
+                                      "name" : activeInfo.name,
+                                      "info" : activeInfo
                                      };
     console.debug(this.uniforms[activeInfo.name]);
   }
@@ -218,13 +263,15 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
   this.ready = true;
 };
 
+
+
 ShaderProgram.prototype.setupAttributesAndUniforms = function(){
   gl.useProgram(this.glProgram);
 
   this.cacheUniformData();
   this.cacheAttributeData();
   
-
+/*
   //DEPRECATED:
   //TODO: remove the following way of storing attributes
 
@@ -248,6 +295,7 @@ ShaderProgram.prototype.setupAttributesAndUniforms = function(){
                         gl.getAttribLocation(this.glProgram, "aVertexColor");
   gl.enableVertexAttribArray(this.vertexColorAttribute);
 
+*/
   //---------------------------------------------------------------------------
   // Uniforms
   //---------------------------------------------------------------------------
@@ -269,11 +317,16 @@ ShaderProgram.prototype.setupAttributesAndUniforms = function(){
 
 };
 
-
 ShaderProgram.prototype.bind = function(mesh){
   if(this.ready == false) return;
+
+
   var gl = this.gl;
   gl.useProgram(this.glProgram);
+  this.bindMeshAttributes(mesh);
+
+  /*
+
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
   gl.vertexAttribPointer(
                         this.vertexPositionAttribute,
@@ -315,7 +368,7 @@ ShaderProgram.prototype.bind = function(mesh){
                         mesh.strideBytes, 
                         mesh.colorOffset 
                         );
-                        
+   */                     
 };
 
 
