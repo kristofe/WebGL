@@ -15,6 +15,8 @@ Model.prototype.drawRenderer = function(renderer){
   this.draw(renderer.currentCamera.projection, renderer.currTime, renderer);
 };
 
+
+//TODO: THIS MUST BE UPDATED TO USE THE NEW BUFFERS
 Model.prototype.draw = function(projMat, time, renderer){
  
   this.material.bind(this.mesh);

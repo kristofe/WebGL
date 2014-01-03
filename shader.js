@@ -177,6 +177,7 @@ ShaderProgram.prototype.bindMeshAttributes = function(mesh) {
                             meshBuffer.stride,
                             meshBuffer.pointer
                           );
+    gl.enableVertexAttribArray(attr.slot);
 
 
 

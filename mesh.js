@@ -62,8 +62,6 @@ function drawScene() {
 }
    */
 
-
-
 function MeshData(gl,name, type){
   this.gl = gl;
   this.data = [];
@@ -102,10 +100,11 @@ MeshData.prototype.constructBuffer = function(data, numComponents) {
                     this.buffer
                     );
 
+  var arr = this.createFloatArray(this.data);
 
   this.gl.bufferData(
                     this.stringToType[this.bufferType], 
-                    new Float32Array(this.data),
+                    arr,
                     this.stringToType[this.bufferUsage] 
                     );
 
@@ -117,11 +116,30 @@ MeshData.prototype.updateBuffer = function() {
                     this.buffer
                     );
                
+  var arr = this.createFloatArray(this.data);
   this.gl.bufferSubData(
                this.stringToType[this.bufferType],
                0,
-               new Float32Array(this.data)
+               arr
                );
+};
+
+MeshData.prototype.createFloatArray = function(dat) {
+  var floatArray = [];
+  for(var i = 0; i < dat.length; i++){
+    var d = dat[i];
+    if(d instanceof Vector2) {
+      floatArray.push(d.x, d.y);
+    }
+    if(d instanceof Vector3) {
+      floatArray.push(d.x, d.y, d.z);
+    }
+    if(d instanceof Vector4) {
+      floatArray.push(d.x, d.y, d.z, d.w);
+    }
+  }
+
+  return new Float32Array(floatArray);
 }
 
 
@@ -192,7 +210,7 @@ Mesh.prototype.constructBuffers = function() {
                                       this.uvs,
                                       this.attributeMap["UVs"].name,
                                       this.attributeMap["UVs"].type,
-                                      3
+                                      2
                                     )
                 );
 
@@ -201,7 +219,7 @@ Mesh.prototype.constructBuffers = function() {
                                       this.uv2s,
                                       this.attributeMap["UV2s"].name,
                                       this.attributeMap["UV2s"].type,
-                                      3
+                                      2
                                     )
                 );
 
@@ -210,7 +228,7 @@ Mesh.prototype.constructBuffers = function() {
                                       this.tangents,
                                       this.attributeMap["Tangents"].name,
                                       this.attributeMap["Tangents"].type,
-                                      3
+                                      4
                                     )
                 );
 
@@ -219,7 +237,7 @@ Mesh.prototype.constructBuffers = function() {
                                       this.colors,
                                       this.attributeMap["Colors"].name,
                                       this.attributeMap["Colors"].type,
-                                      3
+                                      4
                                     )
                 );
 
