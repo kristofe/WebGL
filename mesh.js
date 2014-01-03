@@ -62,55 +62,80 @@ function drawScene() {
 }
    */
 
-function Vertex() {
+
+
+function MeshData(gl,name, type){
+  this.gl = gl;
   this.data = [];
+  this.type = type;
+  this.componentType = "FLOAT";
+  this.itemSize = 3; //Assuming vector3's
+  this.numItems = 0;
+  this.buffer = null;
+  this.bufferType = "ARRAY_BUFFER";
+  this.bufferUsage = "STATIC_DRAW";
+  this.name = name;
+  this.stride = 0; //always 0 as we are not interleaving the arrays
+  this.pointer = 0;//always 0 as we are not interleaving the arrays
+  this.normalized = false; //not using fixed point data so always false
+
+  //TODO: THIS SHOULD GO IN A GL UTILS CLASS
+  this.stringToType = {};
+  this.stringToType["ARRAY_BUFFER"] = gl.ARRAY_BUFFER;
+  this.stringToType["ELEMENT_ARRAY_BUFFER"] = gl.ELEMENT_ARRAY_BUFFER;
+
+  this.stringToType["STATIC_DRAW"] = gl.STATIC_DRAW;
+  this.stringToType["DYNAMIC_DRAW"] = gl.DYNAMIC_DRAW;
+  this.stringToType["STREAM_DRAW"] = gl.STREAM_DRAW;
 }
 
-Vertex.prototype.addVec2Data = function(d) {
-  if(d instanceof Vector2) {
-    this.data.push(d.x, d.y);
+MeshData.prototype.constructBuffer = function(data, numComponents) {
+  if(data.length == 0){
+    return;
   }
-  if(d instanceof Vector3) {
-    this.data.push(d.x, d.y);
-  }
-  else if(d == undefined) { 
-    this.data.push(0.0, 0.0);
-  }
+  this.data = data;
+  this.itemSize = numComponents;
+  this.numItems = data.length;
+  this.buffer = this.gl.createBuffer();
+  this.gl.bindBuffer(
+                    this.stringToType[this.bufferType], 
+                    this.buffer
+                    );
+
+
+  this.gl.bufferData(
+                    this.stringToType[this.bufferType], 
+                    new Float32Array(this.data),
+                    this.stringToType[this.bufferUsage] 
+                    );
+
+};
+
+MeshData.prototype.updateBuffer = function() {
+  this.gl.bindBuffer(
+                    this.stringToType[this.bufferType], 
+                    this.buffer
+                    );
+               
+  this.gl.bufferSubData(
+               this.stringToType[this.bufferType],
+               0,
+               new Float32Array(this.data)
+               );
 }
 
-Vertex.prototype.addVec3Data = function(d) {
-  if(d instanceof Vector2) {
-    this.data.push(d.x, d.y, 0.0);
-  }
-  if(d instanceof Vector3) {
-    this.data.push(d.x, d.y, d.z);
-  }
-  if(d instanceof Vector4) {
-    this.data.push(d.x, d.y, d.z);
-  }
-  else if(d == undefined) { 
-    this.data.push(0.0, 0.0, 0.0);
-  }
-}
-
-Vertex.prototype.addVec4Data = function(d) {
-  if(d instanceof Vector2) {
-    this.data.push(d.x, d.y, 0.0, 0.0);
-  }
-  if(d instanceof Vector3) {
-    this.data.push(d.x, d.y, d.z, 0.0);
-  }
-  if(d instanceof Vector4) {
-    this.data.push(d.x, d.y, d.z, d.w);
-  }
-  else if(d == undefined) { 
-    this.data.push(0.0, 0.0, 0.0, 0.0);
-  }
-}
 
 function Mesh(gl) {
   this.gl = gl;
-  this.useVertices = false;
+  this.buffers = [];
+  this.attributeMap = {};
+  this.attributeMap["Positions"] = {name: "aPosition", type: "FLOAT_VEC3"};
+  this.attributeMap["Normals"] = {name:"aNormal", type: "FLOAT_VEC3"};
+  this.attributeMap["UVs"] = {name:"aUV", type: "FLOAT_VEC2"};
+  this.attributeMap["UV2s"] = {name:"aUV2", type: "FLOAT_VEC2"};
+  this.attributeMap["Tangents"] = {name:"aTangent", type: "FLOAT_VEC4"};
+  this.attributeMap["Colors"] = {name:"aColor", type: "FLOAT_VEC4"};
+
   this.vertices = [];
   this.indices = [];
   this.positions = [];
@@ -119,6 +144,8 @@ function Mesh(gl) {
   this.uv2s = [];
   this.tangents = [];
   this.colors = [];
+
+
   this.vertexBuffer = -1;
   this.indexBuffer = -1;
   this.primitiveType = gl.TRIANGLES;
@@ -126,127 +153,105 @@ function Mesh(gl) {
   this.vertCount = 0.0;
 
   
-  this.positionElementCount = 3;
-  this.positionOffset = 0;
-  this.normalElementCount = 3;
-  this.normalOffset = 3*Float32Array.BYTES_PER_ELEMENT;
-  this.uvElementCount = 2;
-  this.uvOffset = 6*Float32Array.BYTES_PER_ELEMENT;
-  this.tangentElementCount = 4;
-  this.tangentOffset = 8*Float32Array.BYTES_PER_ELEMENT;
-  this.colorElementCount = 4;
-  this.colorOffset = 12*Float32Array.BYTES_PER_ELEMENT;
-  this.strideBytes = 16*Float32Array.BYTES_PER_ELEMENT;
-  this.numItems = 0;
+  this.numVertices = 0;
 
 }
 
 Mesh.prototype.clear = function() {
-  this.vertices = [];
-  this.indices = [];
-  this.positions = [];
-  this.normals = [];
-  this.uvs = [];
-  this.uv2s = [];
-  this.tangents = [];
-  this.colors = [];
-}
-
-Mesh.prototype.updateVertices = function() {
-  //check that each array has the same length
-  this.vertCount = this.positions.length;
-  var indiceCount = this.indices.length;
-  var normalCount = this.normals.length;
-  var uvCount = this.uvs.length;
-  var tangentCount = this.tangents.length;
-  var colorCount = this.colors.length;
-
-  this.vertices = [];
-
-  for(var i = 0; i < this.vertCount; i++){
-    var vert = new Vertex();
-    vert.addVec3Data(this.positions[i]);
-
-    if(normalCount > i){
-      vert.addVec3Data(this.normals[i]);
-    }else{
-      vert.addVec3Data();
-    }
-
-    if(uvCount > i){
-      vert.addVec2Data(this.uvs[i]);
-    }else{
-      vert.addVec2Data();
-    }
-
-    if(tangentCount > i){
-      vert.addVec4Data(this.tangents[i]);
-    }else{
-      vert.addVec4Data();
-    }
-
-    if(colorCount > i){
-      vert.addVec4Data(this.colors[i]);
-    }else{
-      vert.addVec4Data();
-    }
-    
-    for(var j = 0; j < vert.data.length; j++){
-      this.vertices.push(vert.data[j]);
-    }
-  }
-}
+  this.vertices.length = 0;
+  this.indices.length = 0;
+  this.positions.length = 0;
+  this.normals.length = 0;
+  this.uvs.length = 0;
+  this.uv2s.length = 0;
+  this.tangents.length = 0;
+  this.colors.length = 0;
+};
 
 Mesh.prototype.constructBuffers = function() {
-  this.updateVertices();
-  this.vertexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-  gl.bufferData(
-               gl.ARRAY_BUFFER, 
-               new Float32Array(this.vertices), 
-               gl.DYNAMIC_DRAW
-               );
-  this.numItems = this.vertices.length/this.stride;
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.positions,
+                                      this.attributeMap["Positions"].name,
+                                      this.attributeMap["Positions"].type,
+                                      3
+                                    )
+                );
+  
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.normals,
+                                      this.attributeMap["Normals"].name,
+                                      this.attributeMap["Normals"].type,
+                                      3
+                                    )
+                );
+  
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.uvs,
+                                      this.attributeMap["UVs"].name,
+                                      this.attributeMap["UVs"].type,
+                                      3
+                                    )
+                );
 
-}
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.uv2s,
+                                      this.attributeMap["UV2s"].name,
+                                      this.attributeMap["UV2s"].type,
+                                      3
+                                    )
+                );
+
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.tangents,
+                                      this.attributeMap["Tangents"].name,
+                                      this.attributeMap["Tangents"].type,
+                                      3
+                                    )
+                );
+
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.colors,
+                                      this.attributeMap["Colors"].name,
+                                      this.attributeMap["Colors"].type,
+                                      3
+                                    )
+                );
+
+
+
+  this.numItems = this.positions.length;
+
+};
+
+Mesh.prototype.constructBuffer = function(data, name, type, numComponents) {
+  if(data.length == 0){
+    return null;
+  }
+  var meshData = new MeshData(this.gl,name,type);
+  meshData.constructBuffer(data, numComponents);
+
+  return meshData;
+};
+
+Mesh.prototype.addBuffer = function(buf) {
+  if(buf != null){
+    this.buffers.push(buf);
+  }
+};
 
 Mesh.prototype.updateBuffers = function() {
-  this.updateVertices();
+  for(var i = 0; i < this.buffers.length; i++){
+    var meshData = this.buffers[i];
+    meshData.updateBuffer();
+  }
+};
 
-  var gl = this.gl;
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-  /*
-  gl.bufferData(
-               gl.ARRAY_BUFFER, 
-               new Float32Array(this.vertices), 
-               gl.DYNAMIC_DRAW
-               );
-               */
-  this.numItems = this.vertices.length/this.stride;
-               
-  gl.bufferSubData(
-               gl.ARRAY_BUFFER,
-               0,
-               new Float32Array(this.vertices) 
-               );
-}
-
-
-Mesh.prototype.createVertexBuffer = function (vertArray, stride){
-  var gl = this.gl;
-  this.vertexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  gl.bufferData(
-               gl.ARRAY_BUFFER, 
-               new Float32Array(vertArray), 
-               gl.DYNAMIC_DRAW
-               );
-
-  this.numItems = vertArray.length/stride;
-
-  //return vertexBuffer;
-} 
 
 Mesh.prototype.createScreenQuad = function(min, max){
   var norm = new Vector3(0,0,1);

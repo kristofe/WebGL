@@ -152,7 +152,7 @@ ShaderProgram.prototype.bindMeshAttributes = function(mesh) {
     var meshBuffer = mesh.buffers[i];
     var attr = this.attributes[meshBuffer.name];
     if(attr == null) {
-      console.error("Attribute not found for: " + meshBuffer.name);
+      //console.error("Attribute not found for: " + meshBuffer.name);
       continue;
     }
     if(attr.type != meshBuffer.type){
@@ -170,9 +170,9 @@ ShaderProgram.prototype.bindMeshAttributes = function(mesh) {
                       meshBuffer.buffer
                     );
     gl.vertexAttribPointer(
-                            this.attr.slot,
+                            attr.slot,
                             meshBuffer.itemSize,
-                            meshBuffer.stringToType[meshBuffer.type], 
+                            this.stringToType[meshBuffer.componentType], 
                             meshBuffer.normalized,
                             meshBuffer.stride,
                             meshBuffer.pointer

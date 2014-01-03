@@ -20,136 +20,61 @@
 <script type="text/javascript" src="camera.js"></script>
 <script type="text/javascript" src="light.js"></script>
 
-
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
-
-    varying vec4 vPosition;
     varying vec2 vUV;
     varying vec3 vNormal;
-    varying vec3 vTangent;
-    varying vec3 vBitangent;
-    varying vec4 vVertColor;
-    varying vec4 vWorldVertex;
-    varying vec3 vViewVec;
-
     uniform sampler2D uTexture01;
-    uniform sampler2D uTexture02;
-    uniform sampler2D uShadowMap;
-    uniform float uTime;
-    uniform mat4 uMVMatrix;
-    uniform vec3 uLightPosition;
-    uniform float uRenderFromLight;
 
-    const float Near = 0.1;
-    const float Far = 20.0;
-    const float LinearDepthConstant = 1.0 / (Far - Near);
-
-    float LinearizeDepth(vec2 uv)
-    {
-      float n = 0.1; // camera z near;
-      float f = 20.0; // camera z far;
-      float z = texture2D(uShadowMap, uv).x;
-      return (2.0 * n) / (f + n - z * (f - n));	
-    }
     void main(void) {
-
-      if(uRenderFromLight == 0.0){
+     	vec3 light = normalize(vec3(0.8,  1.0,  0.2));
         
-        vec3 depth = vPosition.xyz / vPosition.w;
-        depth.z = length(vWorldVertex.xyz - uLightPosition) * LinearDepthConstant;
-        float shadow = 1.0;
-        depth.z *= 0.96;
-        
-        
-        //float shadowDepth = texture2D(uShadowMap, depth.xy).x;
-        float shadowDepth = LinearizeDepth(depth.xy);
-        if (depth.z > shadowDepth){
-          shadow = 0.3;
-        }
-       
-        
-        vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
-        gl_FragColor = vec4(texColor * shadow, 1.0);
-      }
-      else{
-        vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
-        gl_FragColor = vec4(texColor, 1.0);
-      }
-        
+			float d = dot(vNormal, light);
+      d = clamp(d, 0.0, 1.0);
+      float c = mix(0.1, 1.0, d);
+      vec4 tex = texture2D(uTexture01,vUV);
+      tex.xyz *= c;
+      gl_FragColor = tex;
+      //gl_FragColor = vec4(vNormal.xyz, 1.0);
     }
 
 </script>
 
 <script id="shader-vs" type="x-shader/x-vertex">
-    precision mediump float;
     //Data from bufferData
-    attribute vec3 aVertexPosition;
-    attribute vec3 aVertexNormal;
-    attribute vec2 aVertexUV;
-    attribute vec4 aVertexTangent;
-    attribute vec4 aVertexColor;
+    attribute vec3 aPosition;
+    attribute vec3 aNormal;
+    attribute vec2 aUV;
+    //attribute vec4 aTangent;
+    attribute vec4 aColor;
 
     uniform mat4 uMVMatrix;
     uniform mat4 uInverse;
     uniform mat4 uInverseTranspose;
     uniform mat4 uPMatrix;
-    uniform float uTime;
-
-    uniform mat4 uCameraMatrix;
-    uniform mat4 uViewMatrix;
-    uniform mat4 uLightMatrix;
-    uniform mat4 uLightViewMatrix;
-    uniform mat4 uLightProjectionMatrix;
-    uniform vec3 uLightPosition;
-    uniform float uRenderFromLight;
-
+    uniform float uTime;    
     uniform sampler2D uTexture01;
     uniform sampler2D uTexture02;
-    uniform sampler2D uShadowMap;
 
     //These will be passed to the fragment shader and will be interpreted per
     //pixel
-    varying vec4 vPosition;
     varying vec2 vUV;
     varying vec3 vNormal;
     varying vec3 vTangent;
-    varying vec3 vBitangent;
     varying vec4 vVertColor;
-
-    const mat4 depthScaleMatrix = mat4(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
-
-    varying vec4 vWorldVertex;
-    varying vec3 vViewVec;
 
 
     void main(void) {
-        if(uRenderFromLight == 0.0){
-          mat3 normTrans = mat3(uMVMatrix);
-          vNormal = normalize(normTrans * aVertexNormal);
-          vUV = aVertexUV.xy;
-          vTangent = normalize(normTrans * aVertexTangent.xyz);
-          vBitangent = normalize(cross(vNormal, vTangent));
-          vVertColor = aVertexColor;
 
-
-          vWorldVertex = uMVMatrix * vec4(aVertexPosition, 1.0);
-          vec4 viewVertex = uViewMatrix * vWorldVertex;
-          gl_Position = uPMatrix * viewVertex;
-          
-          vViewVec = normalize(-viewVertex.xyz);
-          // Project the vertex from the light's point of view
-          vPosition = depthScaleMatrix * uLightProjectionMatrix * uLightViewMatrix * vWorldVertex;
-        }
-        else{
-          vPosition = uLightViewMatrix * uMVMatrix * vec4(aVertexPosition,1.0);
-          vUV = aVertexUV.xy;
-          gl_Position = uPMatrix * vPosition;
-
-        }
+        gl_Position = uPMatrix * uMVMatrix * vec4(aPosition, 1.0);
+        //The line below will ignore any translation of perspective matrix
+        //gl_Position =  vec4(aPosition, 1.0);
+        //vTangent = aTangent.xyz;
+        vVertColor = aColor;
         
-
-
+        vUV = aUV.xy;
+        vec3 norm = mat3(uInverseTranspose) * normalize(aNormal);
+        vNormal = norm.xyz;
     }
 </script>
 
@@ -181,23 +106,21 @@
 
     function drawScene() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        //shadowMap.bind();
 
-        shadowMap.bind();
+        //renderer.renderFromLight = 1.0;
+        //drawObjects();
 
-        renderer.renderFromLight = 1.0;
-        drawObjects();
-
-        shadowMap.unbind();
+        //shadowMap.unbind();
         renderer.renderFromLight = 0.0;
-
         drawObjects();
-
-
+        /*
         shadowMap.debugDraw(
                             renderer.currentCamera.projection.m,
                             renderer.currTime, 
                             renderer
                            );
+        */
                            
     }
 
@@ -241,20 +164,18 @@
     var sphereModel;
     var planeModel;
     var renderer;
-    var shadowMap;
+    //var shadowMap;
 
     function initScene(){
-      //renderer.currentLight.transform.setPosition(new Vector3(5,2,0));
       renderer.currentLight.transform.setPosition(new Vector3(2,2,0));
       var target = new Vector3(0.0, 0, -4);
       renderer.currentLight.transform.lookAt(target, Vector3.up());
-      //renderer.currentLight.transform.lookAt(new Vector3(0,0,0), Vector3.up());
 
-      shadowMap = new ShadowMap(gl, renderer.canvas.width, renderer.canvas.height);
+      //shadowMap = new ShadowMap(gl, renderer.canvas.width, renderer.canvas.height);
       sphereModel = new Model(gl);
       sphereModel.material.shader.initShader("shader-fs","shader-vs");
       sphereModel.material.texture.load("testTexture.jpg", 0);
-      sphereModel.material.addTexture(shadowMap.getTexture());
+      //sphereModel.material.addTexture(shadowMap.getTexture());
       sphereModel.material.zWrite = true;
       sphereModel.mesh.primitiveType = gl.TRIANGLES;
       sphereModel.mesh.createSphereMesh( 10,10);
@@ -262,7 +183,7 @@
       planeModel = new Model(gl);
       planeModel.material.shader.initShader("shader-fs","shader-vs");
       planeModel.material.texture.load("testTexture.jpg", 0);
-      planeModel.material.addTexture(shadowMap.getTexture());
+      //planeModel.material.addTexture(shadowMap.getTexture());
       //planeModel.material.setTexture(shadowMap.getTexture());
       planeModel.material.culling = false;
       planeModel.mesh.primitiveType = gl.TRIANGLES;
