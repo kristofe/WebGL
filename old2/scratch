@@ -1,0 +1,74 @@
+float computeShadow() {
+   vec3 depth = vShadowPosition.xyz / vShadowPosition.w;
+   float shadowValue = texture2D(shadowMap, depth.xy).r;
+   depth.z *= 0.999;
+   if(shadowValue < depth.z) { return 0.0; }
+   return 1.0;
+}
+
+// Shaders
+// SpotLight.vertexFunction = [
+uniform vec3 lightPosition;
+uniform mat4 lightViewMat;
+uniform mat4 lightProjectionMat;
+
+varying vec3 vLightToPoint;
+varying vec3 vEyeToPoint;
+varying vec4 vShadowPosition;
+
+const mat4 depthScaleMatrix = mat4(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
+
+void setupLight(vec3 worldPosition) {
+   vLightToPoint = lightPosition - worldPosition;
+   vEyeToPoint = -worldPosition;
+}
+
+void setupShadow(vec4 worldPosition) {
+   vShadowPosition = depthScaleMatrix * lightProjectionMat * lightViewMat * worldPosition;
+}
+
+
+
+SpotLight.prototype.getProjectionMat = function () {
+    if (this._dirty) {
+        var angle = this.outerAngle * (180 / Math.PI) * 2.0;
+        mat4.perspective(angle, 1.0, 1.0, 256, this._projectionMat);
+        //this._dirty = false;
+    }
+    return this._projectionMat;
+};
+
+
+var upVec = vec3.createFrom(0, 0, 1);
+SpotLight.prototype.getViewMat = function () {
+    if (this._dirty) {
+        mat4.lookAt(this.position, this.target, upVec, this._viewMat);
+        //this._dirty = false;
+    }
+
+    return this._viewMat;
+};
+
+
+SpotLight.prototype.bindUniforms = function(gl, uniforms, textureUnit) {
+    if(!textureUnit) { textureUnit = 1; }
+
+    vec3.subtract(this.target, this.position, this._direction);
+    vec3.scale(this.color, this.brightness, this._scaledColor);
+    
+    gl.uniform3fv(uniforms.lightPosition, this.position);
+    gl.uniform3fv(uniforms.lightColor, this._scaledColor);
+    gl.uniform3fv(uniforms.lightSpotDirection, this._direction);
+
+    gl.uniform1f(uniforms.lightRadius, this.radius);
+    gl.uniform1f(uniforms.lightSpotInnerAngle, Math.cos(this.innerAngle));
+    gl.uniform1f(uniforms.lightSpotOuterAngle, Math.cos(this.outerAngle));
+
+    // Bind the shadown map texture
+    gl.uniformMatrix4fv(uniforms.lightViewMat, false, this.getViewMat());
+    gl.uniformMatrix4fv(uniforms.lightProjectionMat, false, this.getProjectionMat());
+
+    gl.activeTexture(gl.TEXTURE0 + textureUnit);
+    gl.uniform1i(uniforms.shadowMap, textureUnit);
+    gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
+};

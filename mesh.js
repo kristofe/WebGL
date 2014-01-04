@@ -1,54 +1,182 @@
 "use strict";
 
-function Vertex() {
+
+/*
+
+   For mesh just store each attribute in its own array.. as it is now.
+   but bind each array seperately instead of interleaving.
+
+   Then map the array to the attribute name and pass that to the shader.
+   So it can map the attributes correctly
+
+
+   from an early example:
+   function initBuffers() {
+  //Create Square Position Buffer
+    squareVertexPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+    var vertices = [
+         1.0,  1.0,  0.0,
+        -1.0,  1.0,  0.0,
+         1.0, -1.0,  0.0,
+        -1.0, -1.0,  0.0
+    ];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    squareVertexPositionBuffer.itemSize = 3;
+    squareVertexPositionBuffer.numItems = 4;
+ 
+  //Create Square UV Buffer
+    squareVertexUVBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexUVBuffer);
+    var uvs = [
+         1.0, 1.0,
+         0.0, 1.0,
+         1.0, 0.0,
+         0.0, 0.0
+    ];
+     
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
+    squareVertexUVBuffer.itemSize = 2;
+    squareVertexUVBuffer.numItems = 4;
+}
+ 
+ 
+function drawScene() {
+    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+ 
+ 
+    pMatrix = identity();
+    mvMatrix = identity();
+ 
+    //pMatrix = ortho(-1, 1, -1, 1, 0.01, 10);
+    //pMatrix = makePerspective(45 * Math.PI/180.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+    //mvMatrix = makeTranslation(0.0, 0.0, -0.01);
+ 
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, squareVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexUVBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexUVAttribute, squareVertexUVBuffer.itemSize, gl.FLOAT, false, 0, 0);
+    setUniforms();
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
+}
+   */
+
+function MeshData(gl,name, type){
+  this.gl = gl;
   this.data = [];
+  this.type = type;
+  this.componentType = "FLOAT";
+  this.itemSize = 3; //Assuming vector3's
+  this.numItems = 0;
+  this.buffer = null;
+  this.bufferType = "ARRAY_BUFFER";
+  this.bufferUsage = "STATIC_DRAW";
+  this.name = name;
+  this.stride = 0; //always 0 as we are not interleaving the arrays
+  this.pointer = 0;//always 0 as we are not interleaving the arrays
+  this.normalized = false; //not using fixed point data so always false
+
+  //TODO: THIS SHOULD GO IN A GL UTILS CLASS
+  this.stringToType = {};
+  this.stringToType["ARRAY_BUFFER"] = gl.ARRAY_BUFFER;
+  this.stringToType["ELEMENT_ARRAY_BUFFER"] = gl.ELEMENT_ARRAY_BUFFER;
+
+  this.stringToType["STATIC_DRAW"] = gl.STATIC_DRAW;
+  this.stringToType["DYNAMIC_DRAW"] = gl.DYNAMIC_DRAW;
+  this.stringToType["STREAM_DRAW"] = gl.STREAM_DRAW;
 }
 
-Vertex.prototype.addVec2Data = function(d) {
-  if(d instanceof Vector2) {
-    this.data.push(d.x, d.y);
+MeshData.prototype.constructBuffer = function(data, numComponents) {
+  if(data.length == 0){
+    return;
   }
-  if(d instanceof Vector3) {
-    this.data.push(d.x, d.y);
+  this.data = data;
+  this.itemSize = numComponents;
+  this.numItems = data.length;
+  this.buffer = this.gl.createBuffer();
+  this.gl.bindBuffer(
+                    this.stringToType[this.bufferType], 
+                    this.buffer
+                    );
+
+  var arr = this.createFloatArray(this.data,this.itemSize);
+
+  this.gl.bufferData(
+                    this.stringToType[this.bufferType], 
+                    arr,
+                    this.stringToType[this.bufferUsage] 
+                    );
+
+};
+
+MeshData.prototype.updateBuffer = function() {
+  this.gl.bindBuffer(
+                    this.stringToType[this.bufferType], 
+                    this.buffer
+                    );
+               
+  var arr = this.createFloatArray(this.data,this.itemSize);
+  this.gl.bufferSubData(
+               this.stringToType[this.bufferType],
+               0,
+               arr
+               );
+};
+
+MeshData.prototype.createFloatArray = function(dat, numComponents) {
+  var floatArray = [];
+  var tmp = [];
+  var count = 0;
+  for(var i = 0; i < dat.length; i++){
+    var d = dat[i];
+    if(d instanceof Vector2) {
+      tmp.push(d.x, d.y);
+    }
+    if(d instanceof Vector3) {
+      tmp.push(d.x, d.y, d.z);
+    }
+    if(d instanceof Vector4) {
+      tmp.push(d.x, d.y, d.z, d.w);
+    }
+
+    //If for some reason the data passed in has more components than specified
+    //truncate it.
+    count = 0;
+    for(var j = 0; j < tmp.length; j++){
+      if(count < numComponents){
+        floatArray.push(tmp[j]);
+        count++;
+      }
+    }
+
+    //If for some reason the data passed in has fewer components than specified
+    //pad with zeros
+    var padding = numComponents - count;
+    if(padding < 0) padding = 0;
+    for(var j = 0; j < padding; j++){
+      floatArray.push(0);
+    }
+
+
+    tmp.length = 0;
   }
-  else if(d == undefined) { 
-    this.data.push(0.0, 0.0);
-  }
+
+  return new Float32Array(floatArray);
 }
 
-Vertex.prototype.addVec3Data = function(d) {
-  if(d instanceof Vector2) {
-    this.data.push(d.x, d.y, 0.0);
-  }
-  if(d instanceof Vector3) {
-    this.data.push(d.x, d.y, d.z);
-  }
-  if(d instanceof Vector4) {
-    this.data.push(d.x, d.y, d.z);
-  }
-  else if(d == undefined) { 
-    this.data.push(0.0, 0.0, 0.0);
-  }
-}
-
-Vertex.prototype.addVec4Data = function(d) {
-  if(d instanceof Vector2) {
-    this.data.push(d.x, d.y, 0.0, 0.0);
-  }
-  if(d instanceof Vector3) {
-    this.data.push(d.x, d.y, d.z, 0.0);
-  }
-  if(d instanceof Vector4) {
-    this.data.push(d.x, d.y, d.z, d.w);
-  }
-  else if(d == undefined) { 
-    this.data.push(0.0, 0.0, 0.0, 0.0);
-  }
-}
 
 function Mesh(gl) {
   this.gl = gl;
-  this.useVertices = false;
+  this.buffers = [];
+  this.attributeMap = {};
+  this.attributeMap["Positions"] = {name: "aPosition", type: "FLOAT_VEC3"};
+  this.attributeMap["Normals"] = {name:"aNormal", type: "FLOAT_VEC3"};
+  this.attributeMap["UVs"] = {name:"aUV", type: "FLOAT_VEC2"};
+  this.attributeMap["UV2s"] = {name:"aUV2", type: "FLOAT_VEC2"};
+  this.attributeMap["Tangents"] = {name:"aTangent", type: "FLOAT_VEC4"};
+  this.attributeMap["Colors"] = {name:"aColor", type: "FLOAT_VEC4"};
+
   this.vertices = [];
   this.indices = [];
   this.positions = [];
@@ -57,6 +185,8 @@ function Mesh(gl) {
   this.uv2s = [];
   this.tangents = [];
   this.colors = [];
+
+
   this.vertexBuffer = -1;
   this.indexBuffer = -1;
   this.primitiveType = gl.TRIANGLES;
@@ -64,127 +194,105 @@ function Mesh(gl) {
   this.vertCount = 0.0;
 
   
-  this.positionElementCount = 3;
-  this.positionOffset = 0;
-  this.normalElementCount = 3;
-  this.normalOffset = 3*Float32Array.BYTES_PER_ELEMENT;
-  this.uvElementCount = 2;
-  this.uvOffset = 6*Float32Array.BYTES_PER_ELEMENT;
-  this.tangentElementCount = 4;
-  this.tangentOffset = 8*Float32Array.BYTES_PER_ELEMENT;
-  this.colorElementCount = 4;
-  this.colorOffset = 12*Float32Array.BYTES_PER_ELEMENT;
-  this.strideBytes = 16*Float32Array.BYTES_PER_ELEMENT;
-  this.numItems = 0;
+  this.numVertices = 0;
 
 }
 
 Mesh.prototype.clear = function() {
-  this.vertices = [];
-  this.indices = [];
-  this.positions = [];
-  this.normals = [];
-  this.uvs = [];
-  this.uv2s = [];
-  this.tangents = [];
-  this.colors = [];
-}
-
-Mesh.prototype.updateVertices = function() {
-  //check that each array has the same length
-  this.vertCount = this.positions.length;
-  var indiceCount = this.indices.length;
-  var normalCount = this.normals.length;
-  var uvCount = this.uvs.length;
-  var tangentCount = this.tangents.length;
-  var colorCount = this.colors.length;
-
-  this.vertices = [];
-
-  for(var i = 0; i < this.vertCount; i++){
-    var vert = new Vertex();
-    vert.addVec3Data(this.positions[i]);
-
-    if(normalCount > i){
-      vert.addVec3Data(this.normals[i]);
-    }else{
-      vert.addVec3Data();
-    }
-
-    if(uvCount > i){
-      vert.addVec2Data(this.uvs[i]);
-    }else{
-      vert.addVec2Data();
-    }
-
-    if(tangentCount > i){
-      vert.addVec4Data(this.tangents[i]);
-    }else{
-      vert.addVec4Data();
-    }
-
-    if(colorCount > i){
-      vert.addVec4Data(this.colors[i]);
-    }else{
-      vert.addVec4Data();
-    }
-    
-    for(var j = 0; j < vert.data.length; j++){
-      this.vertices.push(vert.data[j]);
-    }
-  }
-}
+  this.vertices.length = 0;
+  this.indices.length = 0;
+  this.positions.length = 0;
+  this.normals.length = 0;
+  this.uvs.length = 0;
+  this.uv2s.length = 0;
+  this.tangents.length = 0;
+  this.colors.length = 0;
+};
 
 Mesh.prototype.constructBuffers = function() {
-  this.updateVertices();
-  this.vertexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-  gl.bufferData(
-               gl.ARRAY_BUFFER, 
-               new Float32Array(this.vertices), 
-               gl.DYNAMIC_DRAW
-               );
-  this.numItems = this.vertices.length/this.stride;
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.positions,
+                                      this.attributeMap["Positions"].name,
+                                      this.attributeMap["Positions"].type,
+                                      3
+                                    )
+                );
+  
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.normals,
+                                      this.attributeMap["Normals"].name,
+                                      this.attributeMap["Normals"].type,
+                                      3
+                                    )
+                );
+  
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.uvs,
+                                      this.attributeMap["UVs"].name,
+                                      this.attributeMap["UVs"].type,
+                                      2
+                                    )
+                );
 
-}
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.uv2s,
+                                      this.attributeMap["UV2s"].name,
+                                      this.attributeMap["UV2s"].type,
+                                      2
+                                    )
+                );
+
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.tangents,
+                                      this.attributeMap["Tangents"].name,
+                                      this.attributeMap["Tangents"].type,
+                                      4
+                                    )
+                );
+
+  this.addBuffer(
+                this.constructBuffer(
+                                      this.colors,
+                                      this.attributeMap["Colors"].name,
+                                      this.attributeMap["Colors"].type,
+                                      4
+                                    )
+                );
+
+
+
+  this.numItems = this.positions.length;
+
+};
+
+Mesh.prototype.constructBuffer = function(data, name, type, numComponents) {
+  if(data.length == 0){
+    return null;
+  }
+  var meshData = new MeshData(this.gl,name,type);
+  meshData.constructBuffer(data, numComponents);
+
+  return meshData;
+};
+
+Mesh.prototype.addBuffer = function(buf) {
+  if(buf != null){
+    this.buffers.push(buf);
+  }
+};
 
 Mesh.prototype.updateBuffers = function() {
-  this.updateVertices();
+  for(var i = 0; i < this.buffers.length; i++){
+    var meshData = this.buffers[i];
+    meshData.updateBuffer();
+  }
+};
 
-  var gl = this.gl;
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-  /*
-  gl.bufferData(
-               gl.ARRAY_BUFFER, 
-               new Float32Array(this.vertices), 
-               gl.DYNAMIC_DRAW
-               );
-               */
-  this.numItems = this.vertices.length/this.stride;
-               
-  gl.bufferSubData(
-               gl.ARRAY_BUFFER,
-               0,
-               new Float32Array(this.vertices) 
-               );
-}
-
-
-Mesh.prototype.createVertexBuffer = function (vertArray, stride){
-  var gl = this.gl;
-  this.vertexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-  gl.bufferData(
-               gl.ARRAY_BUFFER, 
-               new Float32Array(vertArray), 
-               gl.DYNAMIC_DRAW
-               );
-
-  this.numItems = vertArray.length/stride;
-
-  //return vertexBuffer;
-} 
 
 Mesh.prototype.createScreenQuad = function(min, max){
   var norm = new Vector3(0,0,1);
@@ -303,6 +411,7 @@ Mesh.prototype.createSphereMeshData = function(slices, stacks){
 
 Mesh.prototype.createGridMesh = function(n, m, tileUVs){
  this.createTriStripGridMeshData(n,m);
+ //this.createGridMeshData(n,m);
 }
 
 Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
@@ -331,8 +440,8 @@ Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
       var normal = new Vector3(0.0, 0.0, 1.0);
       var p1 = new Vector3(x,y,z);
       var p2 = new Vector3(x,y2,z);
-      var uv1 = new Vector3(u,v, 0.0);
-      var uv2 = new Vector3(u,v2, 0.0);
+      var uv1 = new Vector3(u,v,0);
+      var uv2 = new Vector3(u,v2,0);
       var tangent = new Vector4(1.0, 0.0, 0.0, 0.0);
 
 
@@ -402,18 +511,18 @@ Mesh.prototype.createGridMeshData = function(n, m, tileUVs){
       }
 
       
-      vertices.push(lx, dy, zpos, 0.0, 0.0, 1.0, uvl, uvd, 1.0, 0.0, 0.0, 0.0,
+      vertices.push(lx, dy, zpos, 0.0, 1.0, 0.0, uvl, uvd, 1.0, 0.0, 0.0, 0.0,
           0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, dy, zpos, 0.0, 0.0, 1.0, uvr, uvd, 1.0, 0.0, 0.0, 0.0,
+      vertices.push(rx, dy, zpos, 0.0, 1.0, 0.0, uvr, uvd, 1.0, 0.0, 0.0, 0.0,
           0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, uy, zpos, 0.0, 0.0, 1.0, uvr, uvu, 1.0, 0.0, 0.0, 0.0,
+      vertices.push(rx, uy, zpos, 0.0, 1.0, 0.0, uvr, uvu, 1.0, 0.0, 0.0, 0.0,
           0.0, 0.0, 0.0, 0.0);
 
-      vertices.push(lx, dy, zpos, 0.0, 0, 1.0, uvl, uvd, 1.0, 0.0, 0.0, 0.0, 
+      vertices.push(lx, dy, zpos, 0.0, 1, 0.0, uvl, uvd, 1.0, 0.0, 0.0, 0.0, 
           0.0, 0.0, 0.0, 0.0);
-      vertices.push(rx, uy, zpos, 0.0, 0, 1.0, uvr, uvu, 1.0, 0.0, 0.0, 0.0, 
+      vertices.push(rx, uy, zpos, 0.0, 1, 0.0, uvr, uvu, 1.0, 0.0, 0.0, 0.0, 
           0.0, 0.0, 0.0, 0.0);
-      vertices.push(lx, uy, zpos, 0.0, 0, 1.0, uvl, uvu, 1.0, 0.0, 0.0, 0.0, 
+      vertices.push(lx, uy, zpos, 0.0, 1, 0.0, uvl, uvu, 1.0, 0.0, 0.0, 0.0, 
           0.0, 0.0, 0.0, 0.0);
       xpos += xinc;
     }

@@ -1,4 +1,22 @@
 "use strict";
+/*
+   For Uniforms:
+   Pass an array of names, values and types to bind uniforms.
+
+   Then loop through each calling the appropriate glUniform on the correct
+   uniform name.  
+   This can be called by the model, the renderer etc each with its own set of
+   attributes.  If an attribute isn't in the shader then nothing gets set.
+
+
+   For Attributes:
+   The mesh will pass in an array of structs containiing the glBuffer, the 
+   attribute name, size of the items in the buffer, and the type,
+
+   Note item size is the number of the elements of the type.  So if the buffer 
+   has Vector3's then the items size is 3.
+   The number of vertices is passed in seperately.  
+*/
 
 function ShaderProgram(gl) {
   this.gl = gl;
@@ -21,6 +39,8 @@ function ShaderProgram(gl) {
                           ["aVertexColor", 4]
                         ];
   this.uniformSlots = [];
+
+  //TODO: THIS SHOULD GO IN A GL UTILS CLASS
   this.typeToString = {};
   this.typeToString[gl.FLOAT] = "FLOAT";
   this.typeToString[gl.FLOAT_VEC2] = "FLOAT_VEC2";
@@ -39,6 +59,25 @@ function ShaderProgram(gl) {
   this.typeToString[gl.FLOAT_MAT4] = "FLOAT_MAT4";
   this.typeToString[gl.SAMPLER_2D] = "SAMPLER_2D";
   this.typeToString[gl.SAMPLER_CUBE] = "SAMPLER_CUBE";
+
+  this.stringToType = {};
+  this.stringToType["FLOAT"] = gl.FLOAT;
+  this.stringToType["FLOAT_VEC2"] = gl.FLOAT_VEC2;
+  this.stringToType["FLOAT_VEC3"] = gl.FLOAT_VEC3;
+  this.stringToType["FLOAT_VEC4"] = gl.FLOAT_VEC4;
+  this.stringToType["INT"] = gl.INT;
+  this.stringToType["INT_VEC2"] = gl.INT_VEC2;
+  this.stringToType["INT_VEC3"] = gl.INT_VEC3;
+  this.stringToType["INT_VEC4"] = gl.INT_VEC4;
+  this.stringToType["BOOL"] = gl.BOOL;
+  this.stringToType["BOOL_VEC2"] = gl.BOOL_VEC2;
+  this.stringToType["BOOL_VEC3"] = gl.BOOL_VEC3;
+  this.stringToType["BOOL_VEC4"] = gl.BOOL_VEC4;
+  this.stringToType["FLOAT_MAT2"] = gl.FLOAT_MAT2;
+  this.stringToType["FLOAT_MAT3"] = gl.FLOAT_MAT3;
+  this.stringToType["FLOAT_MAT4"] = gl.FLOAT_MAT4;
+  this.stringToType["SAMPLER_2D"] = gl.SAMPLER_2D;
+  this.stringToType["SAMPLER_CUBE"] = gl.SAMPLER_CUBE;
 
 }
 
@@ -104,6 +143,48 @@ ShaderProgram.prototype.getShader = function(id) {
   return shader;
 }
 
+
+//NEW: Should replace
+
+ShaderProgram.prototype.bindMeshAttributes = function(mesh) {
+  var gl = this.gl;
+  for(var i = 0; i < mesh.buffers.length; i++) {
+    var meshBuffer = mesh.buffers[i];
+    var attr = this.attributes[meshBuffer.name];
+    if(attr == null) {
+      //console.error("Attribute not found for: " + meshBuffer.name);
+      continue;
+    }
+    if(attr.type != meshBuffer.type){
+      console.error("Attribute type mismatch for: " + meshBuffer.name 
+                    + " type mesh: " + meshBuffer.type
+                    + " type attribute " + attr.type
+                    + " meshBufferName: " + meshBuffer.name
+                    + " attributeName: " + attr.name
+                   );
+      continue;
+    }
+
+    gl.bindBuffer(
+                      meshBuffer.stringToType[meshBuffer.bufferType], 
+                      meshBuffer.buffer
+                    );
+    gl.vertexAttribPointer(
+                            attr.slot,
+                            meshBuffer.itemSize,
+                            this.stringToType[meshBuffer.componentType], 
+                            meshBuffer.normalized,
+                            meshBuffer.stride,
+                            meshBuffer.pointer
+                          );
+    gl.enableVertexAttribArray(attr.slot);
+
+
+
+  }
+
+};
+
 ShaderProgram.prototype.cacheAttributeData = function() {
   var gl = this.gl;
   var total = gl.getProgramParameter(this.glProgram, gl.ACTIVE_ATTRIBUTES);
@@ -116,7 +197,8 @@ ShaderProgram.prototype.cacheAttributeData = function() {
                                       "slot" : slot,
                                       "size" : activeInfo.size,
                                       "type" : this.typeToString[activeInfo.type],
-                                      "name" : activeInfo.name
+                                      "name" : activeInfo.name,
+                                      "info" : activeInfo
                                      };
     console.debug(this.attributes[activeInfo.name]);
   }
@@ -135,7 +217,8 @@ ShaderProgram.prototype.cacheUniformData = function() {
                                       "slot" : slot,
                                       "size" : activeInfo.size,
                                       "type" : this.typeToString[activeInfo.type],
-                                      "name" : activeInfo.name
+                                      "name" : activeInfo.name,
+                                      "info" : activeInfo
                                      };
     console.debug(this.uniforms[activeInfo.name]);
   }
@@ -181,13 +264,15 @@ ShaderProgram.prototype.initShader = function(fragment_shadername, vertex_shader
   this.ready = true;
 };
 
+
+
 ShaderProgram.prototype.setupAttributesAndUniforms = function(){
   gl.useProgram(this.glProgram);
 
   this.cacheUniformData();
   this.cacheAttributeData();
   
-
+/*
   //DEPRECATED:
   //TODO: remove the following way of storing attributes
 
@@ -211,6 +296,7 @@ ShaderProgram.prototype.setupAttributesAndUniforms = function(){
                         gl.getAttribLocation(this.glProgram, "aVertexColor");
   gl.enableVertexAttribArray(this.vertexColorAttribute);
 
+*/
   //---------------------------------------------------------------------------
   // Uniforms
   //---------------------------------------------------------------------------
@@ -232,11 +318,16 @@ ShaderProgram.prototype.setupAttributesAndUniforms = function(){
 
 };
 
-
 ShaderProgram.prototype.bind = function(mesh){
   if(this.ready == false) return;
+
+
   var gl = this.gl;
   gl.useProgram(this.glProgram);
+  this.bindMeshAttributes(mesh);
+
+  /*
+
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vertexBuffer);
   gl.vertexAttribPointer(
                         this.vertexPositionAttribute,
@@ -278,7 +369,7 @@ ShaderProgram.prototype.bind = function(mesh){
                         mesh.strideBytes, 
                         mesh.colorOffset 
                         );
-                        
+   */                     
 };
 
 
