@@ -135,7 +135,6 @@
       sphereModel.drawRenderer(renderer);
       renderer.drawModel(sphereModel);
 
-      /*
       q.identity();
       q.rotateY(currTime);
       sphereModel.transform.setRotation(q);
@@ -148,7 +147,6 @@
       planeModel.transform.setScale(new Vector3(10.0, 20.0,1.0));
       planeModel.transform.setPosition(new Vector3(0.0, -1.1,-10.0));
       renderer.drawModel(planeModel);
-      */
 
 
 
@@ -164,7 +162,7 @@
     //var pMatrix;
     var particles;
     var sphereModel;
-    //var planeModel;
+    var planeModel;
     var renderer;
     //var shadowMap;
 
@@ -181,7 +179,6 @@
       sphereModel.material.zWrite = true;
       sphereModel.mesh.primitiveType = gl.TRIANGLES;
       sphereModel.mesh.createSphereMesh( 10,10);
-/*
       planeModel = new Model(gl);
       planeModel.material.shader.initShader("shader-fs","shader-vs");
       planeModel.material.texture.load("testTexture.jpg", 0);
@@ -190,7 +187,6 @@
       planeModel.material.culling = false;
       planeModel.mesh.primitiveType = gl.TRIANGLES;
       planeModel.mesh.createGridMesh( 10,10);
-      */
 
 
     }
