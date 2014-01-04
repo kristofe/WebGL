@@ -470,6 +470,16 @@ ShaderProgram.prototype.setRendererUniforms = function(renderer) {
     gl.uniform1f(uniformInfo.slot, renderer.currTime);
   }
   
+  uniformInfo = this.uniforms["uMouseLocation"];
+  if(uniformInfo != null){
+    gl.uniform1f(uniformInfo.slot, renderer.mousePos.x, renderer.mousePos.y);
+  }
+
+  uniformInfo = this.uniforms["uMouseRadius"];
+  if(uniformInfo != null){
+    gl.uniform1f(uniformInfo.slot, renderer.mouseRadius);
+  }
+
   uniformInfo = this.uniforms["uShadowMap"];
   if(uniformInfo != null){
     gl.uniform1i(uniformInfo.slot, 2);
