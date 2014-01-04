@@ -20,6 +20,30 @@
 <script type="text/javascript" src="camera.js"></script>
 <script type="text/javascript" src="light.js"></script>
 
+<script id="shader-fs-mouse-test" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform vec2 uViewportSize;
+    uniform vec2 uMouseLocation;
+    uniform float uMouseRadius;
+    varying vec2 vUV;
+
+    void main(void) {
+      vec4 orig_color = vec4(vUV.x, vUV.y, 1.0, 1.0);
+      vec4 mouse_color = vec4(1, 0, 0, 1.0);
+
+      float dist = length(
+                          vec2(gl_FragCoord) - 
+                          vec2(uMouseLocation.x - uMouseRadius,
+                               uMouseLocation.y + uMouseRadius
+                              )
+                         );
+      float t =  clamp(dist/uMouseRadius, 0.0, 1.0);
+
+      gl_FragColor = mix(mouse_color, orig_color, t);
+    }
+
+</script>
+
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
     varying vec2 vUV;
