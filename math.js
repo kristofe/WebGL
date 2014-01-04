@@ -900,7 +900,7 @@ Matrix44.prototype.preMultiply = function(a) {
   return this;
 };
 
-//This only rotates the matrix... it doesn't move it to the eye point.
+//There is no check for direction to target being coincident with up
 Matrix44.prototype.lookAt = function (eye, target, up) {
   var fwd = target.clone().subtract(eye);
   fwd.normalize();
@@ -921,10 +921,13 @@ Matrix44.prototype.lookAt = function (eye, target, up) {
     m[9] = -fwd.y;
     m[10] = -fwd.z;
     m[11] = 0;
-    m[12] = 0;//eye.x;
-    m[13] = 0;//eye.y;
-    m[14] = 0;//eye.z;
+    m[12] = 0;
+    m[13] = 0;
+    m[14] = 0;
     m[15] = 1;
+
+    this.identity();
+    this.translate(eye.x, eye.y, eye.z);
 
     this.preMultiply(m);
     return this;

@@ -56,21 +56,40 @@
 
       if(uRenderFromLight == 0.0){
         
+         /*
         vec3 depth = vPosition.xyz / vPosition.w;
-        depth.z = length(vWorldVertex.xyz - uLightPosition) * LinearDepthConstant;
+        //depth.z = length(vWorldVertex.xyz - uLightPosition) * LinearDepthConstant;
         float shadow = 1.0;
-        depth.z *= 0.96;
+        depth.z += 0.0005;
         
         
-        //float shadowDepth = texture2D(uShadowMap, depth.xy).x;
-        float shadowDepth = LinearizeDepth(depth.xy);
-        if (depth.z > shadowDepth){
+        float distFromLight = texture2D(uShadowMap, depth.xy).x;
+        //float shadowDepth = LinearizeDepth(depth.xy);
+        if (depth.z > distFromLight && vPosition.w > 0.0){
           shadow = 0.3;
         }
        
         
         vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
         gl_FragColor = vec4(texColor * shadow, 1.0);
+        */
+
+        vec4 texColor = vec4(texture2D(uTexture01, vUV.xy).rgb,1.0);
+        	vec4 shadowCoordinateWdivide = vPosition / vPosition.w ;
+		
+         // Used to lower moiré pattern and self-shadowing
+         shadowCoordinateWdivide.z += 0.0005;
+         
+         
+         float distanceFromLight = texture2D(uShadowMap,shadowCoordinateWdivide.st).z;
+         
+         
+         float shadow = 1.0;
+         if (vPosition.w > 0.0)
+            shadow = distanceFromLight < shadowCoordinateWdivide.z ? 0.5 : 1.0 ;
+         
+         
+         gl_FragColor =	 vec4(shadow * texColor.rgb,1.0);
       }
       else{
         vec3 texColor = texture2D(uTexture01, vUV.xy).rgb;
@@ -139,7 +158,7 @@
           
           vViewVec = normalize(-viewVertex.xyz);
           // Project the vertex from the light's point of view
-          vPosition = depthScaleMatrix * uLightProjectionMatrix * uLightViewMatrix * vWorldVertex;
+          vPosition = depthScaleMatrix * uLightProjectionMatrix * uLightMatrix * uMVMatrix * vec4(aVertexPosition,1.0);
         }
         else{
           vPosition = uLightViewMatrix * uMVMatrix * vec4(aVertexPosition,1.0);
