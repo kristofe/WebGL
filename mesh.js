@@ -437,7 +437,7 @@ Mesh.prototype.createTriStripGridMeshData = function(n, m, tileUVs){
       v2 = 0.5 + y2 - yinc;
 
       
-      var normal = new Vector3(0.0, 0.0, -1.0);
+      var normal = new Vector3(0.0, 0.0, 1.0);
       var p1 = new Vector3(x,y,z);
       var p2 = new Vector3(x,y2,z);
       var uv1 = new Vector3(u,v,0);

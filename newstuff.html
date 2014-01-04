@@ -142,7 +142,7 @@
       renderer.drawModel(sphereModel);
 
       q.identity();
-      q.rotateX(+0.5*Math.PI);
+      q.rotateX(-0.5*Math.PI);
       planeModel.transform.setRotation(q);
       planeModel.transform.setScale(new Vector3(10.0, 20.0,1.0));
       planeModel.transform.setPosition(new Vector3(0.0, -1.1,-10.0));
