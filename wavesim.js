@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 //Inherit from Model
 WaveSim.prototype = new Model();

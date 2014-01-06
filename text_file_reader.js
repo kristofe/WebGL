@@ -4,7 +4,6 @@ function TextFileReader() {
   this.allText = "";
   this.lines = [];
   this.txtFile = [];
-
   this.currLine = 0;
   this.lineCount = 0;
 }
