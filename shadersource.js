@@ -1,21 +1,23 @@
 "use strict";
 
 
-function ShaderFileSource(url){
+function ShaderSource(url){
   this.textFile = new TextFileReader();
-  this.textFile.loadFileSynchronous(url);
+  this.textFile.loadSynchronous(url);
   this.shaders = {};
-  console.debug(this.textFile.allText);
+  this.splitIntoShaders(this.textFile, true);
 }
 
-ShaderFileSource.prototype.splitIntoShaders = function(txtFile, addLineNums){
+ShaderSource.prototype.splitIntoShaders = function(txtFile, addLineNums){
   var line = {text:""};
   var nameToken = "--";
-  var currName = none;
+  var currName = "DEFAULT";
   var lineNum = 1;
   while(txtFile.getLine(line) != 0){
     if(line.text.slice(0, nameToken.length) == nameToken){
       currName = line.text.slice(nameToken.length, line.text.length);       
+      //currName = currName.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+      currName = currName.trim();
       this.shaders[currName] = "";
     }else{
        var lineNumPrefix = addLineNums?"/* " + lineNum + " */ ":"";
@@ -25,4 +27,7 @@ ShaderFileSource.prototype.splitIntoShaders = function(txtFile, addLineNums){
   } 
 };
 
+ShaderSource.prototype.get = function(name){
+   return this.shaders[name];
+};
 

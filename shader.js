@@ -210,7 +210,7 @@ ShaderProgram.prototype.cacheUniformData = function() {
   var total = gl.getProgramParameter(this.glProgram, gl.ACTIVE_UNIFORMS);
   for( var i = 0; i < total; ++i) {
     //WebGLActiveInfo = { GLint: size, GLenum: type, DOMString: name};
-    var activeInfo = gl.getActiveUniform(this.glProgram, i);:v
+    var activeInfo = gl.getActiveUniform(this.glProgram, i);
     var slot = gl.getUniformLocation(this.glProgram, activeInfo.name);
 
     this.uniforms[activeInfo.name] = {

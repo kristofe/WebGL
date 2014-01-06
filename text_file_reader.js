@@ -9,7 +9,7 @@ function TextFileReader() {
 }
 
 TextFileReader.prototype.loadSynchronous = function(url) {
-  console.debug("loading: " + url + " sychrnously");
+  console.debug("loading: " + url + " sychronously");
   this.txtFile = new XMLHttpRequest();
   var f = this;
   this.url = url;
