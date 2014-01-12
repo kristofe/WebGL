@@ -17,7 +17,6 @@ function Renderer(gl, canvas) {
 }
 
 Renderer.prototype.drawModel = function(model) {
- 
   model.material.bind(model.mesh);
   model.material.setModelUniforms(model);
   model.material.setRendererUniforms(renderer);

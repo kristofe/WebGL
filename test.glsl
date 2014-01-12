@@ -6,8 +6,8 @@
     varying vec2 vUV;
 
     void main(void) {
-      vec4 orig_color = vec4(vUV.x, vUV.y, 1.0, 1.0);
-      vec4 mouse_color = vec4(1, 0, 0, 1.0);
+      vec4 orig_color = vec4(0, 0, 0, 1.0);
+      vec4 mouse_color = vec4(1, 1, 1, 1.0);
 
       float dist = length(
                           vec2(gl_FragCoord) - 
