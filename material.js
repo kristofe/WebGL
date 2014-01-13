@@ -30,12 +30,21 @@ function Material(gl){
 
 Material.prototype.setShader = function(shader){
   this.shader = shader;
-}
+};
 
 Material.prototype.setTexture = function(texture){
   this.texture = texture;
   this.textures[0] = texture;
-}
+};
+
+Material.prototype.setTextureWithSlot = function(texture, slot){
+  if(slot == 0){
+    this.texture = texture;
+  }
+  if(slot < this.textures.length){
+    this.textures[slot] = texture;
+  }
+};
 
 Material.prototype.addTexture = function(texture){
   if(this.textures.length == 0){

@@ -24,17 +24,16 @@ WaveSim.prototype.drawRenderer = function(renderer){
   this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   this.rt0.bind();
-
-  this.material.bind(this.mesh);
-  this.material.setModelUniforms(this);
-  this.material.setRendererUniforms(renderer);
-  this.gl.drawArrays(
-                      this.mesh.primitiveType,
-                      0, 
-                      this.mesh.numItems
-                    );
-
+  this.drawQuad();
   this.rt0.unbind();
+
+  this.drawQuad();
+  this.debugDraw(renderer);
+
+  this.swapRenderTargets();
+};
+
+WaveSim.prototype.drawQuad = function() {
   this.material.bind(this.mesh);
   this.material.setModelUniforms(this);
   this.material.setRendererUniforms(renderer);
@@ -43,8 +42,14 @@ WaveSim.prototype.drawRenderer = function(renderer){
                       0, 
                       this.mesh.numItems
                     );
+};
 
-  this.debugDraw(renderer);
+WaveSim.prototype.swapRenderTargets = function() {
+  var tmp = this.rt1;
+  this.rt1 = this.rt0;
+  this.rt0  = tmp;
+  this.material.setTextureWithSlot(this.rt0.texture, 0);
+  this.material.setTextureWithSlot(this.rt1.texture, 1);
 };
 
 WaveSim.prototype.debugDraw = function(renderer){
@@ -57,6 +62,8 @@ WaveSim.prototype.setupMaterial = function(gl){
   var fsSource= " precision mediump float;\n\
     uniform vec2 uViewportSize;\n\
     uniform vec2 uMouseLocation;\n\
+    uniform sampler2D uTexture01;\n\
+    uniform sampler2D uTexture02;\n\
     uniform float uMouseRadius;\n\
     varying vec2 vUV;\n\
 \n\
@@ -70,9 +77,20 @@ WaveSim.prototype.setupMaterial = function(gl){
                                uMouseLocation.y + uMouseRadius\n\
                               )\n\
                          );\n\
+      vec2 offset = vec2(1.0/512.0,1.0/512.0);\n\
+      //vec2 offset = 1.0/uViewportSize;\n\
+      vec2 hoffset = vec2(offset.x, 0);\n\
+      vec2 voffset = vec2(0,offset.y);\n\
+      vec4 tex0 =  texture2D(uTexture01,vUV);\n\
+      vec4 tex1 =  texture2D(uTexture02,vUV+hoffset);\n\
+      vec4 tex2 =  texture2D(uTexture02,vUV-hoffset);\n\
+      vec4 tex3 =  texture2D(uTexture02,vUV+voffset);\n\
+      vec4 tex4 =  texture2D(uTexture02,vUV-voffset);\n\
+      vec4 baseColor = (tex1+tex2+tex3+tex4)*0.5 - tex0;\n\
+\n\
       float t =  clamp(dist/uMouseRadius, 0.0, 1.0);\n\
 \n\
-      gl_FragColor = mix(mouse_color, orig_color, t);\n\
+      gl_FragColor = mix(mouse_color, orig_color, t) + baseColor;\n\
     } ";
 
   var vsSource= " precision mediump float;\n\
@@ -104,8 +122,6 @@ WaveSim.prototype.setupMaterial = function(gl){
         vVertColor = aColor;\n\
         \n\
         vUV = aUV.xy;\n\
-        vec3 norm = mat3(uInverseTranspose) * normalize(aNormal);\n\
-        vNormal = norm.xyz;\n\
     }\n\
    ";
 
@@ -113,6 +129,7 @@ WaveSim.prototype.setupMaterial = function(gl){
   this.material.zTest = false;
   this.material.zWrite = false;
   this.material.lineWidth = 1.0;
-  //this.material.setTexture(this.texture);
+  this.material.setTexture(this.rt0.texture);
+  this.material.addTexture(this.rt1.texture);
 
 };
