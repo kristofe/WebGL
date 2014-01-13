@@ -8,16 +8,23 @@ function WaveSim(gl){
   Model.call(this, gl);
 
   this.mesh.createScreenQuad(new Vector2(-1,-1), new Vector2(1,1));
-  this.rt0 = new RenderTarget(gl, 256,256);
-  this.rt1 = new RenderTarget(gl, 256,256);
+  this.rt0 = new RenderTarget(gl, 512,512);
+  this.rt1 = new RenderTarget(gl, 512,512);
 
-  this.rt0.debugMesh.createScreenQuad(new Vector2(-1,-1), new Vector2(-0.5, -0.5));
-  this.rt1.debugMesh.createScreenQuad(new Vector2(-0.5,-0.5), new Vector2(0.0, 0.0));
+  this.rt0.initDebugData(new Vector2(-1,-1), new Vector2(-0.5, -0.5));
+  this.rt1.initDebugData(new Vector2(-0.5,-1), new Vector2(0.0, -0.5));
 
+  this.rt0.viewportSync(512,512);
+  this.rt1.viewportSync(512,512);
   this.setupMaterial(this.gl);
 }
 
 WaveSim.prototype.drawRenderer = function(renderer){
+  this.gl.clearColor(0.0, 0.0, 1.0, 1.0);
+  this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  this.rt0.bind();
+
   this.material.bind(this.mesh);
   this.material.setModelUniforms(this);
   this.material.setRendererUniforms(renderer);
@@ -27,7 +34,17 @@ WaveSim.prototype.drawRenderer = function(renderer){
                       this.mesh.numItems
                     );
 
-  //this.debugDraw(renderer);
+  this.rt0.unbind();
+  this.material.bind(this.mesh);
+  this.material.setModelUniforms(this);
+  this.material.setRendererUniforms(renderer);
+  this.gl.drawArrays(
+                      this.mesh.primitiveType,
+                      0, 
+                      this.mesh.numItems
+                    );
+
+  this.debugDraw(renderer);
 };
 
 WaveSim.prototype.debugDraw = function(renderer){

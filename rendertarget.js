@@ -8,10 +8,13 @@ function RenderTarget(gl, width, height){
   this.texture.setupFBO(width, height, true);
   this.transform = new Transform();
 
+}
+
+RenderTarget.prototype.initDebugData = function(min, max){
   //Debug stuff
   this.debugMesh = new Mesh(gl);
   this.debugMaterial = new Material(gl);
-  this.debugMesh.createScreenQuad(new Vector2(-1,-1), new Vector2(-0.5, -0.5));
+  this.debugMesh.createScreenQuad(min, max);
   this.setupMaterial();
 }
 
@@ -60,15 +63,9 @@ RenderTarget.prototype.setupMaterial = function(gl){
   fsSource +="\n";
   fsSource +="    varying vec4 vPosition;\n";
   fsSource +="    varying vec2 vUV;\n";
-  fsSource +="    varying vec3 vNormal;\n";
-  fsSource +="    varying vec3 vTangent;\n";
-  fsSource +="    varying vec3 vBitangent;\n";
-  fsSource +="    varying vec4 vVertColor;\n";
+  fsSource +="    varying vec4 vColor;\n";
   fsSource +="\n";
   fsSource +="    uniform sampler2D uTexture01;\n";
-  fsSource +="    uniform sampler2D uTexture02;\n";
-  fsSource +="    uniform float uTime;\n";
-  fsSource +="    uniform mat4 uMVMatrix;\n";
   fsSource +="\n";
   fsSource +="    void main(void) {\n";
   //fsSource +="      float t= sin(gl_PointCoord.x * 0.01 + uTime);\n"
@@ -78,36 +75,17 @@ RenderTarget.prototype.setupMaterial = function(gl){
   fsSource +="    }\n";
 
   var vsSource="  precision mediump float;\n";
-  vsSource +="    attribute vec3 aVertexPosition;\n";
-  vsSource +="    attribute vec3 aVertexNormal;\n";
-  vsSource +="    attribute vec2 aVertexUV;\n";
-  vsSource +="    attribute vec4 aVertexTangent;\n";
-  vsSource +="    attribute vec4 aVertexColor;\n";
+  vsSource +="    attribute vec3 aPosition;\n";
+  vsSource +="    attribute vec2 aUV;\n";
   vsSource +="\n";
-  vsSource +="    uniform mat4 uMVMatrix;\n";
-  vsSource +="    uniform mat4 uInverse;\n";
-  vsSource +="    uniform mat4 uInverseTranspose;\n";
-  vsSource +="    uniform mat4 uPMatrix;\n";
   vsSource +="    uniform sampler2D uTexture01;\n";
-  vsSource +="    uniform sampler2D uTexture02;\n";
-  vsSource +="    uniform float uTime;\n";
   vsSource +="\n";
   vsSource +="    varying vec4 vPosition;\n";
   vsSource +="    varying vec2 vUV;\n";
-  vsSource +="    varying vec3 vNormal;\n";
-  vsSource +="    varying vec3 vTangent;\n";
-  vsSource +="    varying vec3 vBitangent;\n";
-  vsSource +="    varying vec4 vVertColor;\n";
   vsSource +="\n";
   vsSource +="    void main(void) {\n";
-  vsSource +="        vPosition = vec4(aVertexPosition,1.0);\n";
-  vsSource +="        vVertColor = aVertexColor;\n";
-  vsSource +="        vUV = aVertexUV.xy;\n";
-  vsSource +="        vNormal = aVertexNormal.xyz;\n";
-  vsSource +="        vTangent = aVertexTangent.xyz;\n";
-  vsSource +="        gl_PointSize = 4.0;\n";
-  vsSource +="        vec4 pos = vec4(aVertexPosition, 1.0);\n";
-  vsSource +="        gl_Position = vec4(pos.xy, 0.0, 1.0);\n";
+  vsSource +="        vUV = aUV.xy;\n";
+  vsSource +="        gl_Position = vec4(aPosition,1.0);\n";
   vsSource +="    }\n";
 
   this.debugMaterial.shader.initShaderWithSource(fsSource,vsSource);
