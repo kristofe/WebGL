@@ -64,7 +64,7 @@
 
         //shadowMap.unbind();
         renderer.renderFromLight = 0.0;
-        drawObjects();
+        //drawObjects();
         /*
         shadowMap.debugDraw(
                             renderer.currentCamera.projection.m,
@@ -72,6 +72,8 @@
                             renderer
                            );
         */
+
+        waveSim.drawRenderer(renderer);
                            
     }
 
@@ -98,9 +100,6 @@
       planeModel.transform.setScale(new Vector3(10.0, 20.0,1.0));
       planeModel.transform.setPosition(new Vector3(0.0, -1.1,-10.0));
       renderer.drawModel(planeModel);
-
-
-
     };
 
 
@@ -126,6 +125,7 @@
       //shadowMap = new ShadowMap(gl, renderer.canvas.width, renderer.canvas.height);
       var testGLSL = new ShaderSource("test.glsl");
 
+      /*
       sphereModel = new Model(gl);
       sphereModel.material.shader.initShaderWithSource(
                                                       testGLSL.get("Frag"),
@@ -147,7 +147,7 @@
       planeModel.material.culling = false;
       planeModel.mesh.primitiveType = gl.TRIANGLES;
       planeModel.mesh.createGridMesh( 10,10);
-
+      */
       waveSim = new WaveSim(gl);
     }
 

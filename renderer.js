@@ -11,7 +11,7 @@ function Renderer(gl, canvas) {
   this.cameras = [this.currentCamera];
   this.lights = [this.currentLight];
   this.mousePos = new Vector2(0,0);
-  this.mouseRadius = 3.0;
+  this.mouseRadius = 10.0;
   this.renderFromLight = 0;
   this.currTime = 0;
 }
