@@ -8,9 +8,8 @@ function WaveSim(gl){
   Model.call(this, gl);
 
   this.mesh.createScreenQuad(new Vector2(-1,-1), new Vector2(1,1));
-  this.rt0 = new RenderTarget(gl, 512,512);
-  this.rt1 = new RenderTarget(gl, 512,512);
-
+  this.rt0 = new RenderTarget(gl, 512,512, gl.FLOAT);
+  this.rt1 = new RenderTarget(gl, 512,512, gl.FLOAT);
   this.rt0.initDebugData(new Vector2(-1,-1), new Vector2(-0.5, -0.5));
   this.rt1.initDebugData(new Vector2(-0.5,-1), new Vector2(0.0, -0.5));
 
@@ -81,11 +80,11 @@ WaveSim.prototype.setupMaterial = function(gl){
       //vec2 offset = 1.0/uViewportSize;\n\
       vec2 hoffset = vec2(offset.x, 0);\n\
       vec2 voffset = vec2(0,offset.y);\n\
-      vec4 tex0 =  texture2D(uTexture01,vUV);\n\
-      vec4 tex1 =  texture2D(uTexture02,vUV+hoffset);\n\
-      vec4 tex2 =  texture2D(uTexture02,vUV-hoffset);\n\
-      vec4 tex3 =  texture2D(uTexture02,vUV+voffset);\n\
-      vec4 tex4 =  texture2D(uTexture02,vUV-voffset);\n\
+      vec4 tex0 =  texture2D(uTexture02,vUV);\n\
+      vec4 tex1 =  texture2D(uTexture01,vUV+hoffset);\n\
+      vec4 tex2 =  texture2D(uTexture01,vUV-hoffset);\n\
+      vec4 tex3 =  texture2D(uTexture01,vUV+voffset);\n\
+      vec4 tex4 =  texture2D(uTexture01,vUV-voffset);\n\
       vec4 baseColor = (tex1+tex2+tex3+tex4)*0.5 - tex0;\n\
 \n\
       float t =  clamp(dist/uMouseRadius, 0.0, 1.0);\n\

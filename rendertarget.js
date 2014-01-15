@@ -1,11 +1,15 @@
 "use strict";
 
-function RenderTarget(gl, width, height){
+function RenderTarget(gl, width, height, dataType){
   this.gl = gl;
   this.texture = new Texture(gl);
   this.width = width;
   this.height = height;
-  this.texture.setupFBO(width, height, true);
+  this.dataType = gl.UNSIGNED_BYTE;
+  if(dataType != undefined){
+    this.dataType = dataType;
+  }
+  this.texture.setupFBO(width, height, true, this.dataType);
   this.transform = new Transform();
 
 }

@@ -60,9 +60,12 @@ Texture.prototype.unbindFBO = function() {
   gl.bindFramebuffer( gl.FRAMEBUFFER, null); 
 };
 
-Texture.prototype.setupFBO = function(width, height, create){
+Texture.prototype.setupFBO = function(width, height, create, dataType){
   this.fbo = true;
   this.loaded = true;
+  if(dataType == undefined){
+    dataType = gl.UNSIGNED_BYTE;
+  }
   // 1. Init Color Texture 
   if(create){
     this.glTexture = gl.createTexture(); 
@@ -73,7 +76,7 @@ Texture.prototype.setupFBO = function(width, height, create){
   gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); 
   gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, 
-                 gl.UNSIGNED_BYTE, null);
+                 dataType, null);
 
   // 2. Init Render Buffer 
   if(create){
