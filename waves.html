@@ -74,7 +74,6 @@
         */
 
         waveSim.drawRenderer(renderer);
-                           
     }
 
     function drawObjects() {
@@ -104,7 +103,7 @@
 
 
     var mouse = [250,250];
-    var mouseRadius = 10;
+    var mouseRadius = 1;
     var currentAngle = [0,0]; // [x-axis, y-axis] degrees
     var startTime = 0.0;
     var currTime = 0.0;
@@ -196,12 +195,14 @@
           mousePosition[0] = x;
           mousePosition[1] = canvas.height - y;
           renderer.mousePos.set(mousePosition[0], mousePosition[1]);
+          renderer.mouseDown = 1.0;
           dragging = true;
 
         }
       };
 
       canvas.onmouseup = function(ev){ //Mouse is released
+        renderer.mouseDown = 0.0;
         dragging = false;
       }
 

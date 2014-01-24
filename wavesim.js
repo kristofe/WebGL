@@ -66,8 +66,8 @@ WaveSim.prototype.setupMaterial = function(gl){
     varying vec2 vUV;\n\
 \n\
     void main(void) {\n\
-      float c =  texture2D(uTexture01,vUV).x * 0.5 + 0.5;\n\
-      gl_FragColor =  vec4(c,c,c,1);\n\
+      float c =  texture2D(uTexture01,vUV).x ;\n\
+      gl_FragColor =  vec4(c,c,c,1) * 0.5 + 0.5;\n\
     } ";
 
   var vsSource= " precision mediump float;\n\
@@ -96,8 +96,6 @@ WaveSim.prototype.setupMaterial = function(gl){
   this.material.zWrite = false;
   this.material.lineWidth = 1.0;
   this.material.setTexture(this.rt0.texture);
-  this.material.addTexture(this.rt1.texture);
-
 };
 
 
@@ -108,11 +106,12 @@ WaveSim.prototype.setupSimulationMaterial = function(gl){
     uniform sampler2D uTexture01;\n\
     uniform sampler2D uTexture02;\n\
     uniform float uMouseRadius;\n\
+    uniform float uMouseDown;\n\
     varying vec2 vUV;\n\
 \n\
     void main(void) {\n\
       vec4 orig_color = vec4(0, 0, 0, 1.0);\n\
-      vec4 mouse_color = vec4(1, 1, 1, 1.0);\n\
+      vec4 mouse_color = vec4(1.0, 1.0, 1.0, 1.0);\n\
 \n\
       float dist = length(\n\
                           vec2(gl_FragCoord) - \n\
@@ -124,16 +123,19 @@ WaveSim.prototype.setupSimulationMaterial = function(gl){
       //vec2 offset = 1.0/uViewportSize;\n\
       vec2 hoffset = vec2(offset.x, 0);\n\
       vec2 voffset = vec2(0,offset.y);\n\
-      vec4 tex0 =  texture2D(uTexture02,vUV);\n\
-      vec4 tex1 =  texture2D(uTexture01,vUV+hoffset);\n\
-      vec4 tex2 =  texture2D(uTexture01,vUV-hoffset);\n\
-      vec4 tex3 =  texture2D(uTexture01,vUV+voffset);\n\
-      vec4 tex4 =  texture2D(uTexture01,vUV-voffset);\n\
-      vec4 baseColor = (tex1+tex2+tex3+tex4)*0.5 - tex0;\n\
+      vec4 tex0 =  texture2D(uTexture01,vUV);\n\
+      vec4 tex1 =  texture2D(uTexture02,vUV+hoffset);\n\
+      vec4 tex2 =  texture2D(uTexture02,vUV-hoffset);\n\
+      vec4 tex3 =  texture2D(uTexture02,vUV+voffset);\n\
+      vec4 tex4 =  texture2D(uTexture02,vUV-voffset);\n\
+      vec4 baseColor = (tex1+tex2+tex3+tex4)*0.25 - tex0;\n\
+      //baseColor *= 0.975;\n\
 \n\
-      float t =  clamp(dist/uMouseRadius, 0.0, 1.0);\n\
+      float t =  1.0 - step(dist,uMouseRadius);\n\
+      //baseColor = clamp(baseColor, -1.0, 1.0);\n\
 \n\
-      gl_FragColor = mix(mouse_color, orig_color, t) + baseColor;\n\
+      vec4 m = mix(mouse_color, orig_color, t) * uMouseDown;\n\
+      gl_FragColor = m + baseColor;\n\
     } ";
 
   var vsSource= " precision mediump float;\n\

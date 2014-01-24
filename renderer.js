@@ -14,6 +14,7 @@ function Renderer(gl, canvas) {
   this.mouseRadius = 10.0;
   this.renderFromLight = 0;
   this.currTime = 0;
+  this.mouseDown = 0.0;
 }
 
 Renderer.prototype.drawModel = function(model) {

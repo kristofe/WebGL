@@ -481,6 +481,16 @@ ShaderProgram.prototype.setRendererUniforms = function(renderer) {
     gl.uniform1f(uniformInfo.slot, renderer.mouseRadius);
   }
 
+  uniformInfo = this.uniforms["uMouseDown"];
+  if(uniformInfo != null){
+    gl.uniform1f(uniformInfo.slot, renderer.mouseDown);
+  }
+
+  uniformInfo = this.uniforms["uMouseUp"];
+  if(uniformInfo != null){
+    gl.uniform1f(uniformInfo.slot, renderer.mouseUp);
+  }
+
   uniformInfo = this.uniforms["uShadowMap"];
   if(uniformInfo != null){
     gl.uniform1i(uniformInfo.slot, 2);
