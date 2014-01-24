@@ -61,7 +61,8 @@ Material.prototype.addTexture = function(texture){
 
 Material.prototype.bind = function(mesh){
   for(var i = 0; i < this.textures.length; i++){
-    this.textures[i].activate();
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, this.textures[i].glTexture);
   }
   this.shader.bind(mesh);
   if(this.culling){

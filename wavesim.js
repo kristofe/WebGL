@@ -32,6 +32,7 @@ WaveSim.prototype.drawRenderer = function(renderer){
   this.debugDraw(renderer);
 
   this.swapRenderTargets();
+
 };
 
 WaveSim.prototype.drawQuad = function(material) {
@@ -128,8 +129,8 @@ WaveSim.prototype.setupSimulationMaterial = function(gl){
       vec4 tex2 =  texture2D(uTexture02,vUV-hoffset);\n\
       vec4 tex3 =  texture2D(uTexture02,vUV+voffset);\n\
       vec4 tex4 =  texture2D(uTexture02,vUV-voffset);\n\
-      vec4 baseColor = (tex1+tex2+tex3+tex4)*0.25 - tex0;\n\
-      //baseColor *= 0.975;\n\
+      vec4 baseColor = (tex1+tex2+tex3+tex4)*0.5 - tex0;\n\
+      baseColor *= 0.975;\n\
 \n\
       float t =  1.0 - step(dist,uMouseRadius);\n\
       //baseColor = clamp(baseColor, -1.0, 1.0);\n\
