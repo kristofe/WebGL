@@ -529,3 +529,146 @@ ShaderProgram.prototype.setModelUniforms = function(model) {
     gl.uniform1i(uniformInfo.slot, 1);
   }
 };
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+ShaderProgram.prototype.setUniform1i = function(name, val) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform1i(uniformInfo.slot, val);
+  }
+};
+
+ShaderProgram.prototype.setUniform2i = function(name, val1, val2) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform2i(uniformInfo.slot, val1, val2);
+  }
+};
+
+ShaderProgram.prototype.setUniform3i = function(name, val1, val2, val3) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform3i(uniformInfo.slot, val1, val2, val3);
+  }
+};
+
+ShaderProgram.prototype.setUniform4i = function(name, val1, val2, val3, val4) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform4i(uniformInfo.slot, val1, val2, val3, val4);
+  }
+};
+//-----------------------------------------------------------------------------
+
+ShaderProgram.prototype.setUniform1iv = function(name, count, arr) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform1iv(uniformInfo.slot, count, arr);
+  }
+};
+
+ShaderProgram.prototype.setUniform2iv = function(name, count, arr) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform2iv(uniformInfo.slot, count, arr);
+  }
+};
+
+ShaderProgram.prototype.setUniform3iv = function(name, count, arr) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform3iv(uniformInfo.slot, count, arr);
+  }
+};
+
+ShaderProgram.prototype.setUniform4iv = function(name, count, arr) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform4iv(uniformInfo.slot, count, arr);
+  }
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+ShaderProgram.prototype.setUniform1f = function(name, val) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform1f(uniformInfo.slot, val);
+  }
+};
+
+ShaderProgram.prototype.setUniform2f = function(name, val1, val2) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform2f(uniformInfo.slot, val1, val2);
+  }
+};
+
+ShaderProgram.prototype.setUniform3f = function(name, val1, val2, val3) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform3f(uniformInfo.slot, val1, val2, val3);
+  }
+};
+
+ShaderProgram.prototype.setUniform4f = function(name, val1, val2, val3, val4) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform4f(uniformInfo.slot, val1, val2, val3, val4);
+  }
+};
+
+//-----------------------------------------------------------------------------
+ShaderProgram.prototype.setUniform1fv = function(name, count, arr) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform1fv(uniformInfo.slot, count, arr);
+  }
+};
+
+ShaderProgram.prototype.setUniform2fv = function(name, count, arr) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform2fv(uniformInfo.slot, count, arr);
+  }
+};
+
+ShaderProgram.prototype.setUniform3fv = function(name, count, arr) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform3fv(uniformInfo.slot, count, arr);
+  }
+};
+
+ShaderProgram.prototype.setUniform4fv = function(name, count, arr) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniform4fv(uniformInfo.slot, count, arr);
+  }
+};
+
+//-----------------------------------------------------------------------------
+ShaderProgram.prototype.setUniformMatrix2fv = function(name, mtx) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniformMatrix2fv(uniformInfo.slot, false, mtx);
+  }
+};
+
+ShaderProgram.prototype.setUniformMatrix3fv = function(name, mtx) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniformMatrix3fv(uniformInfo.slot, false, mtx);
+  }
+};
+
+ShaderProgram.prototype.setUniformMatrix4fv = function(name, mtx) {
+  uniformInfo = this.uniforms[name];
+  if(uniformInfo != null){
+    gl.uniformMatrix4fv(uniformInfo.slot, false, mtx);
+  }
+};
+

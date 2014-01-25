@@ -112,7 +112,7 @@ WaveSim.prototype.setupSimulationMaterial = function(gl){
 \n\
     void main(void) {\n\
       vec4 orig_color = vec4(0, 0, 0, 1.0);\n\
-      vec4 mouse_color = vec4(1.0, 1.0, 1.0, 1.0);\n\
+      vec4 mouse_color = vec4(0.2, 0.2, 0.2, 1.0);\n\
 \n\
       float dist = length(\n\
                           vec2(gl_FragCoord) - \n\
